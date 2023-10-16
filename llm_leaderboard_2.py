@@ -24,7 +24,6 @@ from bs4 import BeautifulSoup
 from os.path import expanduser
 
 home_dir = expanduser("~")
-
 mydir = f"{home_dir}/Documents/GitHub/ai"
 
 #%%

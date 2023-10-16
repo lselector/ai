@@ -5,16 +5,23 @@
 # --------------------------------------------------------------
 # llm_leaderboard.py
 # get HuggingFace.co LLM leaderboard data
+# using felixz space on HuggingFace
 # by Lev Selector, October 2023
 # --------------------------------------------------------------
 """
 
+#%%
 import os, sys, json, time
 from gradio_client import Client
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
+from os.path import expanduser
 
+home_dir = expanduser("~")
+mydir = f"{home_dir}/Documents/GitHub/ai"
+
+#%%
 client = Client("https://felixz-open-llm-leaderboard.hf.space/")
 
 json_data = client.predict("","", api_name='/predict')
@@ -26,33 +33,13 @@ with open(json_data, 'r') as file:
 # Load the JSON data
 data = json.loads(file_data)
 headers = data['headers'] # list of table headers
-
-# ['T','Model','Average ⬆️','ARC','HellaSwag','MMLU','TruthfulQA',
-#  'Type','Precision','Hub License','#Params (B)','Hub ❤️',
-#  'Available on the hub','Model sha','model_name_for_query']
-
 data = data['data'] 
-# list of more than thousand elements
-# each element is a list like this
-# 
-# [
-# '🔶', 
-# '<a target="_blank" href="https://huggingface.co/AIDC-ai-business/Marcoroni-70B-v1" ...">📑</a>',
-# 74.06,
-# 73.55,
-# 87.62,
-# 70.67,
-# 64.41,
-# 'fine-tuned',
-# 'torch.bfloat16',
-# 'cc-by-nc-4.0',
-# 68.72,
-# 14,
-# True,
-# '55a30d29db194832c0b5de1392a6598a63582144',
-# 'AIDC-ai-business/Marcoroni-70B-v1'] 
-
 df = pd.DataFrame(data=data, columns=headers)
+
+#%%
+
+mylen = len(df)
+print(f"len(df) = {len(df)}")
 
 # --------------------------------------------------------------
 # select some columns
@@ -84,9 +71,7 @@ df['model_link'] = df['model_link'].map(lambda x: myurl(x))
 
 mylist = [
     ['GPT-4', 84.3, 96.3, 95.3, 86.4, 59, 'Unknown', 'torch.float16', 1800.00, 'GPT-4'],
-    ['GPT-3.5', 71.9, 85.2, 85.5, 70, 47, 'Unknown', 'torch.float16', 175.00, 'GPT-3.5'],
-    ['Open-Orca/Mistral-7B-OpenOrca', 65.84, 64.08, 83.99, 62.24, 53.05, 'fine-tuned', 'torch.float16', 
-     7.3, 'https://huggingface.co/Open-Orca/Mistral-7B-OpenOrca']
+    ['GPT-3.5', 71.9, 85.2, 85.5, 70, 47, 'Unknown', 'torch.float16', 175.00, 'GPT-3.5']
 ]
 
 df2 = pd.DataFrame(mylist, columns = mycols)
@@ -116,55 +101,80 @@ df.insert(0, "Rank", list(range(mylen)))
 # save to file
 time_now = time.strftime("%Y%m%d_%H%M%S")
 fname = f"llm_leaderboard_{time_now}"
-mydir = os. getcwd()
 fname = mydir + "/" + fname
-# fname_csv = fname + ".csv"
-# print(f"writing to file {fname_csv}")
-# df.to_csv(fname_csv, index=False)
+fname_csv = fname + ".csv"
+print(f"writing to file {fname_csv}")
+df.to_csv(fname_csv, index=False)
 fname_xls = fname + ".xlsx"
 print(f"writing to file {fname_xls}")
 df.to_excel(fname_xls, index=False)
 
 # --------------------------------------------------------------
-# Select interesting rows only 
+# create mask to select only interesting rows 
+
+# first 3 rows and very last row
 mask = ( df['Rank'].isin([0,1,2,mylen-1])) | df['Model'].isin(['GPT-4','GPT-3.5'])
 
+# add top 8bit model
 myrank = df.loc[df['Precision'] == '8bit'].iloc[0]["Rank"]
 mask = mask | ( df['Rank'] == myrank )
 
+# add top 4bit model
 myrank = df.loc[df['Precision'] == '4bit'].iloc[0]["Rank"]
 mask = mask | ( df['Rank'] == myrank )
 
-for ss in ['tiiuae/falcon-180B',
-           'meta-llama/Llama-2-70b-chat-hf',
-           'Open-Orca/Mistral-7B-OpenOrca',
-           'mistralai/Mistral-7B-v0.1'
-          ]:
-    m0 = df['Model'].str.contains(ss)
+def add_to_mask():
+    global df, mask, m0
     dft = df.loc[ m0 ]
     if len(dft) > 0:
         myrank = df.loc[ m0 ].iloc[0]["Rank"]
         mask = mask | ( df['Rank'] == myrank )
 
-# top -13B model
-for ss in ["-13B", "-7B"]:
-    sss = ss.lower()
-    m0 = df['Model'].str.contains(ss) | df['Model'].str.contains(ss.lower())
+for ss in ['tiiuae/falcon-180B',
+           'meta-llama/Llama-2-70b-chat-hf',
+           'mistral',
+           'mistralai/Mistral-7B-v0.1',
+           'Open-Orca/Mistral-7B-OpenOrca'
+          ]:
+    m0 = df['Model'].str.contains(ss, na=False, case=False)
+    add_to_mask()
+
+# top 7b, 11b, 13b models
+for ss in ["-13b", "11b", "-7b"]:
+    m0 = df['Model'].str.contains(ss, na=False, case=False) 
+    add_to_mask()
+
+# top 4bit 7b, 11b, 13b models
+for ss in ["-13b", "11b", "-7b"]:
+    m0 = df['Model'].str.contains(ss, na=False, case=False) 
     m0 = m0 & (df['Precision'] == '4bit')
-    dft = df.loc[m0]
-    if len(dft) > 0:
-        myrank = df.loc[m0].iloc[0]["Rank"]
-        mask = mask | ( df['Rank'] == myrank )
+    add_to_mask()
+
+# top Mistral + OpenOrca
+m0 = df['Model'].str.contains('mistral', na=False, case=False) \
+   & df['Model'].str.contains('OpenOrca', na=False, case=False)
+add_to_mask()
+
+# top Mistral + 4bit
+m0 = df['Model'].str.contains('mistral', na=False, case=False) \
+   & df['Precision'].str.contains('4bit', na=False, case=False)
+add_to_mask()
+
+# --------------------------------------------------------------
+# use the mask to get only several interesting rows
 
 df2 = df[mask].copy()
 df2 = df2.drop_duplicates()
 df2 = df2.sort_values(by=['Rank'])
 
+# --------------------------------------------------------------
 # round up Nparam
 
 def round_nparam(x):
     if (x > 6.5) and (x<7.5):
         return 7
+    if (x > 10.5) and (x<11.5):
+        return 11
     if (x > 12.5) and (x<13.5):
         return 13
     if (x > 25) and (x<35):
@@ -175,6 +185,7 @@ def round_nparam(x):
 
 df2['Nparam'] = df2['Nparam'].map(lambda x: round_nparam(x))
 
+# --------------------------------------------------------------
 mycols = ["Rank", "Model", "Aver", "Precision", "Nparam"]
 df2 = df2[mycols].copy()
 print(df2)
@@ -183,4 +194,6 @@ fname_selected = fname + "_selected.xlsx"
 
 print(f"writing to file {fname_selected}")
 df2.to_excel(fname_selected, index=False)
+
+# %%
 
