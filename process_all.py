@@ -140,7 +140,10 @@ def mask_make1(bag):
 
 # --------------------------------------------------------------
 def add_to_mask(bag):
-    """ convenience function to add rows to bag.mask """
+    """ 
+    # convenience function to add rows to bag.mask 
+    # add only top model with this mask
+    """
     dft = bag.df.loc[ bag.m0 ]
     if len(dft) > 0:
         myrank = bag.df.loc[ bag.m0 ].iloc[0]["Rank"]
@@ -156,7 +159,7 @@ def mask_make2(bag):
             'Open-Orca/Mistral-7B-OpenOrca'
             ]:
         bag.m0 = bag.df['Model'].str.contains(ss, na=False, case=False)
-        add_to_mask(bag)
+        add_to_mask(bag) # add only top model with this string
 
 # --------------------------------------------------------------
 def mask_make3(bag):
