@@ -107,6 +107,7 @@ def sort_and_add_index(bag):
     print(bag.df)
     bag.mylen = len(bag.df)
     bag.df.insert(0, "Rank", list(range(bag.mylen)))
+    bag.df.index = range(bag.mylen)
 
 # --------------------------------------------------------------
 def df_to_csv_xlsx(bag):
