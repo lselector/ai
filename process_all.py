@@ -103,7 +103,7 @@ def simplify_precision(bag):
 # --------------------------------------------------------------
 def sort_and_add_index(bag):
     """ sort by average score and add index column """
-    bag.df = bag.df.sort_values(by=['Aver'], ascending=False)
+    bag.df = bag.df.sort_values(by=['Aver','Model'], ascending=[False,True])
     print(bag.df)
     bag.mylen = len(bag.df)
     bag.df.insert(0, "Rank", list(range(bag.mylen)))
@@ -214,15 +214,19 @@ def df2_round_params(bag):
     bag.df2['Nparam'] = bag.df2['Nparam'].map(lambda x: round_nparam(x))
 
 # --------------------------------------------------------------
-def df2_to_xlsx(bag):
+def df2_to_csv_xlsx(bag):
     """ write selected models into small Excel file """
     mycols = ["Rank", "Model", "Aver", "Precision", "Nparam"]
     bag.df2 = bag.df2[mycols].copy()
     print(bag.df2)
 
-    fname_selected = bag.fname + "_selected.xlsx"
-    print(f"writing to file {fname_selected}")
-    bag.df2.to_excel(fname_selected, index=False)
+    fname_sel_csv = bag.fname + "_selected.csv"
+    print(f"writing to file {fname_sel_csv}")
+    bag.df2.to_csv(fname_sel_csv, index=False)
+
+    fname_sel_xlsx = bag.fname + "_selected.xlsx"
+    print(f"writing to file {fname_sel_xlsx}")
+    bag.df2.to_excel(fname_sel_xlsx, index=False)
 
 # ---------------------------------------------------------------
 def process_all(bag):
@@ -238,6 +242,6 @@ def process_all(bag):
     mask_make3(bag)
     mask_apply(bag)
     df2_round_params(bag)
-    df2_to_xlsx(bag)
+    df2_to_csv_xlsx(bag)
 
 # ---------------------------------------------------------------
