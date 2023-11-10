@@ -3,7 +3,7 @@
 
 """
 # --------------------------------------------------------------
-# process_all.py
+# process_lib.py
 # functions to be called from llm_leaderboard*.py
 # --------------------------------------------------------------
 """
@@ -51,13 +51,18 @@ def get_felixz_data(bag):
 # --------------------------------------------------------------
 def select_columns(bag):
     """ select and rename columns """
+    cols_orig = ['T', 'Model', 'Average ⬆️', 'ARC', 'HellaSwag', 'MMLU', 
+        'TruthfulQA', 'Winogrande', 'GSM8K', 'DROP', 'Type', 'Precision', 
+        'Hub License', '#Params (B)', 'Hub ❤️', 'Available on the hub', 
+        'Model sha', 'model_name_for_query']
     mycols = ['model_name_for_query','Average ⬆️','ARC','HellaSwag','MMLU',
-                  'TruthfulQA','Type','Precision', '#Params (B)', 'Model']
+                  'TruthfulQA', 'Winogrande', 'GSM8K', 'DROP', 
+                  'Type','Precision', '#Params (B)', 'Model']
     bag.df = bag.df[mycols].copy()
 
     # rename columns
     bag.mycols = ['Model','Aver','ARC','HellaSwag','MMLU','TruthfulQA', 
-            'Type','Precision', 'Nparam','model_link']
+            'Winogrande','GSM8K','DROP','Type','Precision', 'Nparam','model_link']
     bag.df.columns = bag.mycols
 
 # --------------------------------------------------------------
@@ -81,8 +86,8 @@ def add_gpt(bag):
     # https://arxiv.org/abs/2303.08774
     """
     mylist = [
-        ['GPT-4', 84.3, 96.3, 95.3, 86.4, 59, 'Unknown', 'torch.float16', 1800.00, 'GPT-4'],
-        ['GPT-3.5', 71.9, 85.2, 85.5, 70, 47, 'Unknown', 'torch.float16', 175.00, 'GPT-3.5']
+        ['GPT-4', 84.3, 96.3, 95.3, 86.4, 59, '','','','Unknown', 'torch.float16', 1800.00, 'GPT-4'],
+        ['GPT-3.5', 71.9, 85.2, 85.5, 70, 47, '','','','Unknown', 'torch.float16', 175.00, 'GPT-3.5']
     ]
     df2 = pd.DataFrame(mylist, columns = bag.mycols)
     bag.df = pd.concat([bag.df, df2], ignore_index = True)
@@ -157,7 +162,8 @@ def mask_make2(bag):
             'meta-llama/Llama-2-70b-chat-hf',
             'mistral',
             'mistralai/Mistral-7B-v0.1',
-            'Open-Orca/Mistral-7B-OpenOrca'
+            'Open-Orca/Mistral-7B-OpenOrca',
+            'ValiantLabs/ShiningValiant'
             ]:
         bag.m0 = bag.df['Model'].str.contains(ss, na=False, case=False)
         add_to_mask(bag) # add only top model with this string
@@ -232,7 +238,7 @@ def df2_to_csv_xlsx(bag):
 def process_all(bag):
     select_columns(bag)
     simplify_url(bag)
-    add_gpt(bag)
+    # add_gpt(bag)
     simplify_precision(bag)
     sort_and_add_index(bag)
     df_to_csv_xlsx(bag)

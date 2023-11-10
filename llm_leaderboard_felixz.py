@@ -3,31 +3,25 @@
 
 """
 # --------------------------------------------------------------
-# llm_leaderboard_2.py
+# llm_leaderboard.py
 # get HuggingFace.co LLM leaderboard data
+# using felixz space on HuggingFace
 # by Lev Selector, October 2023
-# first run
-#     cd open_llm_leaderboard
-#     python lev_app.py
-# to get the data into file like this:
-#     orig_df_20231013_084845.csv
-#
-# Then run this script to read the latest file
-# and create Excel files for review
 # --------------------------------------------------------------
 """
 
-import os, sys, json, time, glob
+import os, sys, json, time
+from gradio_client import Client
 import pandas as pd
 import numpy as np
 from bs4 import BeautifulSoup
 from os.path import expanduser
 from mybag import *
-from process_all import *
+from process_lib import *
 
 bag = MyBunch()
 bag.error_flag = 0
 bag.home_dir = expanduser("~")
 bag.mydir = f"{bag.home_dir}/Documents/GitHub/ai"
-get_data_from_orig_df_file(bag)
+get_felixz_data(bag)
 process_all(bag)
