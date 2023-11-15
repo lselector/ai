@@ -163,7 +163,8 @@ def mask_make2(bag):
             'mistral',
             'mistralai/Mistral-7B-v0.1',
             'Open-Orca/Mistral-7B-OpenOrca',
-            'ValiantLabs/ShiningValiant'
+            'ValiantLabs/ShiningValiant',
+            'Phind-CodeLlama-34B-v2'
             ]:
         bag.m0 = bag.df['Model'].str.contains(ss, na=False, case=False)
         add_to_mask(bag) # add only top model with this string
