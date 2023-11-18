@@ -11,7 +11,7 @@ In "ai" repo directory:
 
 Then edit the app.py:
 
-    search for "original_df" (approx. at line 110)
+    search for "original_df" (approx. at line 50)
 
 original_df = get_leaderboard_df(EVAL_RESULTS_PATH, COLS, BENCHMARK_COLS)
 
@@ -39,4 +39,10 @@ sys.exit()
 # ---------- Lev portion end ----------
 
 and remove all code after that.
+
+then run it:   python app.py
+then:
+
+cd ../
+python llm_leaderboard_local.py
 
