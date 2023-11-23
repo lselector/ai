@@ -162,6 +162,8 @@ def mask_make2(bag):
             'meta-llama/Llama-2-70b-chat-hf',
             'mistral',
             'mistralai/Mistral-7B-v0.1',
+            'Microsoft/Orca-2-13b',
+            'Microsoft/Orca-2-7b',
             'Open-Orca/Mistral-7B-OpenOrca',
             'ValiantLabs/ShiningValiant',
             'Phind-CodeLlama-34B-v2'
