@@ -41,7 +41,6 @@ def main():
         dict_assistant = {"role": "assistant", "content": ai_response}
         st.session_state.messages.append(dict_assistant)
 
-    # Display chat history
     for message in st.session_state.messages:
         with st.container():
             st.markdown(f"**{message['role']}:** {message['content']}")
