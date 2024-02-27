@@ -12,7 +12,6 @@
 import os
 from flask import Flask, render_template, request
 from openai import OpenAI
-
 client = OpenAI( api_key=os.environ.get("OPENAI_API_KEY") )
 
 app = Flask(__name__)
@@ -34,11 +33,10 @@ def chat():
 
     ai_response = response.choices[0].message.content.strip()
 
-    return render_template("index.html", 
-                           user_input=user_input, 
+    return render_template("index.html",
+                           user_input=user_input,
                            ai_response=ai_response)
 
 # --------------------------------------------------------------
 if __name__ == "__main__":
     app.run(debug=True)
-
