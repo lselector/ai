@@ -1,6 +1,6 @@
 
 # --------------------------------------------------------------
-# app3.py - streamlit app - simple chatbot with history memory
+# app_streamlit_cookies.py - streamlit app - simple chatbot with history memory
 # 
 # NOT WORKING YET
 # 
@@ -9,7 +9,7 @@
 # https://discuss.streamlit.io/t/streamlit-cookies-which-package-to-use-so-many-of-them/50500
 # 
 # to run:
-#    streamlit run app3.py
+#    streamlit run app_streamlit_cookies.py
 # which starts the local server
 #   http://localhost:8501/
 # --------------------------------------------------------------

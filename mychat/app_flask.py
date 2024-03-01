@@ -1,9 +1,9 @@
 
 # --------------------------------------------------------------
-# app.py - Flask app - simple chatbot
+# app_flask.py - Flask app - simple chatbot
 # uses file templates/index.html
 # to run:
-#    python app.py
+#    python app_flask.py
 # which starts the local server:
 #   http://127.0.0.1:5000
 # --------------------------------------------------------------

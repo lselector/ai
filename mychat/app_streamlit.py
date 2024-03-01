@@ -1,8 +1,8 @@
 
 # --------------------------------------------------------------
-# app2.py - streamlit app - simple chatbot
+# app_streamlit.py - streamlit app - simple chatbot
 # to run:
-#    streamlit run app2.py
+#    streamlit run app_streamlit.py
 # which starts the local server
 #   http://localhost:8501/
 # --------------------------------------------------------------
