@@ -95,6 +95,24 @@ https://www.youtube.com/watch?v=zjkBMFhNj_g
 AI Updates January 19, 2024
 https://www.youtube.com/watch?v=0R5glMg69I4&t=183s
 
+================================================================================
+RAG = Retrieval Augmented Generation
+  convert your text into vectors in vector database
+  convert your question into vector
+  do vector similarity search - retrieve best matches
+  re-rank/sort the findings
+  use LLM to convert the findings into response
+
+Advance RAG
+https://luv-bansal.medium.com/advance-rag-improve-rag-performance-208ffad5bb6a
+
+Mastering RAG
+https://www.rungalileo.io/blog/mastering-rag-how-to-architect-an-enterprise-rag-system
+
+RAG on AWS:
+https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/
+
+
 # --------------------------------------------------------------------------------------------------------------------
 Lesson 3
     LangChain - Python framework to work with LLMs
