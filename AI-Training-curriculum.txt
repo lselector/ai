@@ -1,15 +1,16 @@
 AI Training Curriculum
-August 2023
+Created August 2023
+Updated March 2024
 
 Prerequisites:
 
 Computer with unix - may be a desktop or a laptop.
-For Linux or unix on Windows - you will need a Cuda-compatible Nvidia GPU.
+For Linux (standalone or under Windows) - you will need a Cuda-compatible Nvidia GPU.
  - Linux (any flavor, Mint, Ubuntu preferred
  - Windows - preferably with Nvidia GPU, activate WSL2 on it (Windows Subsystem for Linux version 2)
    .. https://learn.microsoft.com/en-us/windows/wsl/install 
    .. https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-vscode 
- - Mac - with M1, M2, ... apple chips
+ - Mac - with Apple Silicone chips (M1, M2, M3, ...)
 
 Knowledge:
  - Linux/Unix
@@ -20,16 +21,17 @@ Knowledge:
  - Basic cloud usage: files (AWS s3, Azure data lake, etc), SQL Data Warehouse, 
                                   ETL tools, Analytics dashboards
 
-Go through materials below. Use Chat GPT, Google Bard, Anthropic Claude2, Google Search, etc. to find answers to your questions.  and others to help you to study:
+Go through materials below. 
+When you have questions - use ChatGPT, Google Gemini, Anthropic Claude, Google Search, etc. 
     ChatGPT ( https://chat.openai.com )
-    Bard ( https://bard.google.com )
+    Bard ( https://gemini.google.com )
     Claude ( https://claude.ai )
     Google search
 
 # --------------------------------------------------------------------------------------------------------------------
-Lesson 1
-    About most popular models used in generative AI.
-    Transformer, GAN, Diffusion
+Lesson 1 
+    Introdauction into Generative AI
+    Most popular model types - Transformer, GAN, Diffusion
     Especially transformer.
 # --------------------------------------------------------------------------------------------------------------------
 
@@ -51,60 +53,47 @@ Then read this illustrated description (and watch video):
 How ChatGPT Works Technically | ChatGPT Architecture (7min):
     https://www.youtube.com/watch?v=bSvTVREwSNw 
 
-Look at the latest open Source Leader Board on Hugging Face:
-
+Look at leaderboards:
+    https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard
     https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard 
-
-Also look at the current leader - Beluga from Stability.AI:
-
-    https://stability.ai/blog/stable-beluga-large-instruction-fine-tuned-models 
-
 
 Some terms to know:
 
     LLM = Large Language Model
     word2vec (2013)
     Google Translate
-    attention is all you need (2016-2017) = transformer
+    Paper "Attention is all you need", transformer (Google 2016-2017)
 
+    tokenizer: text to tokens
+    embedding: tokens to vectors
     encoder layers and decoder layers
-    embedding layer (token to vector)
     Output and Softmax layers (vector to word)
 
     Google Translate (encoder+decoder)
     vs BERT (encoder only)
     vs ChatGPT (decoder only)
 
-
 # --------------------------------------------------------------------------------------------------------------------
 Lesson 2
   recent AI updates
 # --------------------------------------------------------------------------------------------------------------------
 
-Go to my youtube channel:
+Watch some recent AI updates on my youtube channel:
  .. https://www.youtube.com/@lev-selector
+
+You can download all my slides here as one zip file:
+ .. https://github.com/lselector/seminar
 
 I recommend the following lectures:
 
 AI Training (Brief Introduction) - June 21, 2023
  .. https://www.youtube.com/watch?v=W_2Vb9aBkao
 
-Updates about ChatGPT and other LLMs - June 30, 2023
- .. https://www.youtube.com/watch?v=65upiZppSyk
+Andrej Karpathy - Intro into LLMs - Nov 22, 2023
+https://www.youtube.com/watch?v=zjkBMFhNj_g
 
-Updates about AI - July 16, 2023
- .. https://www.youtube.com/watch?v=EffVD8EeE14
-
-AI Updates July 30, 2023
- https://www.youtube.com/watch?v=xA9VuOMVbiI
-
-
-You can download all my slides here as one zip file:
- .. https://github.com/lselector/seminar
-
-Or you can download slides for specific lectures in 2023 by selecting them
-one by one here:
- .. https://github.com/lselector/seminar/tree/master/2023
+AI Updates January 19, 2024
+https://www.youtube.com/watch?v=0R5glMg69I4&t=183s
 
 # --------------------------------------------------------------------------------------------------------------------
 Lesson 3
@@ -122,7 +111,6 @@ https://docs.langchain.com
 https://python.langchain.com/docs/get_started 
 https://python.langchain.com/docs/modules/model_io/prompts/prompt_templates/ 
 https://github.com/MarekOo/ChatGPTLangChain 
-https://github.com/ksm26?tab=repositories - files for courses
 
 Andrew Ng short Coursera courses:
    https://learn.deeplearning.ai 
@@ -132,6 +120,7 @@ Andrew Ng short Coursera courses:
  - Building Systems with the ChatGPT API
  - LangChain Chat with Your Data
  - Building Generative AI Applications with Gradio
+   ...
 
 Search YouTube for "langchain tutorial", for example:
 
@@ -168,6 +157,7 @@ https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-da
 
 Running model on Windows:
 https://medium.com/@sasika.roledene/unlocking-llm-running-llama-2-70b-on-a-gpu-with-langchain-561adc616b16 
+
 
 # --------------------------------------------------------------------------------------------------------------------
 Lesson 4 
