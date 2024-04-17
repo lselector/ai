@@ -26,6 +26,7 @@ When you have questions - use ChatGPT, Google Gemini, Anthropic Claude, Google S
     ChatGPT ( https://chat.openai.com )
     Bard ( https://gemini.google.com )
     Claude ( https://claude.ai )
+    Groq platform ( https://groq.com )
     Google search
 
 # --------------------------------------------------------------------------------------------------------------------
