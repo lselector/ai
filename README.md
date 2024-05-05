@@ -138,6 +138,11 @@ RAG on AWS: https://aws.amazon.com/blogs/machine-learning/quickly-build-high-acc
 
 ### Ollama
 
+| Ollama             | In Terminal            |
+|----------------------|----------------------|
+| ![Ollama](img/Ollama.png) | ![In Terminal](img/Ollama2.png) |
+
+
 Download and install Ollama from https://ollama.ai
 
 Open terminal window (or CMD window on Windows) and type:
@@ -149,6 +154,8 @@ press /bye to exit
 
 ### LM Studio
 
+![Chat with LLM](img/LMStudio2.jpg)
+
 Download and install LM Studio from https://lmstudio.ai
 
 Use it to download and run LLMs locally
@@ -157,6 +164,8 @@ Use it to download and run LLMs locally
 ## Lesson 4 - LangChain 
 
 Python framework to work with LLMs 
+
+<img src="img/LangChain.png" alt="LangChain" width="50%">
 
 Langchain was first released in October 2022 
 <br>It was created by Harrison Chase 
