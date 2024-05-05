@@ -1,4 +1,4 @@
-## AI Training Curriculum 
+# AI Training Curriculum 
 Created August 2023 
 <br>Updated May 2024
 
@@ -19,7 +19,9 @@ You have 3 choices:
     - Linux under Windows (WSL2)
     - Mac with Apple Silicone chip (M1, M2, M3, ...)
 
-For Linux you need a Cuda-compatible Nvidia GPU.
+<table bgcolor="green" width="50%"><tr><td></td></tr></table>
+
+For Linux you need a CUDA-compatible Nvidia GPU.
 <br>with as much memory as you can afford.
 
     Nvidia RTX 3090 or 4090 with 24GB memory ($800 - $1,600)
@@ -37,7 +39,8 @@ Here are some affordable options for you (on ebay, May 2024):
 <br>$1,500 - - MacBook Air 15" screen, M2 chip with 16GB memory, 1TB SSD
 <br>$1,600 - - MacBook Air 15" screen, M2 chip with 24GB memory, 1TB SSD
 
-=======================================
+<table bgcolor="green" width="50%"><tr><td></td></tr></table>
+
 ## Prerequisites (not really required):
 
 - Linux/Unix
@@ -57,7 +60,8 @@ As you go through the training materials below, you will have questions.
  - Huggingface ( https://huggingface.co/chat )
  - Google search
 
-======================================= 
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
 ## Lesson 1 - Introduction into Generative AI
 
 Most popular model types - Transformer, GAN, Diffusion. 
@@ -76,6 +80,8 @@ Also download updated PPT for this lecture here:
 Then read this illustrated description (and watch video) by Jay Alammar: 
 <br> http://jalammar.github.io/illustrated-transformer/ 
 <br> https://www.youtube.com/watch?v=-QH8fRhqFHM
+
+<table bgcolor="green" width="50%"><tr><td></td></tr></table>
 
 Excellent animated tutorials about deep learning.
 <br>You may start with #5 and #6 explaining GPT and Transformers.
@@ -106,7 +112,8 @@ Some terms to know:
       vs BERT (encoder only) 
       vs ChatGPT (decoder only)
 
-======================================= 
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
 ## Lesson 2 - Recent AI updates
 
 Watch some recent AI updates on my youtube channel: .. https://www.youtube.com/@lev-selector You can download all my slides here as one zip file: .. https://github.com/lselector/seminar
@@ -133,7 +140,8 @@ Mastering RAG https://www.rungalileo.io/blog/mastering-rag-how-to-architect-an-e
 
 RAG on AWS: https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/
 
-======================================= 
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
 ## Lesson 3 - Ollama, LM Studio - running LLM locally
 
 ### Ollama
@@ -152,6 +160,8 @@ Open terminal window (or CMD window on Windows) and type:
 use terminal to chat to local model
 press /bye to exit
 
+<table bgcolor="green" width="50%"><tr><td></td></tr></table>
+
 ### LM Studio
 
 ![Chat with LLM](img/LMStudio2.jpg)
@@ -160,12 +170,13 @@ Download and install LM Studio from https://lmstudio.ai
 
 Use it to download and run LLMs locally
 
-======================================= 
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
 ## Lesson 4 - LangChain 
 
 Python framework to work with LLMs 
 
-<img src="img/LangChain.png" alt="LangChain" width="50%">
+<img src="img/LangChain.png" alt="LangChain" width="30%">
 
 Langchain was first released in October 2022 
 <br>It was created by Harrison Chase 
@@ -206,8 +217,9 @@ LangChain provides:
   - etc
 - Agents - use LLMs to decide what actions should be taken (generate a plan or execute tasks)
 
-======================================= 
-## Lesson 5 Simple Chatbots
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
+## Lesson 5 - Simple Chatbots
 
 Review several simple exampels of ChatBots
 <br>under subdirectory "mychat" here:
@@ -234,8 +246,9 @@ __Coding tasks__:
 
 Running model on Windows: https://medium.com/@sasika.roledene/unlocking-llm-running-llama-2-70b-on-a-gpu-with-langchain-561adc616b16
 
-======================================= 
-## Lesson 6 Switch from Chroma DB to PostreSQL
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
+## Lesson 6 - Switch from Chroma DB to PostreSQL
 
 We want to switch from Crhoma (temporary in-memory vector db)
 <br>to a real local Vector Database - PostreSQL 
@@ -266,8 +279,9 @@ reproduce the examples from previous lesson using langchain to
 - save these vectors into PostreSQL Database
 - use ChatGPT API to answer questions using embeddings 
 
-======================================= 
-## Lesson 7 Change to use local embedding model 
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
+## Lesson - 7 Change to use local embedding model 
 
 Hugging Face MTEB leaderboard MTEB ( Massive Text Embedding Benchmark )
 <br>https://huggingface.co/spaces/mteb/leaderboard
@@ -283,8 +297,9 @@ Watch this video:
 Select the model somewhere from the top which is free and can be installed locally
 <br>https://python.langchain.com/docs/integrations/text_embedding/
 
-======================================= 
-## Lesson 8 change to use local LLM 
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
+## Lesson 8 -Change to use local LLM 
 
 So here everything is local and can work without internet:
 <br>LangChain + LLM + embedding + PostreSQL 
@@ -296,8 +311,9 @@ install and run the model locally - test the performance and accuracy
 
 make a copy of the script from Lesson 3 - and change it to use local LLM instead of ChatGPT
 
-======================================= 
-## Lesson 9 talk-to-API 
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
+## Lesson 9 - talk-to-API 
 
 Create a new notebook to make a conversational interface to an API. 
 <br>Using OpenAI:
@@ -310,16 +326,20 @@ Using Classifier
 
 Have fun! Ask questions!
 
-======================================= 
-## Lesson Lesson 10 Make Lang-to-API transformer for financial data reporting and dashboard (charts)
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
+## Lesson 10 - Make Lang-to-API transformer for financial data reporting and dashboard (charts)
 
 Create a new jupyter notebook where you can print description of a report or chart (or a dashboard of several charts), and the code should execute on this request and produce the report or dashboard right there in the jupyter notebook.
 
-======================================= 
-## Lesson 11 Fine-tuning a model Making model smaller
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
 
-======================================= 
-## Lesson 12 Training our own model
+## Lesson 11 - Fine-tuning a model Making model smaller
 
-======================================= 
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
+## Lesson 12 - Training our own model
+
+<table bgcolor="red" width="100%"><tr><td></td></tr></table>
+
 
