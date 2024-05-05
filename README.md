@@ -2,9 +2,11 @@
 Created August 2023 
 <br>Updated May 2024
 
+```plaintext
     Do you want to learn about LLM (Large Langiuage Models)?
     AI ChatBots ?
     RAG systems (Retrieval Augmented Geenration) ?
+```
 
 Here is a short tutorial.
 
@@ -27,17 +29,17 @@ For Linux you need a CUDA-compatible Nvidia GPU.
     Nvidia RTX 3090 or 4090 with 24GB memory ($800 - $1,600)
 
 Search for instructions to activate WSL2 (Windows Subsystem for Linux version 2)
-<br> .. https://learn.microsoft.com/en-us/windows/wsl/install 
-<br> .. https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-vscode
+- https://learn.microsoft.com/en-us/windows/wsl/install 
+- https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-vscode
 
 For Mac you should get a macbook with M1, M2, or M3 chip.
 <br>At least 16GB memory (but 64 or 96 or 128GB is better).
 <br>And at least 1TB SSD
 
 Here are some affordable options for you (on ebay, May 2024):
-<br>$900 - MacBook Air 13.6" screen, M1 chip with 16GB memory, 1TB SSD
-<br>$1,500 - - MacBook Air 15" screen, M2 chip with 16GB memory, 1TB SSD
-<br>$1,600 - - MacBook Air 15" screen, M2 chip with 24GB memory, 1TB SSD
+- $900 - MacBook Air 13.6" screen, M1 chip with 16GB memory, 1TB SSD
+- $1,500 - MacBook Air 15" screen, M2 chip with 16GB memory, 1TB SSD
+- $1,600 - MacBook Air 15" screen, M2 chip with 24GB memory, 1TB SSD
 
 <table bgcolor="green" width="50%"><tr><td></td></tr></table>
 
@@ -72,31 +74,32 @@ Below are links to some materials (text, videos)
 
 Start with watching this my old video from June 9, 2023:
 <br>"Generative AI - Transformers, GANs, Stable Diffusion."
-<br> https://www.youtube.com/watch?v=CA0Yfds-nlc
+- https://www.youtube.com/watch?v=CA0Yfds-nlc
 
 Also download updated PPT for this lecture here:
-<br> https://github.com/lselector/seminar/tree/master/2023
+- https://github.com/lselector/seminar/tree/master/2023
 
 Then read this illustrated description (and watch video) by Jay Alammar: 
-<br> http://jalammar.github.io/illustrated-transformer/ 
-<br> https://www.youtube.com/watch?v=-QH8fRhqFHM
+- http://jalammar.github.io/illustrated-transformer/ 
+- https://www.youtube.com/watch?v=-QH8fRhqFHM
 
 <table bgcolor="green" width="50%"><tr><td></td></tr></table>
 
 Excellent animated tutorials about deep learning.
 <br>You may start with #5 and #6 explaining GPT and Transformers.
-https://www.youtube.com/watch?v=aircAruvnKk&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi
+- https://www.youtube.com/watch?v=aircAruvnKk&list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi
 
 How ChatGPT Works Technically | ChatGPT Architecture (7min):
-<br> https://www.youtube.com/watch?v=bSvTVREwSNw
+- https://www.youtube.com/watch?v=bSvTVREwSNw
 
 Look at leaderboards :
- - https://chat.lmsys.org/?leaderboard 
- - https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard 
+- https://chat.lmsys.org/?leaderboard 
+- https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard 
 
 Some terms to know:
 
-    - LLM = Large Language Model 
+```
+    - LLM = "Large Language Model"
     - word2vec (2013) 
     - Google Translate Paper "Attention is all you need", 
       attention mechanism
@@ -106,25 +109,35 @@ Some terms to know:
       dictionary of tokens may have ~ 30K .. 120K entries
     - embeddings - numeric vectors used to represent tokens 
       or words or even chunks of text
-    - encode and decoder layers 
+    - encoder and decoder layers 
     - softmax function
     - Google Translate (encoder+decoder) 
       vs BERT (encoder only) 
       vs ChatGPT (decoder only)
+```
 
 <table bgcolor="red" width="100%"><tr><td></td></tr></table>
 
 ## Lesson 2 - Recent AI updates
 
-Watch some recent AI updates on my youtube channel: .. https://www.youtube.com/@lev-selector You can download all my slides here as one zip file: .. https://github.com/lselector/seminar
+Watch some recent AI updates on my youtube channel: 
+- https://www.youtube.com/@lev-selector 
+
+You can download all my slides here as one zip file: 
+- https://github.com/lselector/seminar
 
 I recommend the following lectures:
 
-AI Training (Brief Introduction) - June 21, 2023 .. https://www.youtube.com/watch?v=W_2Vb9aBkao
+AI Training (Brief Introduction) - June 21, 2023 
+- https://www.youtube.com/watch?v=W_2Vb9aBkao
 
-Andrej Karpathy - Intro into LLMs - Nov 22, 2023 https://www.youtube.com/watch?v=zjkBMFhNj_g
+Andrej Karpathy - Intro into LLMs - Nov 22, 2023 
+- https://www.youtube.com/watch?v=zjkBMFhNj_g
 
-AI Updates January 19, 2024 https://www.youtube.com/watch?v=0R5glMg69I4&t=183s
+AI Updates January 19, 2024 
+- https://www.youtube.com/watch?v=0R5glMg69I4&t=183s
+
+<table bgcolor="green" width="50%"><tr><td></td></tr></table>
 
 ### RAG = Retrieval Augmented Generation
 
@@ -134,11 +147,14 @@ AI Updates January 19, 2024 https://www.youtube.com/watch?v=0R5glMg69I4&t=183s
     4. re-rank/sort the findings 
     5. use LLM to convert the findings into response
 
-Advance RAG https://luv-bansal.medium.com/advance-rag-improve-rag-performance-208ffad5bb6a
+Advance RAG 
+- https://luv-bansal.medium.com/advance-rag-improve-rag-performance-208ffad5bb6a
 
-Mastering RAG https://www.rungalileo.io/blog/mastering-rag-how-to-architect-an-enterprise-rag-system
+Mastering RAG 
+- https://www.rungalileo.io/blog/mastering-rag-how-to-architect-an-enterprise-rag-system
 
-RAG on AWS: https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/
+RAG on AWS: 
+- https://aws.amazon.com/blogs/machine-learning/quickly-build-high-accuracy-generative-ai-applications-on-enterprise-data-using-amazon-kendra-langchain-and-large-language-models/
 
 <table bgcolor="red" width="100%"><tr><td></td></tr></table>
 
@@ -198,7 +214,9 @@ Andrew Ng short Coursera courses:
 - LangChain Chat with Your Data
 - Building Generative AI Applications with Gradio ...
 
-Search YouTube for "langchain tutorial", for example:
+<table bgcolor="green" width="50%"><tr><td></td></tr></table>
+
+<br>Search YouTube for "langchain tutorial", for example:
 
 Using ChatGPT with YOUR OWN Data. This is magical. (LangChain OpenAI API) <br>https://www.youtube.com/watch?v=9AXP7tCI9PI
 
@@ -234,17 +252,19 @@ Review several simple exampels of ChatBots
     templates/
 
 Also please watch this seminar from July 14 where Malte shows chatting using LangChain, OpenAI, and ChromaDB:
-<br>.. https://www.youtube.com/watch?v=8h5WBHqfoA8 
+- https://www.youtube.com/watch?v=8h5WBHqfoA8 
 <br>slides and notebook for this presentation are here: 
-<br>.. https://github.com/lselector/seminar/tree/master/2023/2023-07-14-Embeddings-Malte
+- https://github.com/lselector/seminar/tree/master/2023/2023-07-14-Embeddings-Malte
 
 __Coding tasks__: 
  - reproduce simple Chatbots under "mychat" directory
  - reproduce code from one of the tutorials using ChatGPT API and LangChain
 
-<br>Another example: https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-data-3af0a82789ed
+Another example: 
+<br>https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-data-3af0a82789ed
 
-Running model on Windows: https://medium.com/@sasika.roledene/unlocking-llm-running-llama-2-70b-on-a-gpu-with-langchain-561adc616b16
+Running model on Windows: 
+<br>https://medium.com/@sasika.roledene/unlocking-llm-running-llama-2-70b-on-a-gpu-with-langchain-561adc616b16
 
 <table bgcolor="red" width="100%"><tr><td></td></tr></table>
 
@@ -305,7 +325,7 @@ So here everything is local and can work without internet:
 <br>LangChain + LLM + embedding + PostreSQL 
 
 download a LLM from HuggingFace 
-<br>https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard
+ - https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard
 
 install and run the model locally - test the performance and accuracy
 
