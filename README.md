@@ -38,12 +38,12 @@ Here are some affordable options for you (on ebay, May 2024):
 <br>$1,600 - - MacBook Air 15" screen, M2 chip with 24GB memory, 1TB SSD
 
 =======================================
-## Knowledge:
+## Prerequisites (not really required):
 
 - Linux/Unix
 - Python (Numpy, Pandas), JSON
-- basic math and statistics
-- basic Machine Learning (regression, classification)
+- Basic math and statistics
+- Basic Machine Learning (regression, classification)
 - SQL
 - Basic cloud usage: files (AWS s3, Azure data lake, etc), 
   <br>SQL databases, ETL tools, Analytics dashboards
@@ -206,27 +206,42 @@ LangChain provides:
   - etc
 - Agents - use LLMs to decide what actions should be taken (generate a plan or execute tasks)
 
-Also please watch this seminar from July 14:
+======================================= 
+## Lesson 5 Simple Chatbots
+
+Review several simple exampels of ChatBots
+<br>under subdirectory "mychat" here:
+
+    app_chainlit.py
+    app_chainlit_ollama.py
+    app_flask.py*
+    app_streamlit.py
+    app_streamlit_cookies.py
+    chainlit.md
+    images/
+    templates/
+
+Also please watch this seminar from July 14 where Malte shows chatting using LangChain, OpenAI, and ChromaDB:
 <br>.. https://www.youtube.com/watch?v=8h5WBHqfoA8 
-<br>slides and notebook are here: 
+<br>slides and notebook for this presentation are here: 
 <br>.. https://github.com/lselector/seminar/tree/master/2023/2023-07-14-Embeddings-Malte
 
-__Coding task__: 
-<br>reproduce code from one of the tutorials using ChatGPT API and LangChain
+__Coding tasks__: 
+ - reproduce simple Chatbots under "mychat" directory
+ - reproduce code from one of the tutorials using ChatGPT API and LangChain
 
-Good example: https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-data-3af0a82789ed
+<br>Another example: https://medium.com/@onkarmishra/using-langchain-for-question-answering-on-own-data-3af0a82789ed
 
 Running model on Windows: https://medium.com/@sasika.roledene/unlocking-llm-running-llama-2-70b-on-a-gpu-with-langchain-561adc616b16
 
-
 ======================================= 
-## Lesson 5 Switch from Chroma DB to PostreSQL
+## Lesson 6 Switch from Chroma DB to PostreSQL
 
 We want to switch from Crhoma (temporary in-memory vector db)
 <br>to a real local Vector Database - PostreSQL 
 <br>(LangChain + LLM (ChatGPT) + OpenAI_embedding + PostreSQL)
 
-Task:
+Tasks:
 
 install PostgreSQL locally 
 
@@ -252,7 +267,7 @@ reproduce the examples from previous lesson using langchain to
 - use ChatGPT API to answer questions using embeddings 
 
 ======================================= 
-## Lesson 6 Change to use local embedding model 
+## Lesson 7 Change to use local embedding model 
 
 Hugging Face MTEB leaderboard MTEB ( Massive Text Embedding Benchmark )
 <br>https://huggingface.co/spaces/mteb/leaderboard
@@ -269,7 +284,7 @@ Select the model somewhere from the top which is free and can be installed local
 <br>https://python.langchain.com/docs/integrations/text_embedding/
 
 ======================================= 
-## Lesson 7 change to use local LLM 
+## Lesson 8 change to use local LLM 
 
 So here everything is local and can work without internet:
 <br>LangChain + LLM + embedding + PostreSQL 
@@ -282,7 +297,7 @@ install and run the model locally - test the performance and accuracy
 make a copy of the script from Lesson 3 - and change it to use local LLM instead of ChatGPT
 
 ======================================= 
-## Lesson 8 talk-to-API 
+## Lesson 9 talk-to-API 
 
 Create a new notebook to make a conversational interface to an API. 
 <br>Using OpenAI:
@@ -296,15 +311,15 @@ Using Classifier
 Have fun! Ask questions!
 
 ======================================= 
-## Lesson Lesson 9 Make Lang-to-API transformer for financial data reporting and dashboard (charts)
+## Lesson Lesson 10 Make Lang-to-API transformer for financial data reporting and dashboard (charts)
 
 Create a new jupyter notebook where you can print description of a report or chart (or a dashboard of several charts), and the code should execute on this request and produce the report or dashboard right there in the jupyter notebook.
 
 ======================================= 
-## Lesson 10 Fine-tuning a model Making model smaller
+## Lesson 11 Fine-tuning a model Making model smaller
 
 ======================================= 
-## Lesson 11 Training our own model
+## Lesson 12 Training our own model
 
 ======================================= 
 
