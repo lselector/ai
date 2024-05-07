@@ -3,25 +3,28 @@
 # --------------------------------------------------------------
 # app_chainlit_ollama.py
 # chainlit run app_chainlit_ollama.py
-# pip install chainlit
+# pip install -U chainlit langchain langchain-community
 # --------------------------------------------------------------
 """
-from langchain_community.llms import Ollama
+import os, sys
+
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
 from langchain.schema.runnable import Runnable
 from langchain.schema.runnable.config import RunnableConfig
 
-import chainlit as cl
+from langchain_community.llms import Ollama
+from langchain_community.callbacks.tracers.wandb import WandbTracer
 
+import chainlit as cl
 # --------------------------------------------------------------
 @cl.on_chat_start
 async def on_chat_start():
 
     # Sending an image with the local file path
-    elements = [ cl.Image(name="image1", display="inline", path="images/mistral_logo.jpg")  ]
-    await cl.Message(content="Hello there, I am Mistral. How can I help you ?", elements=elements).send()
-    model = Ollama(model="mistral:latest")
+    elements = [ cl.Image(name="image1", display="inline", path="images/llama3-logo.jpg")  ]
+    await cl.Message(content="Hello there, I am Llama3-8b. How can I help you ?", elements=elements).send()
+    model = Ollama(model="llama3:latest")
     prompt = ChatPromptTemplate.from_messages( [
             ( "system",
               "You're a very knowledgeable historian who provides accurate and eloquent answers to historical questions.",
@@ -45,3 +48,6 @@ async def on_message(message: cl.Message):
         await msg.stream_token(chunk)
 
     await msg.send()
+
+
+

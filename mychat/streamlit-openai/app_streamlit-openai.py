@@ -28,7 +28,7 @@ def generate_response(user_input):
 
 # --------------------------------------------------------------
 def main():
-    st.title("Chatbot")
+    st.title("Streamlit  +  OpenAI gpt-3.5-turbo")
 
     user_input = st.text_input("Enter your message:")
 

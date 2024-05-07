@@ -3,10 +3,10 @@
 # app_chainlit.py - simple chatbot
 # to run:
 #    chainlit run app_chainlit.py
-# which starts the local server
+# which starts the local server on port 8000 or 8501 or ...
 #   http://localhost:8501/
 # --------------------------------------------------------------
-# pip install streamlit
+# pip install streamlit chainlit
 import chainlit as cl
 import os
 from openai import OpenAI
