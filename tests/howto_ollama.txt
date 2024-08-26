@@ -1,0 +1,212 @@
+
+# --------------------------------------------------------- 
+# scripts to update ollama and models are under the "bin" directory
+# But here are also simple manual instructions for Mac and Linux
+#
+# update ollama on Mac:
+#   cd ~/Downloads
+#   rm -rf Ollama-darwin.zip  Ollama.app
+#   wget https://ollama.com/download/Ollama-darwin.zip
+#   unzip Ollama-darwin.zip
+#   ollama --version
+#   pkill -9 ollama Ollama
+#   sudo rsync -avzh Ollama.app /Applications/
+#   ollama list
+#   ollama --version
+#
+# update ollama on Linux
+#   sudo systemctl stop ollama
+#   ps auxww | grep -i ollama | grep -v grep
+#   curl -fsSL https://ollama.com/install.sh | sh
+#   ollama --version
+#   sudo systemctl start ollama
+# ---------------------------------------------------------
+How to import GGUF and PyTorch/Safetensors models into Ollama
+- https://github.com/ollama/ollama/blob/main/docs/import.md
+
+GGUF is really easy - just download, make a Modelfile, and run ollama create:
+- https://www.youtube.com/watch?v=TFwYvHZV6j0
+- https://www.youtube.com/watch?v=7BH4C6-HP14 
+- https://www.youtube.com/watch?v=0ou51l-MLCo 
+
+For Pytorch/safetnsors you need to pull some stuff from ollama github
+  git clone git@github.com:ollama/ollama.git ollama
+  cd ollama
+  # and then fetch its llama.cpp submodule:
+  git submodule init
+  git submodule update llm/llama.cpp
+  # Next, install the Python dependencies:
+  python3 -m venv llm/llama.cpp/.venv
+  source llm/llama.cpp/.venv/bin/activate
+  pip install -r llm/llama.cpp/requirements.txt
+  # Then build the quantize tool:
+  make -C llm/llama.cpp quantize
+  ... more steps - clone the HG repo, convert the model, quantize it
+  see https://github.com/ollama/ollama/blob/main/docs/import.md
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+Eample: converting GGUF model
+
+download model from HuggingFace, for example:
+https://huggingface.co/PrunaAI/abacusai-Llama-3-Smaug-8B-GGUF-smashed/blob/main/Llama-3-Smaug-8B.Q8_0.gguf 
+
+Manually create file "Modelfile" using model description templates from HuggingFace model page or running "ollama show" command for a similar model
+# ---------------------------------------------------------
+To see examples of Modelfiles, you can run the ollama show command, 
+for example:
+ollama  show  llama3-gradient  --modelfile
+
+To create the model, run this command:
+ollama  create  dragon8b  -f Modelfile
+
+That's it! Run it:
+ollama  run  dragon8b
+# ---------------------------------------------------------
+# Example of the Modelfile:
+FROM ./Llama-3-Smaug-8B.Q8_0.gguf
+TEMPLATE "{{ if .System }}<|start_header_id|>system<|end_header_id|>
+
+{{ .System }}<|eot_id|>{{ end }}{{ if .Prompt }}<|start_header_id|>user<|end_header_id|>
+
+{{ .Prompt }}<|eot_id|>{{ end }}<|start_header_id|>assistant<|end_header_id|>
+
+{{ .Response }}<|eot_id|>"
+PARAMETER stop <|start_header_id|>
+PARAMETER stop <|end_header_id|>
+PARAMETER stop <|eot_id|>
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+Linux - moving Ollama files to a different location
+
+You can download, install, and start Ollama
+by using just one command:
+   curl https://ollama.ai/install.sh | sh
+
+But the problem with this is that it will
+install models on the system drive:
+    /usr/share/ollama/.ollama/
+
+Usually the system drive on cloud VMs is less than 30GB.
+The models are usually many gigabytes in size.
+So we should keep models in a different location.
+
+Suppose we have a second disk mounted as /data
+We need to make configuration to keep the
+models under /data/ollama_models/
+
+This theoretically should be possible by setting environment:
+    export OLLAMA_MODELS=/data/ollama_models
+And it works if we invoke "ollama serve" manually.
+
+But unfortunately it doesn't work when ollama starts on reboot.
+It still tries to use the /usr/share/ollama/.ollama/
+
+You can read discussions here
+https://github.com/ollama/ollama/issues/680
+https://bbs.archlinux.org/viewtopic.php?id=292487
+
+The method that works is to do mount as following:
+
+sudo mount --bind /data/ollama_models /usr/share/ollama/.ollama/models
+
+# --------------------------------------------------------------
+Here is how I have done it (moved ollama files to a different location).
+
+I first copied everything into /data/ollama_models (including ssh keys):
+        blobs/
+        history
+        id_ed25519
+        id_ed25519.pub
+        manifests/
+
+# then become root:
+    sudo su -
+# stop all ollama processes
+    systemctl stop ollama
+    ps auxww | grep ollama  # find process to kill
+
+    rm -rf /usr/share/ollama
+    mkdir - p /usr/share/ollama/.ollama/models
+    chmod -R 777 /usr/share/ollama
+    sudo mount --bind /data/ollama_models /usr/share/ollama/.ollama/models
+
+# --------------------------------------------------------------
+# note: you can edit the ollama service file (as root)
+    cd /etc/systemd/system
+    sudo vi ollama.service
+
+# --------------------------------------------------------------
+sudo vi /etc/fstab
+
+# ollama models
+/data/ollama_models /usr/share/ollama/.ollama/models  none  defaults,bind  0 0
+# --------------------------------------------------------------
+Now you can start ollama service:
+
+sudo systemctl daemon-reload
+sudo systemctl enable ollama.service
+sudo systemctl start ollama
+# sudo systemctl stop ollama.service
+
+# if it doesn't start - look at the log:
+journalctl -u ollama
+
+# ---------------------------------------------------------
+cd /data/ollama_models
+chmod -R 777 *
+# ---------------------------------------------------------
+Now you can pull and run ollama models as usual
+
+ollama run mistral
+
+# Note: ollama by default releases the memory after 5 min of inactivity.
+# You can also release memory faster by switching to a smaller model
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+Concurrency
+export OLLAMA_NUM_PARALLEL=4        # multiple requests simultaneously for a single model
+export OLLAMA_MAX_LOADED_MODELS=4   # load multiple models simultaneously
+ollama serve
+https://www.youtube.com/watch?v=Cd6f86zsAyg 
+https://github.com/mneedham/LearnDataWithMark/blob/main/ollama-parallel/app.py
+https://www.markhneedham.com/blog/2024/05/11/side-by-side-local-llms-ollama-streamlit/ 
+
+import ollama, asyncio
+from openai import AsyncOpenAI
+from token_count import TokenCount
+client = AsyncOpenAI(base_url="http://localhost:11434/v1", ap_key="ignore-me")
+models = [ m['name'] for m in ollama.list()["models"] if m["details"]["family"] in ["llama", "gemma"] ]
+
+async def run_prompt(placeholder, meta, prompt, model):
+    tc = TokenCount(model_name="gpt-3.5-turbo")
+    stream = await client.chat.completions.create(
+        model=model,
+        messages=[{"role":"system","content":"You are a helpful assistant."},
+                  {"role":"user"  ,"content":prompt"},], stream=True)
+
+async for chunk in stream:
+    chunk_content = chunk.choices[0].delta.content
+    if chunk_content is not None:
+      ...
+
+async def main():
+    await asyncio.gather(
+        run_prompt( body_1, meta_1, prompt=prompt, model=model_1),
+        run_prompt( body_2, meta_2, prompt=prompt, model=model_2))
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+# ---------------------------------------------------------
+
+
+

@@ -1,0 +1,14 @@
+**/.ipynb_checkpoints
+**/.chainlit
+**/junk*.*
+**/.DS_Store
+**/__pycache__/
+**/*.py[cod]
+**/Thumbs.db
+**/OLD
+**/SKIP
+**/~*
+*_pdf.txt
+*_ppt.txt
+open_llm_leaderboard
+llm_leaderboard_*.xlsx

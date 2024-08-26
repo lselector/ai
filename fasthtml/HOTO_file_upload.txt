@@ -1,0 +1,28 @@
+
+convert HTML to FastHTML: https://h2x.answer.ai
+good short demo:  https://www.youtube.com/watch?v=evAb2x34Jqk
+
+To upload a file:
+
+    <form action = "/success" method = "post" enctype="multipart/form-data">   
+        <input type="file" name="file" />   
+        <input type = "submit" value="Upload">   
+    </form>
+
+or:
+
+Form(
+    Input(type='file', name='file'),
+    Input(type='submit', value='Upload'),
+    action='/success',
+    method='post',
+    enctype='multipart/form-data'
+)
+
+Note:
+You need enctype="multipart/form-data" 
+otherwise you will load only the file name and not the data.
+
+Here is an example of how to do it in python using Flask:
+    https://www.geeksforgeeks.org/how-to-upload-file-in-python-flask/
+

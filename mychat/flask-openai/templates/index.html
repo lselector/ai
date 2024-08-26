@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask + OpenAI Chatbot</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style0.css') }}">
+</head>
+<body>
+    <h1>Flask + OpenAI Chatbot</h1>
+    <table><tr>
+        <td><img src="{{ url_for('static', filename='flask_logo.png')  }}" alt="Company Logo" width="50"></td>
+        <td><img src="{{ url_for('static', filename='openai-logo.png') }}" alt="Company Logo" width="50"></td>
+    </tr></table>
+    <p></p>
+    <form action="/chat" method="POST">
+        <input type="text" name="user_input" placeholder="Enter your message">
+        <button type="submit">Send</button>
+    </form>
+    {% if user_input %}
+        <p>You:<br>{{ user_input }}</p>
+        <p>Chatbot:<br>{{ ai_response }}</p>
+    {% endif %}
+</body>
+</html>
+
