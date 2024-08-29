@@ -1,0 +1,32 @@
+# --------------------------------------------------------- 
+# myrequirements.txt for FastHTML
+# --------------------------------------------------------- 
+# pip install --upgrade pip
+# pip install -Ur myrequirements.txt
+# --------------------------------------
+# pip install -U pip-autoremove
+# pip-autoremove -y somepackage
+# pip freeze | grep somepackage
+# --------------------------------------
+pip
+notebook
+jupyterlab
+ipywidgets
+numpy
+pandas
+ipython
+matplotlib
+python-dotenv
+pip-autoremove
+# --------------------------------------
+openai
+ollama
+anthropic
+# --------------------------------------
+pymupdf
+uvicorn
+python-fasthtml
+fastapi
+chromadb
+sentence-transformers
+# --------------------------------------
