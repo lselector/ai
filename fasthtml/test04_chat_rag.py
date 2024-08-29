@@ -14,12 +14,20 @@ from myutils import *       # py_utils
 
 import ollama, asyncio
 
+import chromadb
+
+from sentence_transformers import SentenceTransformer
+
 app, rt, = fast_app(live=True, ws_hdr=True)
 bag = MyBunch()
 
 client = ollama.Client()
 model = "mistral:7b-instruct-v0.3-q4_0"
 messages = []
+
+chroma_client = chromadb.Client()
+
+#collection = chroma_client.get_or_create_collection(name="my_documents")
 
 sp = {"role": "system", "content": "You are a helpful and concise assistant."}
 
@@ -38,16 +46,7 @@ def get():
             ),
             A("About us", href="/about"),
             get_history(),
-            Div("Uploaded files:",
-                Ul(id="file-upload")),
-                Form(
-                    Input(id='file', name='file', type='file', onchange="this.form.querySelector('button').click()"),
-                    Button('Upload', type="submit", style="display: none;"),
-                    hx_post="/upload",
-                    target_id="file-upload",
-                    hx_swap="beforeend",
-                    enctype="multipart/form-data"
-                ),
+            Div("Uploaded files:"),
                 Div(P("Add a message with the form below:"),
                 Form(Group(
                      Input(id="new-prompt", type="text", name="data"),
@@ -58,31 +57,116 @@ def get():
                      target_id='message-list',
                      hx_swap="beforeend",
                      enctype="multipart/form-data"
-                     ))
+                     )),
+                    Div("Uploaded Files:", id="container", 
+                    style="width: 300px; height: 200px; background-color: #ced3db"),
+                    Form(
+                    Input(id='file', name='file', type='file', multiple=True, ondrop="this.form.querySelector('button').click()", 
+                          onchange="this.form.querySelector('button').click()"),
+                    Button('Upload', type="submit", style="display: none;"),
+                    id="upload-form",
+
+                    hx_post="/upload",
+                    target_id="container",
+                    hx_swap="beforeend",
+                    enctype="multipart/form-data"
+                ),
+            Script(
+            """
+            const container = document.getElementById('container');
+            const fileInput = document.getElementById('file');
+            const form = document.getElementById('upload-form');;
+            
+            container.addEventListener('dragover', (event) => {
+                event.preventDefault();
+            });
+
+            container.addEventListener('drop', (event) => {
+                event.preventDefault();
+
+                //alert("here1");
+
+                const files = event.dataTransfer.files; 
+
+                fileInput.files = files; 
+
+                form.dispatchEvent(new Event('submit')); 
+            });
+            """
+        )
         ))
     )
     
     return main_page
 
+def read_files_from_folder():
 
-#---------------------------------------------------------------
+    docs = []
+
+    for filename in os.listdir(bag.dir_out):
+        file_path = os.path.join(bag.dir_out, filename)
+        if os.path.isfile(file_path):  
+            with open(file_path, 'r') as file:
+                
+                text = file.read()
+                
+                chunks = text.split("\n\n")  # Assuming paragraphs are separated by blank lines
+
+                # 3. Generate Embeddings
+                model = SentenceTransformer('all-MiniLM-L6-v2')  # Or your chosen model
+                embeddings = model.encode(chunks)
+
+                # 4. Format for Chroma
+                
+                documents = [
+                    {
+                        "id": f"doc_{i}",  # Simplified ID
+                        "document": chunk,
+                        "embedding": embedding.tolist(),
+                    }
+                    for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+                ]
+                docs.extend(documents)
+
+    return docs
+
+def prepare_db():
+    bag.collection = chroma_client.get_or_create_collection(name="my_documents")
+    documents = read_files_from_folder()
+    
+    for document in documents:
+        bag.collection.add(ids=[document['id']], documents=[document['document']], embeddings=[document['embedding']])
+    
+
+def do_rag(query):
+    results = bag.collection.query(
+        query_texts=[query],
+        n_results=3,  # Adjust as needed
+    )
+    return "\n".join([result for result in results['documents'][0]])
+
+
 @rt('/upload')
 async def post(request: Request):
-    """ upload files """
     form = await request.form()
-    uploaded_file = form["file"]
-    
-    print(uploaded_file)
+   
+    uploaded_files = form.getlist("file")  # Use getlist to get a list of files
 
     bag.script_dir = os.path.dirname(os.path.realpath(__file__))
     bag.dir_out = bag.script_dir + "/uploaded_files"
 
     os.makedirs(bag.dir_out, exist_ok=True)
 
+    for uploaded_file in uploaded_files:
+        print(f"Uploaded file: {uploaded_file}")
+
     with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
         f.write(uploaded_file.file.read())
-    
-    return Li(f"{uploaded_file.filename}"),
+
+    prepare_db()
+
+    # Update the response to display all uploaded filenames
+    return Div(*[P(f"{uploaded_file.filename}") for uploaded_file in uploaded_files]) 
                     
 
 #---------------------------------------------------------------
@@ -150,7 +234,9 @@ def ChatInput():
 async def ws(data:str, send):
     """ Call ollama and get responce using streaming """
 
-    messages.append({"role": "user", "content": data})
+    context = do_rag(data)
+
+    messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}"})
 
     await send(
         Div(add_message(data), hx_swap_oob="beforeend", id="message-list")
@@ -165,9 +251,10 @@ async def ws(data:str, send):
         messages=[sp] + messages,
         stream=True,
     )
-
+    
     # Send an empty message with the assistant response
     messages.append({"role": "assistant", "content": ""})
+    
     await send(
         Div(add_message(""), hx_swap_oob="beforeend", id="message-list")
     )
