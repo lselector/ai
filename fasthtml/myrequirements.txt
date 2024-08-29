@@ -1,6 +1,6 @@
-# --------------------------------------------------------- 
+# --------------------------------------
 # myrequirements.txt for FastHTML
-# --------------------------------------------------------- 
+# --------------------------------------
 # pip install --upgrade pip
 # pip install -Ur myrequirements.txt
 # --------------------------------------
@@ -23,7 +23,7 @@ openai
 ollama
 anthropic
 # --------------------------------------
-pymupdf
+pymupdf        # read PDF files
 uvicorn
 python-fasthtml
 fastapi
