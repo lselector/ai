@@ -41,7 +41,7 @@ def get():
             container.addEventListener('drop', (event) => {
                 event.preventDefault();
 
-                const files = event.dataTransfer.files;   
+                const files = event.dataTransfer.files;  
 
                 fileInput.files = files; 
 

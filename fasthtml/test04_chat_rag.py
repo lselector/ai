@@ -25,7 +25,17 @@ client = ollama.Client()
 model = "mistral:7b-instruct-v0.3-q4_0"
 messages = []
 
+messages_for_show = []
+
 chroma_client = chromadb.Client()
+
+doc_id = 0
+
+bag.script_dir = os.path.dirname(os.path.realpath(__file__))
+bag.dir_out = bag.script_dir + "/uploaded_files"
+
+def prepare_db():
+    bag.collection = chroma_client.get_or_create_collection(name="my_documents")    
 
 #collection = chroma_client.get_or_create_collection(name="my_documents")
 
@@ -103,12 +113,18 @@ def read_files_from_folder():
 
     docs = []
 
+    counter = 0
+
+    global doc_id
+
     for filename in os.listdir(bag.dir_out):
         file_path = os.path.join(bag.dir_out, filename)
         if os.path.isfile(file_path):  
             with open(file_path, 'r') as file:
                 
-                text = file.read()
+                text = file.read() 
+
+                print(f"name:{filename} File added {text[:100]}, counter: {counter}")
                 
                 chunks = text.split("\n\n")  # Assuming paragraphs are separated by blank lines
 
@@ -120,29 +136,47 @@ def read_files_from_folder():
                 
                 documents = [
                     {
-                        "id": f"doc_{i}",  # Simplified ID
+                        "id": f"doc_{doc_id}",  # Simplified ID
                         "document": chunk,
                         "embedding": embedding.tolist(),
                     }
                     for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
                 ]
                 docs.extend(documents)
+                doc_id +=1
 
     return docs
 
-def prepare_db():
-    bag.collection = chroma_client.get_or_create_collection(name="my_documents")
-    documents = read_files_from_folder()
-    
-    for document in documents:
-        bag.collection.add(ids=[document['id']], documents=[document['document']], embeddings=[document['embedding']])
-    
+prepare_db()
 
 def do_rag(query):
+
+    try:
+        if bag.collection == None:
+            return ""
+    
+    except AttributeError:
+        return ""
+    
+    documents_ = read_files_from_folder()
+
+    counter = 0
+    for document in documents_:
+       bag.collection.add(ids=[document['id']], documents=[document['document']], embeddings=[document['embedding']])
+       print(counter)
+       print(document)
+       counter+=1
+    
     results = bag.collection.query(
-        query_texts=[query],
-        n_results=3,  # Adjust as needed
+        query_texts=[query]
+       # n_results=3,  # Adjust as needed
     )
+    # all_docs = bag.collection.get()
+        
+    # if 'documents' in all_docs:
+    #     for doc in all_docs['documents']:
+    #         print(f"Document debug: {doc}")
+    
     return "\n".join([result for result in results['documents'][0]])
 
 
@@ -152,18 +186,13 @@ async def post(request: Request):
    
     uploaded_files = form.getlist("file")  # Use getlist to get a list of files
 
-    bag.script_dir = os.path.dirname(os.path.realpath(__file__))
-    bag.dir_out = bag.script_dir + "/uploaded_files"
-
     os.makedirs(bag.dir_out, exist_ok=True)
 
     for uploaded_file in uploaded_files:
         print(f"Uploaded file: {uploaded_file}")
 
-    with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
-        f.write(uploaded_file.file.read())
-
-    prepare_db()
+        with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
+            f.write(uploaded_file.file.read())
 
     # Update the response to display all uploaded filenames
     return Div(*[P(f"{uploaded_file.filename}") for uploaded_file in uploaded_files]) 
@@ -194,7 +223,7 @@ def print_all_messages():
     """ Create ul from messages and return them to main page """
     
     i = 0
-    for message in messages:
+    for message in messages_for_show:
         tid = f'message-{i}'
                  
         list_item = Li(message['content'],
@@ -236,6 +265,8 @@ async def ws(data:str, send):
 
     context = do_rag(data)
 
+    messages_for_show.append({"role": "user", "content": f"{data}"})
+
     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}"})
 
     await send(
@@ -262,14 +293,19 @@ async def ws(data:str, send):
     i = len(messages)
     tid = f'message-{i}'
 
+    msg = ""
+
     # Fill in the message content
     for chunk in stream:
         chunk = chunk["message"]["content"]
+        msg = msg + chunk
         messages[-1]["content"] += chunk
         await send(
             Li(chunk, id=tid, hx_swap_oob="beforeend")
         )
         await asyncio.sleep(0.01)  # simulate a brief delay
+
+    messages_for_show.append({"role": "assistant", "content": f"{msg}"})
 
 if __name__ == "__main__":
     uvicorn.run("test04_chat_rag:app", host='localhost', port=5001, reload=True)
