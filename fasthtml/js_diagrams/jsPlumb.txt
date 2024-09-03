@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Flowchart</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.6/js/jsplumb.min.js"></script>
+    <style>
+        .flowchart-demo {
+            width: 800px;
+            height: 600px;
+            border: 1px solid #ccc;
+            position: relative;
+        }
+        .window {
+            width: 150px;
+            height: 80px;
+            line-height: 80px;
+            text-align: center;
+            position: absolute;
+            background-color: #f0f0f0;
+            border: 1px solid #346789;
+            border-radius: 4px;
+            cursor: move;
+            z-index: 10;
+        }
+        .rectangle { border-radius: 4px; }
+        .diamond {
+            width: 100px;
+            height: 100px;
+            transform: rotate(45deg);
+            line-height: 100px;
+        }
+        .diamond span {
+            display: inline-block;
+            transform: rotate(-45deg);
+        }
+    </style>
+</head>
+<body>
+    <div id="flowchart-demo" class="flowchart-demo">
+        <div id="window1" class="window rectangle" style="top:50px;left:50px;">Rectangle</div>
+        <div id="window2" class="window diamond" style="top:200px;left:250px;"><span>Diamond</span></div>
+        <div id="window3" class="window rectangle" style="top:350px;left:50px;">Rectangle</div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            try {
+                if (typeof jsPlumb === 'undefined') {
+                    throw new Error('jsPlumb is not defined. Library may not have loaded correctly.');
+                }
+
+                var instance = jsPlumb.getInstance({
+                    DragOptions: { cursor: 'pointer', zIndex: 2000 },
+                    ConnectionOverlays: [
+                        [ "Arrow", { location: 1, width: 10, length: 10 } ]
+                    ],
+                    Container: "flowchart-demo"
+                });
+
+                instance.batch(function () {
+                    instance.draggable($(".flowchart-demo .window"), { grid: [20, 20] });
+
+                    instance.connect({
+                        source: "window1",
+                        target: "window2",
+                        anchor: ["Bottom", "Top"],
+                        connector: ["Bezier", { curviness: 50 }],
+                        paintStyle: { stroke: "#456", strokeWidth: 2 },
+                        endpoint: "Dot",
+                        endpointStyle: { fill: "#456" },
+                    });
+
+                    instance.connect({
+                        source: "window2",
+                        target: "window3",
+                        anchor: ["Bottom", "Top"],
+                        connector: ["Straight"],
+                        paintStyle: { stroke: "#456", strokeWidth: 2 },
+                        endpoint: "Dot",
+                        endpointStyle: { fill: "#456" },
+                    });
+                });
+
+                console.log('jsPlumb initialization completed successfully.');
+            } catch (error) {
+                console.error('Error initializing jsPlumb:', error);
+                alert('There was an error initializing the flowchart. Please check the console for details.');
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cytoscape.js Interactive Flowchart</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
+    <style>
+        #flowchart-demo {
+            width: 800px;
+            height: 600px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div id="flowchart-demo"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var cy = cytoscape({
+                container: document.getElementById('flowchart-demo'),
+                elements: [
+                    // Nodes
+                    { data: { id: 'rect1', label: 'Rectangle 1' }, position: { x: 100, y: 100 } },
+                    { data: { id: 'diamond', label: 'Diamond' }, position: { x: 300, y: 250 } },
+                    { data: { id: 'rect2', label: 'Rectangle 2' }, position: { x: 100, y: 400 } },
+                    
+                    // Edges
+                    { data: { id: 'edge1', source: 'rect1', target: 'diamond' } },
+                    { data: { id: 'edge2', source: 'diamond', target: 'rect2' } }
+                ],
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#f0f0f0',
+                            'border-color': '#346789',
+                            'border-width': 1,
+                            'label': 'data(label)',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'width': 150,
+                            'height': 80
+                        }
+                    },
+                    {
+                        selector: 'node[id="diamond"]',
+                        style: {
+                            'shape': 'diamond',
+                            'width': 100,
+                            'height': 100
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#999',
+                            'target-arrow-color': '#999',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'preset'
+                },
+                // Enable user interaction
+                userZoomingEnabled: false,
+                userPanningEnabled: false,
+                boxSelectionEnabled: false,
+                // Enable dragging
+                autoungrabify: false,
+                autounselectify: true
+            });
+
+            // Optional: Add visible feedback when dragging
+            cy.on('dragfree', 'node', function(evt){
+                var node = evt.target;
+                node.animate({
+                    style: { 'border-width': 3, 'border-color': '#ff0000' }
+                }, {
+                    duration: 100
+                }).animate({
+                    style: { 'border-width': 1, 'border-color': '#346789' }
+                }, {
+                    duration: 100
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
