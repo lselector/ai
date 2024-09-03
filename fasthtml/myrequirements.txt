@@ -27,6 +27,7 @@ pymupdf        # read PDF files
 uvicorn
 python-fasthtml
 fastapi
-chromadb
+# chromadb # obsolete, use Milvus Lite instead
+pymilvus
 sentence-transformers
 # --------------------------------------
