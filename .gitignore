@@ -13,4 +13,6 @@
 open_llm_leaderboard
 llm_leaderboard_*.xlsx
 .sesskey
-**/milvus_demo.db
+**/*.db
+**/*.db.lock
+**/uploaded_files
