@@ -1,7 +1,7 @@
 
 """
-# test04_chat_rag_milvus.py
-# Example of chatbot using fasthtml and ollama
+# rag_multi_models.py
+# Example of chatbot using fasthtml and ollama or openai
 # Using Milvus as VectorDB
 # Additional modules:
 #  - RAG
@@ -14,37 +14,44 @@ from mybag import *         # py_utils
 from myutils import *       # py_utils 
 
 import ollama, asyncio
-from pymilvus import MilvusClient, Collection
+from openai import OpenAI
+from pymilvus import MilvusClient
 
 from sentence_transformers import SentenceTransformer
 
 app, rt, = fast_app(live=True, ws_hdr=True)
 bag = MyBunch()
 
-client = ollama.Client()
+client_ollama = ollama.Client()
+client_openai = OpenAI()
 model = "mistral:7b-instruct-v0.3-q4_0"
+
 messages = []
-
 messages_for_show = []
-
 loaded_files_counter = 0
 loaded_files_len = 0
-
 m_client = None
-
-async def init():
-    global m_client
-    m_client = MilvusClient("./milvus_demo.db")
-    #await load_files()
-
-@app.on_event("startup")
-async def startup_event():
-   await init()
+isRAG = False
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
 bag.dir_out = bag.script_dir + "/uploaded_files"
 
 sp = {"role": "system", "content": "You are a helpful and concise assistant."}
+
+# ---------------------------------------------------------------
+async def init():
+    """ Init vectorDB """
+    global m_client
+    m_client = MilvusClient("./milvus_demo.db")
+    # To preload files in Server. 
+    # If you want to have RAG of some default docs
+    # await load_files()
+    
+# ---------------------------------------------------------------
+@app.on_event("startup")
+async def startup_event():
+   """ Launch when server starts """
+   await init()
 
 #---------------------------------------------------------------
 @rt('/')
@@ -65,7 +72,7 @@ def get():
                 Div(P("Add a message with the form below:"),
                 Form(
                     Label("Select model:"),
-                    Select(id="shapeInput", name="model_1")(
+                    Select(id="shapeInput", name="model")(
                             Option("Ollama", value="ollama", selected=True),
                             Option("OpenAI", value="openai", selected=False)
                            ),
@@ -129,7 +136,9 @@ def get():
     
     return main_page
 
+# ---------------------------------------------------------------
 def read_files_from_folder():
+    """ Read files from folder and convert them into vectors/chunks """
     docs = []
     global loaded_files_counter
 
@@ -138,8 +147,6 @@ def read_files_from_folder():
         file_path = os.path.join(bag.dir_out, filename)
         if os.path.isfile(file_path):  
             with open(file_path, 'r') as file:
-
-                
                 
                 text = file.read() 
 
@@ -172,11 +179,14 @@ def read_files_from_folder():
     return docs
 
 
-#prepare_db()
-
+# ---------------------------------------------------------------
 async def load_files():
+    """ Load files to VectorDB """
+    
     global m_client
     global loaded_files_len
+    global isRAG
+
     m_client.create_collection(
     collection_name="demo_collection",
     dimension=384  # The vectors we will use in this demo has 384 dimensions
@@ -185,6 +195,9 @@ async def load_files():
     documents_ = read_files_from_folder()
 
     loaded_files_len = len(documents_)
+
+    if loaded_files_len > 0:
+        isRAG = True
 
     data = [{
               "id": i, 
@@ -201,7 +214,10 @@ async def load_files():
     data=data
 )
 
+# ---------------------------------------------------------------
 async def do_rag(query):
+    """ Get data from VectorDB """
+
     global m_client
 
     res = m_client.query(
@@ -226,8 +242,11 @@ async def do_rag(query):
 )
     return search_results
 
+# ---------------------------------------------------------------
 @rt('/upload')
 async def post(request: Request):
+    """ Upload file(s) from user """
+
     form = await request.form()
    
     uploaded_files = form.getlist("file")  # Use getlist to get a list of files
@@ -245,10 +264,13 @@ async def post(request: Request):
     # Update the response to display all uploaded filenames
     return Div(id="files", *[P(f"{uploaded_file.filename}") for uploaded_file in uploaded_files]) 
 
+# ---------------------------------------------------------------
 @rt('/delete-all-docs')
 async def post():
+    """ Delete all the data in vectorDB """
 
     global m_client
+    global isRAG
 
     # a query that retrieves all entities matching filter expressions.
     res = m_client.query(
@@ -264,15 +286,6 @@ async def post():
         filter="subject == 'superheroes'"
         )
 
-    #if Collection.has_collection("demo_collection")
-    
-    # mycollection = Collection("demo_collection")
-    # n1 = mycollection.count_entities()
-    # mycollection.drop()
-    # n2 = mycollection.count_entities()
-
-    # print(f"b{n1}, a{n2}")
-
     # a query that retrieves all entities matching filter expressions.
     res = m_client.query(
         collection_name="demo_collection",
@@ -280,6 +293,8 @@ async def post():
         output_fields=["text", "subject"],
     )
     print(f"DOCS after deletion:\n{res}")
+
+    isRAG = False
 
     # Update the response to display all uploaded filenames
     return Div(id="files", hx_swap_oob='true')
@@ -345,7 +360,9 @@ def ChatInput():
                  placeholder="Type a message",
                  cls="input input-bordered w-full", hx_swap_oob='true')
 
+# ---------------------------------------------------------------
 async def chat_ollama(send):
+    """ Send message to Ollama model """
 
     # Model response (streaming)
     stream = ollama.chat(
@@ -378,26 +395,56 @@ async def chat_ollama(send):
 
     messages_for_show.append({"role": "assistant", "content": f"{msg}"})
 
+# ---------------------------------------------------------------
+async def chat_openai(send):
+    """ Send message to OpenAI model """
 
+    stream = client_openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=messages,
+    stream=True,
+)
+
+    messages.append({"role": "assistant", "content": ""})
+    await send(
+        Div(add_message(""), hx_swap_oob="beforeend", id="message-list")
+    )
+    
+    collected_chunks = []
+
+    i = len(messages)
+    tid = f'message-{i}'
+
+    for chunk in stream:
+        if chunk.choices[0].delta.content is not None:
+            ss = chunk.choices[0].delta.content
+            collected_chunks.append(ss)
+            await send(
+            Li(ss, id=tid, hx_swap_oob="beforeend")
+            )
+            await asyncio.sleep(0.01)  # simulate a brief delay
+
+    messages.append({"role": "assistant", "content": ''.join(collected_chunks)})
  
 #---------------------------------------------------------------
 @app.ws('/wscon')
-async def ws(data:str, send, model_1:str):
-    """ Call ollama and get responce using streaming """
-    #context = ""
-    context = await do_rag(data)
+async def ws(data:str, send, model:str):
+    """ Call Ollama or OpenAI and get responce using streaming """
+    global isRAG
+    
+    #print(f"{data}, {model}")
+    if isRAG:
+        context = await do_rag(data)
 
-    print(f"{data}, {model_1}")
+        messages_for_show.append({"role": "user", "content": f"{data}"})
 
-    messages_for_show.append({"role": "user", "content": f"{data}"})
-
-    for l in context:
-        if len(l) == 0:
-            messages.append({"role": "user", "content": f"Question: \n {data}"})
-        else:
-             messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}"})
-
-   
+        for l in context:
+            if len(l) == 0:
+                messages.append({"role": "user", "content": f"Question: \n {data}"})
+            else:
+                messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}"})
+    else:
+        messages.append({"role": "user", "content": f"Question: \n {data}"})   
 
     await send(
         Div(add_message(data), hx_swap_oob="beforeend", id="message-list")
@@ -406,8 +453,13 @@ async def ws(data:str, send, model_1:str):
     # Send the clear input field command to the user
     await send(ChatInput())
 
-    await chat_ollama(send)
+    if model == "ollama":
+        await chat_ollama(send)
+    elif model == "openai":
+        await chat_openai(send)
 
-    
+# ---------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------
 if __name__ == "__main__":
     uvicorn.run("rag_multi_models:app", host='localhost', port=5001, reload=True)

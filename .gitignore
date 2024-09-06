@@ -16,3 +16,4 @@ llm_leaderboard_*.xlsx
 **/*.db
 **/*.db.lock
 **/uploaded_files
+**/preuploaded_files
