@@ -1,0 +1,54 @@
+
+.wrapper-content {
+    display: flex;
+    padding-right: 20px;
+    padding-left: 20px;
+    padding-top: 50px;
+    justify-content: center; /* This centers the container horizontally */
+
+    overflow-y: auto;
+    flex-wrap: wrap;
+
+}
+
+.wrapper-uploaded-files-internal {
+    position: sticky;
+    top: 0; /* Adjust this value as needed to control the sticky position */
+    padding: 20px;
+}
+
+.wrapper-chat {
+    padding-right: 70px;
+}
+
+.column {
+    width: 500px;
+    min-height: 300px;
+}
+
+.upload-files {
+    height: 295px;
+    background-color: #d9dde3;
+}
+
+.text-upload {
+    padding: 15px;
+}
+
+@media (max-width: 1040px) {
+
+    /* .wrapper-content {   
+        overflow-y: auto;
+        flex-wrap: wrap;
+    } */
+   
+    .wrapper-chat {
+        padding-right: 0px;
+    }  
+}
+
+/* @media (max-width: 890px) {
+
+    
+  
+} */

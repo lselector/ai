@@ -19,7 +19,9 @@ from pymilvus import MilvusClient
 
 from sentence_transformers import SentenceTransformer
 
-app, rt, = fast_app(live=True, ws_hdr=True)
+app, rt, = fast_app(live=True, ws_hdr=True, hdrs=[
+    Link(rel='stylesheet', href='styles.css')
+])
 bag = MyBunch()
 
 client_ollama = ollama.Client()
@@ -59,16 +61,16 @@ def get():
     """ Main page """
     bag.list_items = []
     main_page = (
-        Title("Chatbot"),
-        Titled('Greeting',
         Div(
-            H1("Chatbot using fasthtml and ollama"),
+        Div(
+        Div( 
+            Title("Chatbot"),
+            H1("Chatbot using fasthtml, Ollama & OpenAI"),
             Div(
             P(Img(src="https://fastht.ml/assets/logo.svg", width=100, height=100)),
             ),
-            A("About us", href="/about"),
+            #A("About us", href="/about"),
             get_history(),
-            Div("Uploaded files:"),
                 Div(P("Add a message with the form below:"),
                 Form(
                     Label("Select model:"),
@@ -76,7 +78,14 @@ def get():
                             Option("Ollama", value="ollama", selected=True),
                             Option("OpenAI", value="openai", selected=False)
                            ),
-                    Group(
+                    Div(Label( 
+                        Input(type="checkbox", 
+                              cls="checkboxer", 
+                              value="strict", 
+                              name="strict", 
+                              data_foo="bar"
+                              ), "Strict", cls='px-2')),
+                    Group( 
                      Input(id="new-prompt", type="text", name="data"),
                      Button("Submit")
                      ),
@@ -85,19 +94,14 @@ def get():
                      hx_swap="beforeend",
                      enctype="multipart/form-data",
                      hx_trigger="submit"
-                     ),
-                    Form(Group(
-                    #Input(id="new-prompt", type="text", name="data"),
-                    Button("Clear all the documents")
+                     )
+                    
                     ),
-                    hx_post="/delete-all-docs",
-                    target_id='files',
-                    hx_swap="outerHTML"
+                    cls="wrapper-chat column"
                     ),
-                    ),
-                    Div("Uploaded Files:", Div(id="files"), id="container",
-                    style="width: 300px; height: 200px; background-color: #ced3db",
-                    ),
+                    Div(
+                    Div(
+                    Div(Div("Uploaded Files:", cls="text-upload"), Div(id="files"), id="container", cls="upload-files"),
                     Form(
                     Input(id='file', name='file', type='file', multiple=True, ondrop="this.form.querySelector('button').click()", 
                           onchange="this.form.querySelector('button').click()"),
@@ -108,6 +112,13 @@ def get():
                     hx_swap="outerHTML",
                     enctype="multipart/form-data"
                 ),
+                Form(Group(
+                    Button("Clear all the documents")
+                    ),
+                    hx_post="/delete-all-docs",
+                    target_id='files',
+                    hx_swap="outerHTML"
+                    ),
             Script(
             """
             const container = document.getElementById('container');
@@ -130,8 +141,36 @@ def get():
                 form.dispatchEvent(new Event('submit')); 
             });
             """
-        )
-        ))
+        ),
+        Script(
+            """
+        
+            const chatlistDiv = document.getElementById('chatlist');
+
+            const observer = new MutationObserver(mutations => {
+            for (let mutation of mutations) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length) {
+                // Scroll to the bottom
+                alert("here");
+                chatlistDiv.scrollTop = chatlistDiv.scrollHeight; 
+                }
+            }
+            });
+
+            observer.observe(chatlistDiv, { childList: true });
+
+            """
+        ),
+        cls="wrapper-uploaded-files-internal",
+        id="uploaded-files-internal"
+                    ),
+                    cls="wrapper-uploaded-files column",
+
+                    ),
+                    
+                    
+        cls="wrapper-content"),
+        cls="wrapper-main")
     )
     
     return main_page
@@ -304,7 +343,7 @@ async def post():
 def get_history():
     """ Get all history messages """ 
     listed_messages = print_all_messages()
-    history = Div(listed_messages, id="chatlist")
+    history = Div(listed_messages, id="chatlist", cls="list-of-messages")
 
     return history
 
@@ -403,7 +442,7 @@ async def chat_openai(send):
     model="gpt-4o-mini",
     messages=messages,
     stream=True,
-)
+    )
 
     messages.append({"role": "assistant", "content": ""})
     await send(
@@ -428,11 +467,11 @@ async def chat_openai(send):
  
 #---------------------------------------------------------------
 @app.ws('/wscon')
-async def ws(data:str, send, model:str):
+async def ws(data:str, send, model:str, strict:str):
     """ Call Ollama or OpenAI and get responce using streaming """
     global isRAG
-    
-    #print(f"{data}, {model}")
+
+    #print(f"{data}, {strict}")
     if isRAG:
         context = await do_rag(data)
 
@@ -441,10 +480,18 @@ async def ws(data:str, send, model:str):
         for l in context:
             if len(l) == 0:
                 messages.append({"role": "user", "content": f"Question: \n {data}"})
+                messages_for_show.append({"role": "user", "content": f"{data}"})
             else:
-                messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}"})
+                if strict == "strict":
+                    messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document"})
+                    messages_for_show.append({"role": "user", "content": f"{context}"})
+                else:
+                    messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
+                    messages_for_show.append({"role": "user", "content": f"{context}"})
+                    
     else:
-        messages.append({"role": "user", "content": f"Question: \n {data}"})   
+        messages.append({"role": "user", "content": f"Question: \n {data}"}) 
+        messages_for_show.append({"role": "user", "content": f"{data}"})  
 
     await send(
         Div(add_message(data), hx_swap_oob="beforeend", id="message-list")
