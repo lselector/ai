@@ -1,6 +1,17 @@
 
 ### RAG demo files
 
+#### demo for website:
+- step_1_rag_multi_models
+- no preload
+- upload one or several files
+- checkbox to make response strictly based only on retrieved data
+- change LLM on the fly while keeping the chat history
+- test on computer and smartphone, make it look nice
+  make step_1_rag_multi_models/README.md file with description and screenshots 
+- record video demo fro eais.ai website
+
+-------------------------------------<br>
 #### Advanced RAG. We divide it into main steps:
 
    1. process documents and popualte vector database (including tags and other metadata)
