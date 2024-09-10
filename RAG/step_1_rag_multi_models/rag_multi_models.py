@@ -26,7 +26,7 @@ bag = MyBunch()
 
 client_ollama = ollama.Client()
 client_openai = OpenAI()
-model = "mistral:7b-instruct-v0.3-q4_0"
+model = "mistral-nemo"
 
 messages = []
 messages_for_show = []
