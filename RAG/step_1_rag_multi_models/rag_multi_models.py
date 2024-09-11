@@ -26,12 +26,11 @@ bag = MyBunch()
 
 client_ollama = ollama.Client()
 client_openai = OpenAI()
-<<<<<<< HEAD
-model = "mistral-nemo"
-=======
+
+#model = "mistral-nemo"
+
 #model = "mistral:7b-instruct-v0.3-q4_0"
 model = "llama3:8b-instruct-q4_0"
->>>>>>> df3885a (update)
 
 messages = []
 messages_for_show = []
