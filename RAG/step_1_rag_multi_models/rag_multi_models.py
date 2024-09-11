@@ -26,7 +26,12 @@ bag = MyBunch()
 
 client_ollama = ollama.Client()
 client_openai = OpenAI()
+<<<<<<< HEAD
 model = "mistral-nemo"
+=======
+#model = "mistral:7b-instruct-v0.3-q4_0"
+model = "llama3:8b-instruct-q4_0"
+>>>>>>> df3885a (update)
 
 messages = []
 messages_for_show = []
@@ -97,7 +102,8 @@ def get():
                      )
                     
                     ),
-                    cls="wrapper-chat column"
+                    cls="wrapper-chat column",
+                    id="wrapper-chat-id"
                     ),
                     Div(
                     Div(
@@ -350,11 +356,12 @@ def get_history():
 #---------------------------------------------------------------
 def add_message(data):
     """ Add message """
-    i = len(messages)
+    i = len(messages_for_show)
     tid = f'message-{i}'
     
     list_item = Li(data,
-                id=tid)
+                id=tid, 
+                hx_swap_oob="true")
     bag.list_items.append(list_item)
 
     return list_item
@@ -372,7 +379,7 @@ def print_all_messages():
         bag.list_items.append(list_item)  # Add the Li element to the list
         i +=1
 
-    return Ul(*bag.list_items, id='message-list')
+    return Ul(*bag.list_items, id='message-list', style="list-style: none !important;")
 
 #---------------------------------------------------------------
 @rt('/about')
@@ -403,6 +410,12 @@ def ChatInput():
 async def chat_ollama(send):
     """ Send message to Ollama model """
 
+    await send(
+        add_message("")
+    )
+
+    #await asyncio.sleep(0)
+
     # Model response (streaming)
     stream = ollama.chat(
         model=model,
@@ -412,12 +425,8 @@ async def chat_ollama(send):
     
     # Send an empty message with the assistant response
     messages.append({"role": "assistant", "content": ""})
-    
-    await send(
-        Div(add_message(""), hx_swap_oob="beforeend", id="message-list")
-    )
 
-    i = len(messages)
+    i = len(messages_for_show)
     tid = f'message-{i}'
 
     msg = ""
@@ -434,9 +443,25 @@ async def chat_ollama(send):
 
     messages_for_show.append({"role": "assistant", "content": f"{msg}"})
 
+def get_loading():
+    """ Send loading animation """
+    
+    i = len(messages_for_show)
+    tid = f'message-{i}'
+
+    loading = Div(
+        Div(cls="loading-line"),
+        id=tid)
+
+    return loading
+
 # ---------------------------------------------------------------
 async def chat_openai(send):
     """ Send message to OpenAI model """
+
+    await send(
+        add_message("")
+    )
 
     stream = client_openai.chat.completions.create(
     model="gpt-4o-mini",
@@ -445,13 +470,11 @@ async def chat_openai(send):
     )
 
     messages.append({"role": "assistant", "content": ""})
-    await send(
-        Div(add_message(""), hx_swap_oob="beforeend", id="message-list")
-    )
+    
     
     collected_chunks = []
 
-    i = len(messages)
+    i = len(messages_for_show)
     tid = f'message-{i}'
 
     for chunk in stream:
@@ -471,31 +494,38 @@ async def ws(data:str, send, model:str, strict:str):
     """ Call Ollama or OpenAI and get responce using streaming """
     global isRAG
 
+    await send(
+        Div(add_message(data), hx_swap_oob="beforeend", id="message-list")
+    )
+
+    messages_for_show.append({"role": "user", "content": f"{data}"})
+
+
+    await send(
+        Div(get_loading(), hx_swap_oob="beforeend", id="message-list")
+    )
+
+
+    await asyncio.sleep(0)
+
     #print(f"{data}, {strict}")
     if isRAG:
         context = await do_rag(data)
 
-        messages_for_show.append({"role": "user", "content": f"{data}"})
-
         for l in context:
             if len(l) == 0:
                 messages.append({"role": "user", "content": f"Question: \n {data}"})
-                messages_for_show.append({"role": "user", "content": f"{data}"})
+                
             else:
                 if strict == "strict":
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document"})
-                    messages_for_show.append({"role": "user", "content": f"{context}"})
+                   
                 else:
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
-                    messages_for_show.append({"role": "user", "content": f"{context}"})
+                   
                     
     else:
-        messages.append({"role": "user", "content": f"Question: \n {data}"}) 
-        messages_for_show.append({"role": "user", "content": f"{data}"})  
-
-    await send(
-        Div(add_message(data), hx_swap_oob="beforeend", id="message-list")
-    )
+        messages.append({"role": "user", "content": f"Question: \n {data}"})  
 
     # Send the clear input field command to the user
     await send(ChatInput())

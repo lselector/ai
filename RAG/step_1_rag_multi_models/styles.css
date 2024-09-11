@@ -1,3 +1,6 @@
+ul li {
+    list-style: none;
+}
 
 .wrapper-content {
     display: flex;
@@ -20,6 +23,7 @@
 .wrapper-chat {
     padding-right: 70px;
 }
+
 
 .column {
     width: 500px;
@@ -46,6 +50,29 @@
         padding-right: 0px;
     }  
 }
+
+.loading-line {
+    width: 0; /* Initially no width */
+    height: 5px;
+    background-color: #aecef3; /* Light gray */
+    margin: 20px 0;
+    animation: loading 1.7s ease-in-out infinite; /* Animation settings */
+  }
+  
+  @keyframes loading {
+    0% {
+      width: 0;
+      opacity: 0; /* Start invisible */
+    }
+    50% {
+      width: 100%; /* Expand to full width */
+      opacity: 1; /* Fully visible */
+    }
+    100% {
+      width: 0;
+      opacity: 0; /* Fade out */
+    }
+  }
 
 /* @media (max-width: 890px) {
 
