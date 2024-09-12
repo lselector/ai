@@ -121,11 +121,14 @@ def get():
                     Div(
                     Div(Div("Uploaded Files:", cls="text-upload"), Div(id="files"), id="container", cls="upload-files"),
                     Form(
-                    Div(
-                        custom_input,
-                        # Span("No files chosen",id="file-chosen"),
-                        cls="file-input-container"
-                    ),
+                    Input(id='file', name='file', type='file', multiple=True, ondrop="this.form.querySelector('button').click()", 
+                          onchange="this.form.querySelector('button').click()"),
+                    Button('Upload', type="submit", style="display: none;"),
+                    # Div(
+                    #     custom_input,
+                    #     # Span("No files chosen",id="file-chosen"),
+                    #     cls="file-input-container"
+                    # ),
                     Button('Upload', type="submit", style="display: none; witdh=0px; height=0px;"),
                     id="upload-form",
                     hx_post="/upload",
