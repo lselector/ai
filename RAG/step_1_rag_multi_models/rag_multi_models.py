@@ -19,8 +19,20 @@ from pymilvus import MilvusClient
 
 from sentence_transformers import SentenceTransformer
 
-app, rt, = fast_app(live=True, ws_hdr=True, hdrs=[
-    Link(rel='stylesheet', href='styles.css')
+app, rt, = fast_app(live=True, pico=False, ws_hdr=True, hdrs=[
+    Link(
+        rel="stylesheet",
+        href="https://cdn.jsdelivr.net/npm/daisyui@4.11.1/dist/full.min.css"
+        ), 
+    Link(
+        rel="stylesheet", 
+        href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css"
+        ),
+    Link(
+        rel='stylesheet', 
+        href='styles.css'
+        )
+    
 ])
 bag = MyBunch()
 
@@ -29,8 +41,8 @@ client_openai = OpenAI()
 
 #model = "mistral-nemo"
 
-#model = "mistral:7b-instruct-v0.3-q4_0"
-model = "llama3:8b-instruct-q4_0"
+model = "mistral:7b-instruct-v0.3-q4_0"
+#model = "llama3:8b-instruct-q4_0"
 
 messages = []
 messages_for_show = []
@@ -38,6 +50,11 @@ loaded_files_counter = 0
 loaded_files_len = 0
 m_client = None
 isRAG = False
+
+custom_input = NotStr("""
+        <input type="file" id="file" name="file" multiple webkitdirectory />
+        <button for="file" class="custom-file-button">Select File</button>
+    """)
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
 bag.dir_out = bag.script_dir + "/uploaded_files"
@@ -70,12 +87,9 @@ def get():
         Div( 
             Title("Chatbot"),
             H1("Chatbot using fasthtml, Ollama & OpenAI"),
-            Div(
-            P(Img(src="https://fastht.ml/assets/logo.svg", width=100, height=100)),
-            ),
             #A("About us", href="/about"),
             get_history(),
-                Div(P("Add a message with the form below:"),
+            Div(
                 Form(
                     Label("Select model:"),
                     Select(id="shapeInput", name="model")(
@@ -98,8 +112,7 @@ def get():
                      hx_swap="beforeend",
                      enctype="multipart/form-data",
                      hx_trigger="submit"
-                     )
-                    
+                    )
                     ),
                     cls="wrapper-chat column",
                     id="wrapper-chat-id"
@@ -108,22 +121,29 @@ def get():
                     Div(
                     Div(Div("Uploaded Files:", cls="text-upload"), Div(id="files"), id="container", cls="upload-files"),
                     Form(
-                    Input(id='file', name='file', type='file', multiple=True, ondrop="this.form.querySelector('button').click()", 
-                          onchange="this.form.querySelector('button').click()"),
-                    Button('Upload', type="submit", style="display: none;"),
+                    Div(
+                        custom_input,
+                        # Span("No files chosen",id="file-chosen"),
+                        cls="file-input-container"
+                    ),
+                    Button('Upload', type="submit", style="display: none; witdh=0px; height=0px;"),
                     id="upload-form",
                     hx_post="/upload",
                     target_id="files",
                     hx_swap="outerHTML",
-                    enctype="multipart/form-data"
-                ),
+                    enctype="multipart/form-data",
+                    cls="upload-cls"
+                    ),
                 Form(Group(
-                    Button("Clear all the documents")
+                    Button("Clear", cls="clear-files")
                     ),
                     hx_post="/delete-all-docs",
                     target_id='files',
-                    hx_swap="outerHTML"
+                    hx_swap="outerHTML",
+                    cls="upload-button-container"
                     ),
+                    
+                
             Script(
             """
             const container = document.getElementById('container');
@@ -353,14 +373,28 @@ def get_history():
     return history
 
 #---------------------------------------------------------------
-def add_message(data):
+def add_message(data, role):
     """ Add message """
     i = len(messages_for_show)
     tid = f'message-{i}'
-    
-    list_item = Li(data,
-                id=tid, 
-                hx_swap_oob="true")
+ 
+    cls_ = ""
+
+    if role == "end":
+        cls_ = "primary"
+    elif role =="start":
+        cls_ = "secondary"
+
+    list_item = Div(
+                Div(data,
+                cls=f"chat-bubble chat-bubble-{cls_}",
+                id=tid,
+                hx_swap_oob="true"
+                ),
+                cls = f"chat chat-{role}"
+                #id=tid,
+                #hx_swap_oob="true"
+                )
     bag.list_items.append(list_item)
 
     return list_item
@@ -372,13 +406,35 @@ def print_all_messages():
     i = 0
     for message in messages_for_show:
         tid = f'message-{i}'
-                 
-        list_item = Li(message['content'],
-                       id=tid)  # Create an Li element for each message
-        bag.list_items.append(list_item)  # Add the Li element to the list
-        i +=1
 
-    return Ul(*bag.list_items, id='message-list', style="list-style: none !important;")
+#         <div class="chat chat-start">
+#   <div class="chat-bubble chat-bubble-secondary">
+#     Put me on the Council and not make me a Master!??
+#   </div>
+                 
+                
+        # list_item = Li(message['content'],
+        #                id=tid)  # Create an Li element for each message
+    
+
+        if message['role'] == "assistant":
+            list_item = Div(
+                Div(message['content'], id=tid,
+                    cls="chat-bubble chat-bubble-secondary"),
+                cls = "chat chat-start")
+            bag.list_items.append(list_item)  # Add the Li element to the list
+        
+        elif message['role'] == "user":
+            list_item = Div(
+                Div(message['content'], id=tid,
+                    cls="chat-bubble chat-bubble-primary"),
+                cls = "chat chat-end")
+            bag.list_items.append(list_item)  # Add the Li element to the list
+        
+        i +=1
+        
+
+    return Div(*bag.list_items, id='message-list')
 
 #---------------------------------------------------------------
 @rt('/about')
@@ -410,7 +466,7 @@ async def chat_ollama(send):
     """ Send message to Ollama model """
 
     await send(
-        add_message("")
+        add_message("", "start")
     )
 
     #await asyncio.sleep(0)
@@ -430,17 +486,35 @@ async def chat_ollama(send):
 
     msg = ""
 
+    await send(
+                Div(Div(
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    ),
+                cls = "chat chat-start",
+                hx_swap_oob="outerHTML",
+                id=tid+"_"
+            )
+        )
+
     # Fill in the message content
     for chunk in stream:
         chunk = chunk["message"]["content"]
         msg = msg + chunk
         messages[-1]["content"] += chunk
         await send(
-            Li(chunk, id=tid, hx_swap_oob="beforeend")
+                Div(
+                    chunk,
+                    hx_swap_oob="beforeend",
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    )
         )
         await asyncio.sleep(0.01)  # simulate a brief delay
 
-    messages_for_show.append({"role": "assistant", "content": f"{msg}"})
+    messages.append({"role": "assistant", "content": ''.join(msg)})
+    messages_for_show.append({"role": "assistant", "content": ''.join(msg)})
+    
 
 def get_loading():
     """ Send loading animation """
@@ -450,7 +524,7 @@ def get_loading():
 
     loading = Div(
         Div(cls="loading-line"),
-        id=tid)
+        id=tid+"_")
 
     return loading
 
@@ -459,7 +533,7 @@ async def chat_openai(send):
     """ Send message to OpenAI model """
 
     await send(
-        add_message("")
+        add_message("", "start")
     )
 
     stream = client_openai.chat.completions.create(
@@ -476,16 +550,33 @@ async def chat_openai(send):
     i = len(messages_for_show)
     tid = f'message-{i}'
 
+    await send(
+                Div(Div(
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    ),
+                cls = "chat chat-start",
+                hx_swap_oob="outerHTML",
+                id=tid+"_"
+            )
+        )
+
     for chunk in stream:
         if chunk.choices[0].delta.content is not None:
             ss = chunk.choices[0].delta.content
             collected_chunks.append(ss)
             await send(
-            Li(ss, id=tid, hx_swap_oob="beforeend")
-            )
+                Div(
+                    ss,
+                    hx_swap_oob="beforeend",
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    )
+        )
             await asyncio.sleep(0.01)  # simulate a brief delay
 
     messages.append({"role": "assistant", "content": ''.join(collected_chunks)})
+    messages_for_show.append({"role": "assistant", "content": ''.join(collected_chunks)})
  
 #---------------------------------------------------------------
 @app.ws('/wscon')
@@ -494,7 +585,7 @@ async def ws(data:str, send, model:str, strict:str):
     global isRAG
 
     await send(
-        Div(add_message(data), hx_swap_oob="beforeend", id="message-list")
+        Div(add_message(data, "end"), hx_swap_oob="beforeend", id="message-list")
     )
 
     messages_for_show.append({"role": "user", "content": f"{data}"})
@@ -507,7 +598,6 @@ async def ws(data:str, send, model:str, strict:str):
 
     await asyncio.sleep(0)
 
-    #print(f"{data}, {strict}")
     if isRAG:
         context = await do_rag(data)
 
@@ -521,7 +611,6 @@ async def ws(data:str, send, model:str, strict:str):
                    
                 else:
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
-                   
                     
     else:
         messages.append({"role": "user", "content": f"Question: \n {data}"})  

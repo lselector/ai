@@ -9,30 +9,33 @@ ul li {
     padding-top: 50px;
     justify-content: center; /* This centers the container horizontally */
 
-    overflow-y: auto;
     flex-wrap: wrap;
-
 }
 
 .wrapper-uploaded-files-internal {
     position: sticky;
     top: 0; /* Adjust this value as needed to control the sticky position */
-    padding: 20px;
+    padding-top: 20px;
 }
 
 .wrapper-chat {
+    width: 800px;
     padding-right: 70px;
 }
 
-
 .column {
-    width: 500px;
     min-height: 300px;
 }
 
 .upload-files {
+    width: 500px;
     height: 295px;
-    background-color: #d9dde3;
+    background-color: #eaeaea;
+}
+
+.wrapper-content button {
+    background-color: #5189a8;
+    border: none;
 }
 
 .text-upload {
@@ -40,11 +43,6 @@ ul li {
 }
 
 @media (max-width: 1040px) {
-
-    /* .wrapper-content {   
-        overflow-y: auto;
-        flex-wrap: wrap;
-    } */
    
     .wrapper-chat {
         padding-right: 0px;
@@ -74,8 +72,59 @@ ul li {
     }
   }
 
-/* @media (max-width: 890px) {
+.chat-bubble-primary {
+    background-color: #d4efff;
+    color: #222720;
+}
 
-    
+.chat-bubble-secondary {
+    background-color: #eaeaea;
+    color: #222720;
+}
+
+
+.file-input-container {
+    display: inline-block; /* or any other desired layout */
+}
+
+.upload-button-container {
+    display: inline-block;
+}
+
+.upload-cls {
+    display: inline;
+}
+
+.clear-files {
+    /* float: left; */
+    margin-top: 12px;
+}
   
-} */
+#file {
+    display: none; /* Hide the default file input */
+  }
+  
+.custom-file-button {
+    /* Style this label to look like a button */
+    background-color: #5189a8;
+    /* border: none; */
+    color: white;
+    /* padding: 20px 25px; */
+  
+    /* padding-top: 15px;
+    padding-bottom: 15px;
+    padding-right: 15px;
+    padding-left: 15px; */
+    /* text-align: center;
+    text-decoration: none;
+    display: inline-block; */
+    /* font-size: 20px; */
+    /* cursor: pointer; */
+    /* margin-top: 5px; */
+    /* margin-bottom: 5px; */
+    /* height: 57px; */
+  }
+  
+.file-chosen {
+    margin-left: 10px;
+  }
