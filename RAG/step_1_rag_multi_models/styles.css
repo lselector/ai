@@ -111,18 +111,18 @@ ul li {
     color: white;
     /* padding: 20px 25px; */
   
-    /* padding-top: 15px;
+    padding-top: 15px;
     padding-bottom: 15px;
     padding-right: 15px;
-    padding-left: 15px; */
-    /* text-align: center;
+    padding-left: 15px; 
+    text-align: center;
     text-decoration: none;
-    display: inline-block; */
-    /* font-size: 20px; */
-    /* cursor: pointer; */
-    /* margin-top: 5px; */
-    /* margin-bottom: 5px; */
-    /* height: 57px; */
+    display: inline-block; 
+    font-size: 20px;
+    cursor: pointer;
+    margin-top: 5px;
+     margin-bottom: 5px; 
+     height: 57px;
   }
   
 .file-chosen {

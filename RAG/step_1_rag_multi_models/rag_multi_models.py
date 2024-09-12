@@ -53,7 +53,7 @@ isRAG = False
 
 custom_input = NotStr("""
         <input type="file" id="file" name="file" multiple webkitdirectory />
-        <button for="file" class="custom-file-button">Select File</button>
+        <label for="file" class="custom-file-button">Select File</label>
     """)
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
