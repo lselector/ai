@@ -46,15 +46,11 @@ model = "mistral:7b-instruct-v0.3-q4_0"
 
 messages = []
 messages_for_show = []
+bag.uploaded_files = []
 loaded_files_counter = 0
 loaded_files_len = 0
 m_client = None
 isRAG = False
-
-custom_input = NotStr("""
-        <input type="file" id="file" name="file" multiple webkitdirectory />
-        <label for="file" class="custom-file-button">Select File</label>
-    """)
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
 bag.dir_out = bag.script_dir + "/uploaded_files"
@@ -118,39 +114,38 @@ def get():
                     id="wrapper-chat-id"
                     ),
                     Div(
+                    Div( 
+                    Div(Div("Uploaded Files:", cls="text-upload"), 
+                    get_uploaded_files_list(),
+                    id="container", cls="upload-files"),
                     Div(
-                    Div(Div("Uploaded Files:", cls="text-upload"), Div(id="files"), id="container", cls="upload-files"),
                     Form(
-                    Input(id='file', name='file', type='file', multiple=True, ondrop="this.form.querySelector('button').click()", 
-                          onchange="this.form.querySelector('button').click()"),
-                    Button('Upload', type="submit", style="display: none;"),
-                    # Div(
-                    #     custom_input,
-                    #     # Span("No files chosen",id="file-chosen"),
-                    #     cls="file-input-container"
-                    # ),
-                    Button('Upload', type="submit", style="display: none; witdh=0px; height=0px;"),
+                    Input(type='file', id='file-upload', name='files', multiple=True, style="display: none", onchange="document.getElementById('submit-upload-btn').click()"),
+                    Button('Select Files', cls="select-files-btn", type='button', onclick="document.getElementById('file-upload').click()"),
+                    Button(type="submit", id="submit-upload-btn", style="display: none"),
                     id="upload-form",
                     hx_post="/upload",
-                    target_id="files",
-                    hx_swap="outerHTML",
+                    target_id="uploaded-files-list",
+                    hx_swap="beforeend",
                     enctype="multipart/form-data",
                     cls="upload-cls"
                     ),
-                Form(Group(
+                    Form(Group(
                     Button("Clear", cls="clear-files")
                     ),
                     hx_post="/delete-all-docs",
                     target_id='files',
-                    hx_swap="outerHTML",
-                    cls="upload-button-container"
+                    hx_swap="outerHTML"
+                    # cls="upload-button-container"
+                    ),
+                    cls="forms-container"
                     ),
                     
                 
             Script(
             """
             const container = document.getElementById('container');
-            const fileInput = document.getElementById('file');
+            const fileInput = document.getElementById('file-upload');
             const form = document.getElementById('upload-form');;
             
             container.addEventListener('dragover', (event) => {
@@ -194,9 +189,7 @@ def get():
                     ),
                     cls="wrapper-uploaded-files column",
 
-                    ),
-                    
-                    
+                    ),                             
         cls="wrapper-content"),
         cls="wrapper-main")
     )
@@ -316,20 +309,22 @@ async def post(request: Request):
 
     form = await request.form()
    
-    uploaded_files = form.getlist("file")  # Use getlist to get a list of files
+    uploaded_files = form.getlist("files")  # Use getlist to get a list of files
+    print(form)
 
-    os.makedirs(bag.dir_out, exist_ok=True)
+    os.makedirs(bag.dir_out, exist_ok=True) 
 
     for uploaded_file in uploaded_files:
         print(f"Uploaded file: {uploaded_file}")
+
+        bag.uploaded_files.append(uploaded_file.filename)
 
         with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
             f.write(uploaded_file.file.read())
 
     await load_files()
 
-    # Update the response to display all uploaded filenames
-    return Div(id="files", *[P(f"{uploaded_file.filename}") for uploaded_file in uploaded_files]) 
+    return [Li(f"{uploaded_file.filename}", id='uploaded-file') for uploaded_file in uploaded_files]
 
 # ---------------------------------------------------------------
 @rt('/delete-all-docs')
@@ -363,9 +358,26 @@ async def post():
 
     isRAG = False
 
+    bag.uploaded_files = []
+
     # Update the response to display all uploaded filenames
     return Div(id="files", hx_swap_oob='true')
                     
+#---------------------------------------------------------------
+def get_uploaded_files_list():
+    """ Get all uploaded files names """ 
+    
+    lis = []
+    for filename in bag.uploaded_files:
+
+        lis.append(
+            Li(filename, cls='uploaded-file-cls')
+        )
+
+    if len(lis) == 0:
+        return Div(Ul(id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_obb=True)
+
+    return Div(Ul(*lis, id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_obb=True)
 
 #---------------------------------------------------------------
 def get_history():
@@ -395,8 +407,6 @@ def add_message(data, role):
                 hx_swap_oob="true"
                 ),
                 cls = f"chat chat-{role}"
-                #id=tid,
-                #hx_swap_oob="true"
                 )
     bag.list_items.append(list_item)
 
@@ -409,16 +419,6 @@ def print_all_messages():
     i = 0
     for message in messages_for_show:
         tid = f'message-{i}'
-
-#         <div class="chat chat-start">
-#   <div class="chat-bubble chat-bubble-secondary">
-#     Put me on the Council and not make me a Master!??
-#   </div>
-                 
-                
-        # list_item = Li(message['content'],
-        #                id=tid)  # Create an Li element for each message
-    
 
         if message['role'] == "assistant":
             list_item = Div(
@@ -598,7 +598,6 @@ async def ws(data:str, send, model:str, strict:str):
         Div(get_loading(), hx_swap_oob="beforeend", id="message-list")
     )
 
-
     await asyncio.sleep(0)
 
     if isRAG:
@@ -614,6 +613,7 @@ async def ws(data:str, send, model:str, strict:str):
                    
                 else:
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
+                    print(f"context: {context}")
                     
     else:
         messages.append({"role": "user", "content": f"Question: \n {data}"})  

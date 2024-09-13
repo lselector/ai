@@ -29,7 +29,9 @@ ul li {
 
 .upload-files {
     width: 500px;
-    height: 295px;
+    min-height: 295px;
+    border: solid #a5a5a5;
+    border-radius: 5px;
     background-color: #eaeaea;
 }
 
@@ -40,6 +42,7 @@ ul li {
 
 .text-upload {
     padding: 15px;
+    padding-left: 50px;
 }
 
 @media (max-width: 1040px) {
@@ -82,21 +85,25 @@ ul li {
     color: #222720;
 }
 
-
-.file-input-container {
-    display: inline-block; /* or any other desired layout */
+.uploaded-fileі-list-cls {
+    list-style: disc;
 }
 
-.upload-button-container {
-    display: inline-block;
+.uploaded-files-list-cls li {
+    list-style: disc;
+    margin-left: 25px;
 }
 
-.upload-cls {
-    display: inline;
+.forms-container {
+    display: flex;
+    margin-top: 10px;
 }
 
 .clear-files {
-    /* float: left; */
-    margin-top: 12px;
+     margin-left: 12px;
+}
+
+.select-files-btn {
+    margin: 0px;
 }
   
