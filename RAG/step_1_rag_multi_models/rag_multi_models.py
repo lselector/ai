@@ -83,8 +83,9 @@ def get():
         Div( 
             Title("Chatbot"),
             H1("Chatbot using fasthtml, Ollama & OpenAI"),
-            #A("About us", href="/about"),
+            Div(
             get_history(),
+            cls="history-container"),
             Div(
                 Form(
                     Label("Select model:"),
@@ -101,7 +102,7 @@ def get():
                               ), "Strict", cls='px-2')),
                     Group( 
                      Input(id="new-prompt", type="text", name="data"),
-                     Button("Submit")
+                     Button("Submit", onclick="setScrollFalse()")
                      ),
                      ws_send=True, hx_ext="ws", ws_connect="/wscon", 
                      target_id='message-list',
@@ -167,21 +168,50 @@ def get():
         ),
         Script(
             """
-        
-            const chatlistDiv = document.getElementById('chatlist');
 
-            const observer = new MutationObserver(mutations => {
-            for (let mutation of mutations) {
-                if (mutation.type === 'childList' && mutation.addedNodes.length) {
-                // Scroll to the bottom
-                alert("here");
-                chatlistDiv.scrollTop = chatlistDiv.scrollHeight; 
-                }
+            //const messageList = document.getElementById('chatlist');
+            //let timeoutId; 
+
+            //const observer = new MutationObserver(() => {
+                // Clear any existing timeout
+            //    clearTimeout(timeoutId);
+
+                // Set a new timeout to trigger scrolling after 1 second of inactivity
+            //    timeoutId = setTimeout(() => {
+            //        scrollToBottom(); 
+            //    }, 1000);
+            //});
+
+            // Start observing the 'message-list' div for changes
+            //observer.observe(messageList, { childList: true, subtree: true });
+
+            //function scrollToBottom() {
+            //    messageList.scrollTop = messageList.scrollHeight;
+            //}
+
+            const messageList = document.getElementById('chatlist');
+            let hasScrolled = false;
+
+            const observer = new MutationObserver(() => {
+            if (!hasScrolled) {
+                smoothScrollToBottom(); 
+                hasScrolled = true;
             }
             });
 
-            observer.observe(chatlistDiv, { childList: true });
+            observer.observe(messageList, { childList: true, subtree: true });
 
+            function smoothScrollToBottom() {
+                messageList.scrollTo({
+                    top: messageList.scrollHeight,
+                    behavior: 'smooth'
+                });
+                }
+            
+
+            function setScrollFalse() {
+                hasScrolled = false;
+            }
             """
         ),
         cls="wrapper-uploaded-files-internal",
@@ -598,6 +628,9 @@ async def ws(data:str, send, model:str, strict:str):
         Div(get_loading(), hx_swap_oob="beforeend", id="message-list")
     )
 
+     # Send the clear input field command to the user
+    await send(ChatInput())
+
     await asyncio.sleep(0)
 
     if isRAG:
@@ -613,13 +646,10 @@ async def ws(data:str, send, model:str, strict:str):
                    
                 else:
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
-                    print(f"context: {context}")
+                    #print(f"context: {context}")
                     
     else:
         messages.append({"role": "user", "content": f"Question: \n {data}"})  
-
-    # Send the clear input field command to the user
-    await send(ChatInput())
 
     if model == "ollama":
         await chat_ollama(send)

@@ -23,6 +23,11 @@ ul li {
     padding-right: 70px;
 }
 
+.list-of-messages {
+    height: 500px;
+    overflow-y: auto;
+}
+
 .column {
     min-height: 300px;
 }
