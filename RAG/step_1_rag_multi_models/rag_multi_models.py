@@ -77,12 +77,11 @@ async def startup_event():
 def get():
     """ Main page """
     bag.list_items = []
-    main_page = (
+    main_page = (Title("Document Q&A"),
         Div(
         Div(
         Div( 
-            Title("Chatbot"),
-            H1("Chatbot using fasthtml, Ollama & OpenAI"),
+            H1("Interactive Document Q&A"),
             Div(
             get_history(),
             cls="history-container"),
