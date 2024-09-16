@@ -1,0 +1,607 @@
+# --------------------------------------------------------------
+    # https://career.guru99.com/top-20-ne04j-interview-questions/
+    # https://mindmajix.com/neo4j-interview-questions-answers
+    # https://interviewprep.org/neo4j-interview-questions/
+    # https://www.acte.in/neo4j-interview-questions-and-answers/
+# --------------------------------------------------------------
+1) What is Neo4j?
+Neo4j is an open source NOSQL graph database, implemented in Java. 
+It saves data structured in graphs rather than in tables.
+# --------------------------------------------------------------
+2) For what Neo4j is widely used for?
+Neo4j is widely used for
+ - Highly connected data - Social Network
+ - Recommendations ( e-coomerce)
+ - Path Finding
+ - Data First Schema (bottom-up)
+ - Schema Evolution
+ - A* (Least Cost Path)
+# --------------------------------------------------------------
+3) How Neo4j differs from MySQL?
+  - Neo4j consists of vertices and edges. 
+  - Each vertex or node represent a key value or attribute.
+  - It is possible to store dynamic content like images, videos, audio,
+  - It has the capability for deep search into the database 
+    without affecting the performance along with efficient timing
+  - We can relate any two objects in neo4j by making relationship 
+    between any two nodes
+# --------------------------------------------------------------
+4) What are some important characteristics of neo4j?
+   Written in Java
+   Continuous time traversals, 
+   double linking between nodes and relationships.
+   fast relationships 
+   Memory caching, compact storage, 
+# --------------------------------------------------------------
+5) Explain Nodes, Relationships, Properties and Labels
+   Nodes - entities
+   Relationships - connect entities and structure domain
+   Properties - meta-data and attributes
+   Labels - group nodes by role
+# --------------------------------------------------------------
+6) Explain how you can run CQL commands in Neo4j?
+   CQL = Cypher Query Language
+   Can run from $ prompt
+# --------------------------------------------------------------
+7) Describe types of object caches in Neo4j
+   There are two types: Reference Caches and High-performance Caches
+# --------------------------------------------------------------
+8) Describe query language
+   Neo4j uses Cypher Query Language (CQL), which is unique to Neo4j.
+        START n
+        MATCH n-[r]- m
+        RETURN r;
+   Traversing the graph from (Start), 
+   rules for traversal (Match) 
+   and what to (Return)
+# --------------------------------------------------------------
+9) Is it possible to query Neo4j over the internet?
+   Yes, you can query over the web, or run locally.
+# --------------------------------------------------------------
+10) How you create/delete databases in Neo4j ?
+    You can do it form GUI (dropdown in Project)
+    Also you can delete from terminal ( rm -rf data/* )
+# --------------------------------------------------------------
+11) Explain how Neo4j can be helpful in detecting Brute Force Attack?
+    Neo4J allows to store and retrieve multiple complex relations
+    in real time. For example, IP addresses, login failures, etc.
+# --------------------------------------------------------------
+12) How indexing is done in Neo4j?
+    Automatic indexes can be created:
+    START n=node:node_auto_index(name='abc') RETURN n
+# --------------------------------------------------------------
+13) Mention how files are stored in Neo4j?
+    Neo4j stores graph data in store files, 
+    for example, file for relationships, for nodes, for properties etc.:
+       neostore.nodestore.db
+       neostore.propertystore.db
+       etc.
+# --------------------------------------------------------------
+14) List some CQL commands functionality
+    Create nodes with and without properties
+    Create a relationship between nodes (with/without properties)
+    Make multiple or single labels to a Node or a Relationship
+# --------------------------------------------------------------
+15) Explain what Neo4j CQL MATCH command is used for?
+    to get data about properties and nodes
+    to get data about relationship, nodes and properties
+# --------------------------------------------------------------
+16) Explain the MATCH command syntax and how to use it.
+    MATCH is used to define rules of traversing data in query
+    Syntax:  MATCH ( <node-name>:<label-name> )
+        START n
+        MATCH n-[r]- m
+        RETURN r;
+# --------------------------------------------------------------
+17) Explain what does the SET clause is used for in Neo4j?
+    To update or add properties values(for nodes or relationships)
+# --------------------------------------------------------------
+18) Explain what Neo4j CQL LIMIT clause is used for?
+    It is used to limit the number of returned rows in a query
+# --------------------------------------------------------------
+19) What is the "IN" Operator syntax in Neo4i?
+    Example:  IN[ <Collection-of-values>]
+# --------------------------------------------------------------
+20) Explain how Neo4j stores primitive array?
+    In a compressed form using a "bit saving" algorithm.
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+**) What is the local address?
+    http://127.0.0.1:7474/
+# --------------------------------------------------------------
+4: List main features of Neo4J.
+   - Data Representation using a graph model
+   - Reliable ACID transactions.
+   - Quick and Durable.
+   - High-Speed query execution for traversals.
+   - Easily accessible by REST or APIs.
+# --------------------------------------------------------------
+5: What does a Neo4J graph node store?
+   Key-Value Pairs
+# --------------------------------------------------------------
+9: Give example of CQL query
+   Example: To get cast of actors starting with S
+
+    MATCH (actor:Person)-[:ACTED_IN]->(movie:Movie)
+    WHERE movie.title STARTS WITH "S"
+    RETURN movie.title AS title, collect(actor.name) AS cast
+    ORDER BY title ASC LIMIT 10;
+# --------------------------------------------------------------
+10: Mention a few other famous graph databases available?
+        Oracle NoSQL Database
+        Sqrrl Enterprise
+        Graph Story
+        Titan
+        Velocity Graph
+        InfoGrid
+        Bitsy
+        Teradata Aster
+        Oracle Spatial and Graph
+        Info Grid
+        etc.
+# --------------------------------------------------------------
+11: List out some of the Neo4J Commands you use?
+        CREATE - To create a node or relationship.
+        MATCH - To read or retrieve all the nodes in the database.
+        MERGE - Combination of CREATE and MATCH.
+        SET - To add or update properties to new or existing nodes/relationships.
+        CREATE UNIQUE - To mention unique constraints in order to avoid redundant values.
+# --------------------------------------------------------------
+12: What is the REMOVE command used for?
+    To remove labels and properties of the nodes
+# --------------------------------------------------------------
+13: What is the difference between REMOVE and DELETE commands?
+    REMOVE is for labels and properties of nodes
+    DELETE is to remove nodes and relationships. 
+# --------------------------------------------------------------
+14: What is object Cache in Neo4J?
+    Object Cache improves performance by caching nodes and their properties
+# --------------------------------------------------------------
+15: What are the types of Object Cache in Neo4J?
+    There are two types of Object Cache:
+          Reference Cache
+          High-Performance Cache(HPC)
+# --------------------------------------------------------------
+16: Which command is used to update properties or adding new properties to existing relationships?
+    SET
+# --------------------------------------------------------------
+17: What is the difference between Neo4j Vs MongoDB?
+    Neo4j is a Graph DB, written in Java, may have optional schema.
+          uses CQL (Cypher Query Language) and APIs
+          Uses triggers
+# --------------------------------------------------------------
+19: What is the IN Operator syntax?
+    IN[ ]
+# --------------------------------------------------------------
+20: CREATE UNIQUE is used for?
+    CREATE UNIQUE used for fixing the graph structures.
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+ - Neo4j supports ACID transactions
+ - CQL - declarative graph query language
+ - Nodes and relationships have direct pointers to each other, enabling fast traversal.
+ - Index-free adjacency, meaning every node directly references its adjacent node, 
+   eliminating the need for index lookups during traversals. This results in constant 
+   time data retrieval regardless of the size of the data set.
+ - high-availability setups through master-slave replication
+ - sharding via graph partitioning
+# --------------------------------------------------------------
+3. How would you convert a relational database into a graph using Neo4j?
+   Identify entities and relationships to represent as nodes and edges
+   Use Neo4j ETL tool for importing data from your relational database. 
+   This involves mapping relational data to graph data structures
+   For complex transformations, Cypher's LOAD CSV command can be used
+   Create indexes on frequently accessed nodes 
+# --------------------------------------------------------------
+4. What are the advantages of using Cypher Query Language (CQL) over SQL in Neo4j?
+    - Cypher is designed for querying graph data natively
+    - Cypher is declarative (like SQL)
+    - CQL syntax visually represents the graph model
+    - Cypher can perform deep traversals efficiently
+# --------------------------------------------------------------
+5. What is ACID compliance in the context of Neo4j and why is it important?
+   ACID = Atomicity, Consistency, Isolation, and Durability
+   - provides high data integrity, prevents data corruption, 
+     enhances reliability & data security, ensures robustness
+# --------------------------------------------------------------
+7. How does indexing work in Neo4j and when should it be used?
+   Indexes improve speed. There are native and schema indexes. 
+   Native indexes are automatically maintained by Neo4j for all nodes and relationships
+   Schema indexes need manual creation and are used for specific label-property combinations.
+   Indexes = mapping between the indexed property values and the ids of the nodes or relationships.
+   Indexes come at a cost of additional storage space and slower write operations due to index maintenance. 
+# --------------------------------------------------------------
+8. Can you elaborate on data replication and data partitioning strategies in Neo4j?
+   Replication strategy “leader-follower” model. 
+   Data partitioning in Neo4j is achieved manually by creating 
+   multiple databases or using application-level sharding. 
+   This involves splitting your data across different Neo4j instances 
+   based on certain criteria like geographical location or user groups.
+   This splitting introduces complexity in managing transactions 
+   and maintaining consistency across shards. 
+# --------------------------------------------------------------
+9. How do you handle complex joins in Neo4j?
+   There are relationships, not joins.
+   For example, if you 2 types of nodes: Person and Company,
+   then you can have relationship WORKS_FOR between them.
+        MATCH (p:Person)-[:WORKS_FOR]->(c:Company {name:'Company Name'})
+        RETURN p.name
+# --------------------------------------------------------------
+10. How would you model hierarchical data in Neo4j?
+    Neo4j is ideal for modeling hierarchical data.
+    Example of organizational chart:
+        CREATE (e1:Employee {name:'John', position:'CEO'})
+        CREATE (e2:Employee {name:'Jane', position:'Manager'})
+        CREATE (e3:Employee {name:'Doe', position:'Developer'})
+        CREATE
+        (e1)-[:MANAGES]->(e2),
+        (e2)-[:REPORTS_TO]->(e1),
+        (e2)-[:MANAGES]->(e3),
+        (e3)-[:REPORTS_TO]->(e2)
+# --------------------------------------------------------------
+11. Can you explain the difference between depth-first and breadth-first traversal in Neo4j?
+        // Depth-first 
+        MATCH p=(n)-[*]->(m)
+        WHERE n.name = 'StartNode'
+        RETURN p
+
+        // Breadth-first
+        MATCH p=(n)-[*0..]->(m)
+        WHERE n.name = 'StartNode'
+        RETURN p
+
+        // You can adjust the depth of the traversal
+        //     [*0..1] will only traverse one level deep, 
+        //     [*0..3] will traverse up to three levels deep.
+# --------------------------------------------------------------
+12. Please describe the use of aggregates and collections in Cypher.
+        Aggregates: COUNT(), AVG(), SUM(), MIN() and MAX()
+                // count all nodes in database
+                MATCH (n)
+                RETURN COUNT(n) AS total_nodes;
+                // count number of all relationships
+                MATCH ()-[r]->()
+                RETURN COUNT(r) AS total_relationships;
+        Collections = ordered lists of elements. They can be created 
+        using square brackets [], and manipulated with operators 
+        such as IN (membership), + (concatenation), and * (repetition). 
+        Collections also support list comprehension for filtering and transforming their elements.
+# --------------------------------------------------------------
+14. What is the role of labels in Neo4j and how do they aid in performance optimization?
+    Labels in Neo4j are identifiers used to group nodes with similar characteristics. 
+    When a label is assigned to a node, an index is automatically created.
+    Labels also enable schema descriptions on parts of the graph and can be used to impose constraints.
+# --------------------------------------------------------------
+15. If you needed to perform full-text searching in Neo4j, how would you go about it?
+    Create a full-text index on the nodes or relationships that you want to search
+    CALL db.index.fulltext.createNodeIndex or createRelationshipIndex procedures
+    Perform searches using db.index.fulltext.queryNodes or  queryRelationships procedures
+    These return nodes or relationships whose specified properties match your query string.
+    The query language used is Lucene's default operator set, allowing for complex queries 
+    including wildcard, fuzzy, proximity, and range searches.
+# --------------------------------------------------------------
+16. Provide an example of using Neo4j for social network analysis.
+    Example: nodes represent people and relationships represent friendships. 
+        CREATE (Person1:Person {name:'John'}), 
+            (Person2:Person {name:'Jane'}),
+            (Person3:Person {name:'Doe'}),
+            (Person1)-[:FRIEND ...
+# --------------------------------------------------------------
+17. Use cases for stored procedures ?
+    Batch processing, data import/export, graph algorithms, network analysis. 
+    Stored procedures also allow integration with other systems through APIs, 
+    enabling the creation of custom functions.
+# --------------------------------------------------------------
+18. What is "Graph Density" ?
+    Graph Density = Number of connections / Number of possible connections (N squared)
+    More connections - slower performance.
+    Mitigate by using vertical partitioning (split data into smaller groups) and/or indexing.
+# --------------------------------------------------------------
+19. How do you handle constraints and validations in Neo4j?
+    Constraints (for nodes or relationships) are used to ensure data integrity.
+    Examples: uniqueness, existence, and node key constraints. 
+    Validations can be implemented using triggers or stored procedures. 
+         CREATE CONSTRAINT ON (book:Book) ASSERT book.isbn IS UNIQUE
+# --------------------------------------------------------------
+20. What is "hot spots" ?
+    Certain nodes or relationships are accessed very often causing performance issues.
+    Mitigation: data partitioning accross several servers,
+                caching in memory 
+                indexing
+                avoiding full scans
+# --------------------------------------------------------------
+21. What is the difference between embedded and server mode in Neo4j?
+    Embedded mode - Neo4j runs within the application's JVM
+    Server mode - runs as server, clients connect to it.
+# --------------------------------------------------------------
+22. How does Neo4j handle transactions and what makes it unique?
+    ACID is supported (Atomicity, Consistency, Isolation, Durability).
+    As all data relationships are stored directly in the DB itself,
+    it is easier and faster to do ACID transactions.
+# --------------------------------------------------------------
+23. How would you use the Neo4j's REST API for CRUD operations?
+    Create - POST request to /db/data/node with an optional JSON body for properties. 
+    Read -   GET /db/data/node/{nodeId} to retrieve the node. 
+    Update - PUT or POST to /db/data/node/{nodeId}/properties sending JSON with new property values
+    Delete - DELETE /db/data/node/{nodeId} removes the node. 
+
+    Relationships are similar: 
+    Create - POST to /db/data/node/{startNodeId}/relationships creates one, specifying endNodeId and type in the body. 
+    Read - GET /db/data/relationship/{relId} reads it
+    Update - PUT or POST to /db/data/relationship/{relId}/properties updates
+    Delete - DELETE /db/data/relationship/{relId} deletes.
+# --------------------------------------------------------------
+24. What are some common performance issues in Neo4j and how to mitigate?
+    Inefficient queries  - avoid Cartesian products, reduce the number of returned nodes, 
+       use 'PROFILE' or 'EXPLAIN' to understand how a query is executed.
+    Improper indexing  - create indexes for frequently accessed properties. 
+       Also, consider composite indexes if multiple properties are often queried together.
+    Hardware limitations - increase RAM to avoid disk swapping.
+# --------------------------------------------------------------
+25. How do you ensure the security of data in Neo4j? 
+    How to set up RBAC (role-based access control)?
+    Neo4j provides authentication, authorization, and encryption. 
+    For RBAC: 
+      Create roles using the ROLE command. 
+      Assign privileges to these roles, for example: 
+           READ {*} ON GRAPH * TO role_name.
+      Assign users to roles using the  ROLE command, for example:
+           ROLE role_name TO user_name
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+# --------------------------------------------------------------
+Example of CQL query:
+
+    MATCH (n:Person)-[:FRIEND]->(friend)
+    WHERE n.name = ‘John'
+    RETURN n, friend
+# --------------------------------------------------------------
+10. What are some other well-known graph databases that are out there?
+    Amazon Neptune
+    Microsoft Azure Cosmos DB
+    JanusGraph
+    ArangoDB
+    OrientDB
+    AllegroGraph
+# --------------------------------------------------------------
+Which Neo4J commands do you frequently use?
+
+    MATCH: Used to specify patterns to be matched in the graph.
+    MATCH (n:Label)-[:RELATIONSHIP]->(m)
+    CREATE: Used to create nodes and relationships in the graph.
+    CREATE (n:Label {property: value})-[:RELATIONSHIP]->(m:Label)
+    RETURN: Specifies what data to retrieve from a query.
+    RETURN n.property, m.property
+    WHERE: Applies a condition to filter results.
+    WHERE n.property = ‘value'
+    MERGE: Matches a pattern, or creates it if it doesn't exist.
+    MERGE (n:Label {property: ‘value'})
+# --------------------------------------------------------------
+Which kinds of object caches are available in Neo4J?
+   Node Cache & Relationship Cache
+# --------------------------------------------------------------
+How to add or update property?
+        MATCH (a)-[r]->(b)
+        SET r.newProperty = ‘NewValue'
+# --------------------------------------------------------------
+Example of using LIMIT clause
+        MATCH (n)
+        RETURN n
+        LIMIT 10
+# --------------------------------------------------------------
+Example of using IN Operator?
+        MATCH (n)
+        WHERE n.propertyName IN ['value1', 'value2']
+        RETURN n
+# --------------------------------------------------------------
+What is the purpose of CREATE UNIQUE?
+    Creates only if it doesn't exist.
+# --------------------------------------------------------------
+Explain how collections and aggregates are used in Cypher?
+   Collections like lists and aggregates like `COLLECT` 
+   are used to manipulate and aggregate data. 
+   For example, `COLLECT `can group results into a list, 
+   while `UNWIND` can be used to transform a list into individual rows 
+   for further processing.
+# --------------------------------------------------------------
+How can labels help with performance optimization?
+    Limiting query by label reduces the scope of operations and improves 
+    the overall speed of graph traversals and searches
+# --------------------------------------------------------------
+How would you approach full-text searching in Neo4j if you needed to?
+   third-party plugins like the Neo4j Elasticsearch Integration 
+   or the `fulltext` index offered by the APOC library 
+# --------------------------------------------------------------
+Social network analysis examples:
+    MATCH (u)-[r]-(v) RETURN u, count(r) AS degree ORDER BY degree DESC LIMIT 10
+# --------------------------------------------------------------
+Does Neo4J store files in nodes?
+    No, usually only path to files.
+# --------------------------------------------------------------
+What is a relationship 
+    relationships are node-to-node connections
+    They have type, optional characteristics, and direction
+# --------------------------------------------------------------
+Neo4j supports integration with Java, Python, and JavaScript.
+# --------------------------------------------------------------
+How is scalability handled by Neo4j?
+    Clustering and sharding
+# --------------------------------------------------------------
+In Neo4j you can have nodes without any connections:
+      CREATE (n:Person {name: 'John Doe'})
+
+You can add connections:
+      MATCH (n:Person {name: 'John Doe'}), (m:Person {name: 'Lisa Smith'})
+      CREATE (n)-[:KNOWS]->(m)
+# --------------------------------------------------------------
+In Neo4j, nodes belong to a single graph by default. 
+It is possible to create separate graphs (subgraphs) within a single database.
+It is possible to create separate databases within the same instance. 
+# --------------------------------------------------------------
+What is label?
+    A node may have 0, 1, or more lables.
+    Labels use to narrow down the query to make them faster
+# --------------------------------------------------------------
+Whaat os Index Provider ?
+    Index Provider determines how indexes are stored and queried.
+# --------------------------------------------------------------
+What is the Neo4j Bolt protocol ?
+    Bolt is a binary protocol to effectively communicate with Noe4j server.
+# --------------------------------------------------------------
+Neo4j Import Tool 
+    can import massive amounts of data from external sources in CSV and JSON formats
+# --------------------------------------------------------------
+Neo4j primarily employs an optimistic locking strategy for handling concurrency.
+Each node has a version property, and transactions check this version before committing changes to identify conflicts. 
+The explicit pessimistic locking is not a core feature.
+# --------------------------------------------------------------
+What is Neo4j Aura platform ?
+    It is Neo4j as a managed cloud service.
+# --------------------------------------------------------------
+How is geographical data supported by Neo4j?
+    Mapping and GIS analysis is handled using built-in indexing and spatial types
+# --------------------------------------------------------------
+Triggers - there is no built-in triggers
+# --------------------------------------------------------------
+What is Neo4j Extension ?
+    a specially designed plugin or module that incorporates additional 
+    custom processes, methods, or endpoints. Can be written in Java, Python, or Javascript.
+# --------------------------------------------------------------
+How are data backup and recovery handled by Neo4j?
+    Neo4j has both online and offline backup techniques. 
+    Recovery from data loss includes replaying transaction logs, 
+    applying incremental backups as necessary, and recovering 
+    the database from a backup.
+# --------------------------------------------------------------
+What is Neo4j Sandbox ?
+    It is a cloud-based pre-configured platform to explore and learn Neo4j
+# --------------------------------------------------------------
+How time and date can be stored/used?
+   Date/time attributes on nodes or relationships may be used.
+# --------------------------------------------------------------
+What is Neo4j Graph Data Science library?
+    Graph analytics, Graph Embeddings, Graph Projection
+# --------------------------------------------------------------
+There is no explicit COMMIT and ROLLBACK statements. 
+Instead each Cypher query is automatically wrapped into a transaction.
+# --------------------------------------------------------------
+In a distributed context, Neo4j uses the Raft consensus algorithm 
+to guarantee data consistency. 
+# --------------------------------------------------------------
+Neo4j uses graph processing engines. Supports parallel operation,
+leverages multi-core operations and multiple computers.
+Leverages caching and indexing.
+# --------------------------------------------------------------
+Neo4j has Connectors and Drivers (Java, Python, .NET, ...) 
+RESTful API over HTTP
+ETL Tools like Apache Kafka, NiFi, or Talend
+# --------------------------------------------------------------
+PageRank algorithm - to rank nodes
+    // Install Graph Data Science library
+    CALL gds.alpha.enable
+    // Run query to retrieve PageRank scores
+        CALL gds.pageRank.write({
+        nodeProjection: '*',
+        relationshipProjection: {
+            REL: {
+            type: 'REL',
+            direction: 'OUTGOING'
+            }
+        },
+        relationshipWeightProperty: 'weight',
+        writeProperty: 'rank'
+        })
+        YIELD nodePropertiesWritten, relationshipPropertiesWritten, commitTime, writeMillis
+
+        MATCH (n)
+        RETURN n.name, n.rank
+        ORDER BY n.rank DESC
+        LIMIT 10
+# --------------------------------------------------------------
+Finding clusters / communities
+    Neo4j's has algorithms for community detection, such as Louvain and Label Propagation.
+    They unveil organic clusters, unveiling significant connections and configurations.
+    This clustering can be used for Analysis and Recommendations
+# --------------------------------------------------------------
+Date and time:
+    LocalDate, LocalTime, DateTime
+    date(), time(), datetime() functions
+    Temporal indexing, Temporal Range Queries (FROM, TO, DURING) 
+# --------------------------------------------------------------
+Importing data from CSV file
+
+        // Create the nodes for the users
+        USING PERIODIC COMMIT 1000
+        LOAD CSV WITH HEADERS FROM 'file:///users.csv' AS row
+        MERGE (u:User {id: row.id})
+        ON CREATE SET u.name = row.name, u.age = row.age
+
+        // Create the nodes for the posts
+        USING PERIODIC COMMIT 1000
+        LOAD CSV WITH HEADERS FROM 'file:///posts.csv' AS row
+        MERGE (p:Post {id: row.id})
+        ON CREATE SET p.title = row.title, p.content = row.content
+
+        // Create the relationships between users and posts
+        USING PERIODIC COMMIT 1000
+        LOAD CSV WITH HEADERS FROM 'file:///user_posts.csv' AS row
+        MATCH (u:User {id: row.user_id}), (p:Post {id: row.post_id})
+        MERGE (u)-[:AUTHOR]->(p)
+
+# --------------------------------------------------------------
+Neo4j for social network analysis.
+Neo4j for recommendation systems?
+Neo4j for Anomaly Detection
+# --------------------------------------------------------------
+Example of User-defined functions (UDF) creation and usage
+    CALL apoc.help("apoc")
+    CALL apoc.trigger.add("absolute_value", "RETURN Math.abs(value)", 
+        { value: { type: "number", description: "The number to get the absolute value of" } })
+
+    CALL apoc.trigger.run("absolute_value", { value: -4 }) 
+    YIELD value
+    RETURN value
+
+Note: "APOC" stands for "Awesome Procedures On Cypher."
+# -------------------------------------------------------------- 
+Importing lots of data using the neo4j-admin import tool
+    Importing Data Offline (uses parallelism)
+# -------------------------------------------------------------- 
+Connected Components algorithm - identify clusters
+# -------------------------------------------------------------- 
+Shortest Path algorithm in Neo4j's Graph Algorithms library
+    gds.alpha.shortestPath
+# -------------------------------------------------------------- 
+Betweenness Centrality algorithm
+    figuring out the percentage of shortest paths that go through each node, 
+    highlighting important bridges or connectors in the graph 
+    that are essential to network resilience or information flow
+# -------------------------------------------------------------- 
+Label Propagation algorithm - detect clusters
+# -------------------------------------------------------------- 
+spatial indexing, location-based queries (by geographic coordinates)
+# -------------------------------------------------------------- 
+Neo4j Bloom tool - interactive visual exploration
+# -------------------------------------------------------------- 
+undirected vs directed relationship
+    CREATE (p)-[:LIKES]-(m)       // undirected
+    CREATE (p)-[:WATCHED]->(m)    // directed
+# -------------------------------------------------------------- 
+Removal of the node - consider cascading effects on connected nodes
+        MATCH (u:User)
+        WHERE u.age > 30
+        DETACH DELETE u
+# -------------------------------------------------------------- 
