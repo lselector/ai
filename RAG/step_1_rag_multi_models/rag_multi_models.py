@@ -87,18 +87,19 @@ def get():
             cls="history-container"),
             Div(
                 Form(
-                    Label("Select model:"),
-                    Select(id="shapeInput", name="model")(
+                    Div(
+                        Select(id="shapeInput", name="model")(
                             Option("Ollama", value="ollama", selected=True),
-                            Option("OpenAI", value="openai", selected=False)
-                           ),
-                    Div(Label( 
+                            Option("OpenAI", value="openai", selected=False),
+                           id="select-model"), 
+                    Label("Strict:", cls='px-2'),
                         Input(type="checkbox", 
                               cls="checkboxer", 
                               value="strict", 
                               name="strict", 
                               data_foo="bar"
-                              ), "Strict", cls='px-2')),
+                              ),
+                    cls="model-strict-container"),
                     Group( 
                      Input(id="new-prompt", type="text", name="data"),
                      Button("Submit", onclick="setScrollFalse()")

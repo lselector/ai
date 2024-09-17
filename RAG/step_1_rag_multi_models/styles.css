@@ -24,8 +24,33 @@ ul li {
 }
 
 .list-of-messages {
-    height: 500px;
+    max-height: 500px;
+    /* min-height: 300px; */
     overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.model-strict-container {
+    display: flex;
+    /* justify-content: center; */
+    align-items: center;
+}
+
+.px-2 {
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+    padding-bottom: 10px;
+}
+
+.checkboxer {
+    margin-bottom: 15px;
+}
+
+#select-model {
+    max-width: 200px;
+    padding: 0px;
+    padding-inline-start: 0.5rem;
+    padding-left: 0.5rem;
 }
 
 .column {
