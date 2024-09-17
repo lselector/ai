@@ -115,8 +115,9 @@ def get():
                     id="wrapper-chat-id"
                     ),
                     Div(
+                    Div(
+                    Div("Uploaded Files:", cls="text-upload"), 
                     Div( 
-                    Div(Div("Uploaded Files:", cls="text-upload"), 
                     get_uploaded_files_list(),
                     id="container", cls="upload-files"),
                     Div(

@@ -19,20 +19,18 @@ ul li {
 }
 
 .wrapper-chat {
-    width: 800px;
+    width: 900px;
     padding-right: 70px;
 }
 
 .list-of-messages {
     max-height: 500px;
-    /* min-height: 300px; */
-    overflow-y: auto;
+    overflow-y: hidden;
     margin-bottom: 10px;
 }
 
 .model-strict-container {
     display: flex;
-    /* justify-content: center; */
     align-items: center;
 }
 
@@ -58,11 +56,15 @@ ul li {
 }
 
 .upload-files {
-    width: 500px;
-    min-height: 295px;
+    width: 400px;
+    min-height: 150px;
+    max-height: 325px;
     border: solid #a5a5a5;
     border-radius: 5px;
     background-color: #eaeaea;
+    padding-top: 10px;
+    padding-left: 0.3rem;
+    overflow-y: auto;
 }
 
 .wrapper-content button {
@@ -70,10 +72,10 @@ ul li {
     border: none;
 }
 
-.text-upload {
-    padding: 15px;
-    padding-left: 50px;
-}
+/* .text-upload { */
+    /* padding: 15px; */
+    /* padding-left: 50px; */
+/* } */
 
 @media (max-width: 1040px) {
    
