@@ -25,7 +25,7 @@ ul li {
 
 .list-of-messages {
     max-height: 500px;
-    overflow-y: hidden;
+    overflow-y: auto;
     margin-bottom: 10px;
 }
 

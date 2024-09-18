@@ -349,7 +349,6 @@ async def reload_files(filename):
                 "subject": documents_[i]['subject'],
                 "year" : "2024"
                 })
-        lid +=1
                 
 
     res = m_client.query(
@@ -409,28 +408,33 @@ async def do_rag(query):
     """ Get data from VectorDB """
 
     global m_client
-
-    res = m_client.query(
-    collection_name="demo_collection",
-    filter=f"subject == '{query}'",
-    output_fields=["text", "subject"],
-    )
+    
+    res_ = []
+    # for subject in bag.uploaded_files:
+    #     res = m_client.query(
+    #     collection_name="demo_collection",
+    #     filter=f"subject == '{subject}'",
+    #     output_fields=["text", "subject"],
+    # )
+    # res_.extend(res)
     
     model = SentenceTransformer('all-MiniLM-L6-v2') 
     query_vector = model.encode(query)
     query_vector = np.array([query_vector]) 
 
-    search_results = m_client.search(
-    collection_name="demo_collection",
-    data=query_vector,
-    filter="subject == 'superheroes'",  
-    output_fields=["text", "subject"],
-    #anns_field="superheroes", # Specify the field containing your vectors
-    #param={"metric_type": "IP"}, # Or other similarity metric as needed
-    limit=5  # Number of top results to return
-   
-)
-    return search_results
+    
+    for subject in bag.uploaded_files:
+        search_results = m_client.search(
+        collection_name="demo_collection",
+        data=query_vector,
+        filter=f"subject == '{subject}'",  
+        output_fields=["text", "subject"],
+        #anns_field="superheroes", # Specify the field containing your vectors
+        #param={"metric_type": "IP"}, # Or other similarity metric as needed
+        limit=5  # Number of top results to return
+    )
+        res_.extend(search_results)
+    return res_ 
 
 def delete_by_subject(subject):
 
@@ -806,6 +810,8 @@ async def ws(data:str, send, model:str, strict:str):
     """ Call Ollama or OpenAI and get responce using streaming """
     global isRAG
 
+    print(f"isRag: {isRAG}, strict: {strict}")
+
     await send(
         Div(add_message(data, "end"), hx_swap_oob="beforeend", id="message-list")
     )
@@ -825,17 +831,19 @@ async def ws(data:str, send, model:str, strict:str):
     if isRAG:
         context = await do_rag(data)
 
+        #print(f"doing rag: {context}")
+
         for l in context:
             if len(l) == 0:
                 messages.append({"role": "user", "content": f"Question: \n {data}"})
                 
             else:
                 if strict == "strict":
-                    messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document"})
-                   
+                   messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document"})
+                   #print("strict++")
                 else:
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
-                    #print(f"context: {context}")
+                    #print("strict--")
                     
     else:
         messages.append({"role": "user", "content": f"Question: \n {data}"})  
