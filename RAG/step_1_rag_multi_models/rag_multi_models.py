@@ -13,7 +13,7 @@ from starlette.requests import Request
 from mybag import *         # py_utils
 from myutils import *       # py_utils 
 
-import ollama, asyncio
+import ollama, asyncio, subprocess
 from openai import OpenAI
 from pymilvus import MilvusClient
 
@@ -51,6 +51,7 @@ loaded_files_counter = 0
 loaded_files_len = 0
 m_client = None
 isRAG = False
+chunks_id = 0
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
 bag.dir_out = bag.script_dir + "/uploaded_files"
@@ -116,14 +117,17 @@ def get():
                     ),
                     Div(
                     Div(
-                    Div("Uploaded Files:", cls="text-upload"), 
-                    Div( 
+                    Div("Uploaded Files:", cls="text-upload"),
+                    Div(
+                    Div(
                     get_uploaded_files_list(),
                     id="container", cls="upload-files"),
+                    id="upload-container-wrapper"
+                    ),
                     Div(
                     Form(
-                    Input(type='file', id='file-upload', name='files', multiple=True, style="display: none", onchange="document.getElementById('submit-upload-btn').click()"),
-                    Button('Select Files', cls="select-files-btn", type='button', onclick="document.getElementById('file-upload').click()"),
+                    Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", onchange="document.getElementById('submit-upload-btn').click()"),
+                    Button('Select Files', cls="select-files-btn", type='button', onclick="document.getElementById('file-upload_').click()"),
                     Button(type="submit", id="submit-upload-btn", style="display: none"),
                     id="upload-form",
                     hx_post="/upload",
@@ -133,10 +137,10 @@ def get():
                     cls="upload-cls"
                     ),
                     Form(Group(
-                    Button("Clear", cls="clear-files")
+                    Button("Clear", type="submit", id="clear-files")
                     ),
                     hx_post="/delete-all-docs",
-                    target_id='files',
+                    target_id='uploaded-files-list',
                     hx_swap="outerHTML"
                     # cls="upload-button-container"
                     ),
@@ -147,7 +151,7 @@ def get():
             Script(
             """
             const container = document.getElementById('container');
-            const fileInput = document.getElementById('file-upload');
+            const fileInput = document.getElementById('file-upload_');
             const form = document.getElementById('upload-form');;
             
             container.addEventListener('dragover', (event) => {
@@ -165,6 +169,17 @@ def get():
 
                 form.dispatchEvent(new Event('submit')); 
             });
+
+            container.addEventListener('change', () => {
+                event.preventDefault(); 
+
+                const files = event.dataTransfer.files; 
+
+                fileInput.files = files; 
+
+                form.dispatchEvent(new Event('submit')); 
+
+                });
             """
         ),
         Script(
@@ -213,6 +228,11 @@ def get():
             function setScrollFalse() {
                 hasScrolled = false;
             }
+            """
+        ),
+        Script(
+            """ 
+            
             """
         ),
         cls="wrapper-uploaded-files-internal",
@@ -269,6 +289,83 @@ def read_files_from_folder():
 
     return docs
 
+def get_chunks(filename):
+    #text = text.encode('utf-8')
+
+    file_path = os.path.join(bag.dir_out, filename)
+    if os.path.isfile(file_path):  
+        with open(file_path, 'r') as file:
+            
+            text = file.read() 
+
+            chunks = text.split("\n\n")
+
+            # 3. Generate Embeddings
+            model = SentenceTransformer('all-MiniLM-L6-v2') 
+            embeddings = model.encode(chunks)
+
+            # 4. Format for db, including 'subject' field
+            # You'll need to determine the subject for each file. 
+            # Here, I'm just using the filename as a placeholder. 
+            # You might need more sophisticated logic to extract the subject from the file content.
+            subject = filename  # Replace with your actual subject extraction logic
+
+            documents = [
+                {
+                    "document": chunk,
+                    "embedding": embedding.tolist(),
+                    "subject": subject  # Add the subject field
+                }
+                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+            ]
+    return documents
+
+# ---------------------------------------------------------------
+async def reload_files(filename):
+    """ Reload files to VectorDB """
+    
+    global m_client
+    global loaded_files_len
+    global isRAG
+
+    m_client.create_collection(
+    collection_name="demo_collection",
+    dimension=384  # The vectors we will use in this demo has 384 dimensions
+    )
+
+    documents_ = get_chunks(filename)
+
+    loaded_files_len = len(documents_)
+
+    if loaded_files_len > 0:
+        isRAG = True
+    
+    data = []
+    for i in range(len(documents_)):
+        data.append({
+                "id": i, 
+                "vector": documents_[i]['embedding'], 
+                "text": documents_[i]['document'], 
+                "subject": documents_[i]['subject'],
+                "year" : "2024"
+                })
+        lid +=1
+                
+
+    res = m_client.query(
+                collection_name="demo_collection",
+                filter=f"subject == '{documents_[0]['subject']}'",
+                output_fields=["text", "subject"],
+            )
+    print(res)
+    print("inserting...")
+    print(data) 
+
+    # Assuming 'documents' is a list of dictionaries as in your db example
+    res1 = m_client.insert(
+    collection_name="demo_collection",
+    data=data
+)
 
 # ---------------------------------------------------------------
 async def load_files():
@@ -294,12 +391,14 @@ async def load_files():
               "id": i, 
               "vector": documents_[i]['embedding'], 
               "text": documents_[i]['document'], 
-              "subject": "superheroes",
+              "subject": documents_[i]['subject'],
               "year" : "2024"
               } 
               for i in range(len(documents_)) ]
 
     # Assuming 'documents' is a list of dictionaries as in your db example
+    print("inserting...")
+    print(data)
     res1 = m_client.insert(
     collection_name="demo_collection",
     data=data
@@ -333,20 +432,58 @@ async def do_rag(query):
 )
     return search_results
 
+def delete_by_subject(subject):
+
+    res_ = m_client.query(
+        collection_name="demo_collection",
+        filter=f"subject == '{subject}'",
+        output_fields=["text", "subject"],
+    )
+
+    for _ in range(len(res_)):
+        res = m_client.delete( 
+        collection_name="demo_collection",
+        filter=f"subject == '{subject}'"
+    )
+
 # ---------------------------------------------------------------
 @rt('/upload')
 async def post(request: Request):
     """ Upload file(s) from user """
 
     form = await request.form()
-   
+
     uploaded_files = form.getlist("files")  # Use getlist to get a list of files
     print(form)
 
-    os.makedirs(bag.dir_out, exist_ok=True) 
+    os.makedirs(bag.dir_out, exist_ok=True)
 
     for uploaded_file in uploaded_files:
-        print(f"Uploaded file: {uploaded_file}")
+        print(f"Uploaded file: {uploaded_file.filename}")
+
+        res = []
+        try:
+            res = m_client.query(
+                collection_name="demo_collection",
+                filter=f"subject == '{uploaded_file.filename}'",
+                output_fields=["text", "subject"],
+            )
+            print(res)
+        except:
+            pass
+            
+
+        if len(res) > 0:
+            print("deleting...")
+            delete_by_subject(uploaded_file.filename)
+            print("inserting...")
+
+            with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
+                f.write(uploaded_file.file.read())
+
+            await reload_files(uploaded_file.filename)
+            return ""
+            
 
         bag.uploaded_files.append(uploaded_file.filename)
 
@@ -365,34 +502,83 @@ async def post():
     global m_client
     global isRAG
 
-    # a query that retrieves all entities matching filter expressions.
-    res = m_client.query(
-        collection_name="demo_collection",
-        filter="subject == 'superheroes' and year == '2024'",
-        output_fields=["text", "subject", "year"],
-    )
-    print(f"DOCS before deletion:\n{res}")
-    
-    for _ in range(loaded_files_len):
-        res = m_client.delete( 
-        collection_name="demo_collection",
-        filter="subject == 'superheroes'"
-        )
+    os.system(f"find {bag.dir_out} -type f -delete")
 
     # a query that retrieves all entities matching filter expressions.
-    res = m_client.query(
-        collection_name="demo_collection",
-        filter="subject == 'superheroes'",
-        output_fields=["text", "subject"],
-    )
-    print(f"DOCS after deletion:\n{res}")
+
+    for subject in bag.uploaded_files:
+        res_ = m_client.query(
+            collection_name="demo_collection",
+            filter=f"subject == '{subject}'",
+            output_fields=["text", "subject", "year"],
+        )
+        print(f"DOCS before deletion:\n{res_}")
+
+        # delete ALL files, include preuploaded
+        #for _ in range(len(res_)):
+        
+        for _ in range(loaded_files_len):
+            res = m_client.delete( 
+            collection_name="demo_collection",
+            filter=f"subject == '{subject}'"
+        )
+
+        print(res)
+
+        # a query that retrieves all entities matching filter expressions.
+        res = m_client.query(
+            collection_name="demo_collection",
+            filter=f"subject == '{subject}'",
+            output_fields=["text", "subject"],
+        )
+        print(f"DOCS after deletion:\n{res}")
 
     isRAG = False
 
     bag.uploaded_files = []
 
     # Update the response to display all uploaded filenames
-    return Div(id="files", hx_swap_oob='true')
+    return Div(Ul(id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_obb=True)
+
+
+# return Div(Div(id="upload-container"), Script(
+#             """
+#             const container = document.getElementById('upload-container');
+#             const fileInput = document.getElementById('file-upload_');
+#             const form = document.getElementById('upload-form');;
+            
+#             container.addEventListener('dragover', (event) => {
+#                 event.preventDefault();
+#             });
+
+#             container.addEventListener('drop', (event) => {
+#                 event.preventDefault();
+
+#                 //alert("here1");
+
+#                 const files = event.dataTransfer.files; 
+
+#                 fileInput.files = files; 
+
+#                 form.dispatchEvent(new Event('submit')); 
+#             });
+
+#             container.addEventListener('change', () => {
+#                 event.preventDefault(); 
+
+#                 const files = event.dataTransfer.files; 
+
+#                 fileInput.files = files; 
+
+#                 form.dispatchEvent(new Event('submit')); 
+#                 //here1
+
+#                 });
+#             """,
+#             id="upload-script"
+#         ),
+#     id="upload-container-wrapper", hx_obb_swap="true")
+
                     
 #---------------------------------------------------------------
 def get_uploaded_files_list():
@@ -404,6 +590,8 @@ def get_uploaded_files_list():
         lis.append(
             Li(filename, cls='uploaded-file-cls')
         )
+
+    #Ul(Li(filename, cls='uploaded-file-cls'), id='uploaded-files-list', cls="uploaded-files-list-cls")
 
     if len(lis) == 0:
         return Div(Ul(id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_obb=True)

@@ -131,9 +131,14 @@ ul li {
     margin-top: 10px;
 }
 
-.clear-files {
+#clear-files {
      margin-left: 12px;
 }
+
+#clear-files:active {
+    /* Styles when the button is clicked */
+    /* transform: scale(0.95); */
+  }
 
 .select-files-btn {
     margin: 0px;
