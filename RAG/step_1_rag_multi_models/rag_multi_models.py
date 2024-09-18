@@ -132,7 +132,7 @@ def get():
                     id="upload-form",
                     hx_post="/upload",
                     target_id="uploaded-files-list",
-                    hx_swap="beforeend",
+                    hx_swap="innerHTML",
                     enctype="multipart/form-data",
                     cls="upload-cls"
                     ),
@@ -391,7 +391,8 @@ async def load_files():
               "vector": documents_[i]['embedding'], 
               "text": documents_[i]['document'], 
               "subject": documents_[i]['subject'],
-              "year" : "2024"
+              "year" : "2024",
+              "doc_type" : "upload"
               } 
               for i in range(len(documents_)) ]
 
@@ -482,21 +483,22 @@ async def post(request: Request):
             delete_by_subject(uploaded_file.filename)
             #print("inserting...")
 
-            with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
-                f.write(uploaded_file.file.read())
+            #with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
+            #    f.write(uploaded_file.file.read())
 
-            await reload_files(uploaded_file.filename)
-            return ""
+            #await reload_files(uploaded_file.filename)
+            continue
             
-
-        bag.uploaded_files.append(uploaded_file.filename)
+        if not len(res) > 0:
+            print(f"{len(res)} ... adding")
+            bag.uploaded_files.append(uploaded_file.filename)
 
         with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
             f.write(uploaded_file.file.read())
 
     await load_files()
 
-    return [Li(f"{uploaded_file.filename}", id='uploaded-file') for uploaded_file in uploaded_files]
+    return [Li(f"{uploaded_file}", id='uploaded-file') for uploaded_file in bag.uploaded_files]
 
 # ---------------------------------------------------------------
 @rt('/delete-all-docs')
@@ -505,39 +507,41 @@ async def post():
 
     global m_client
     global isRAG
+    global loaded_files_counter
 
     os.system(f"find {bag.dir_out} -type f -delete")
 
     # a query that retrieves all entities matching filter expressions.
 
-    for subject in bag.uploaded_files:
-        res_ = m_client.query(
-            collection_name="demo_collection",
-            filter=f"subject == '{subject}'",
-            output_fields=["text", "subject", "year"],
-        )
-        print(f"DOCS before deletion:\n{res_}")
+    #for subject in bag.uploaded_files:
+    res_ = m_client.query(
+        collection_name="demo_collection",
+        filter=f"doc_type == 'upload''",
+        output_fields=["text", "subject", "year"],
+    )
+    print(f"DOCS before deletion:\n{res_}")
 
-        # delete ALL files, include preuploaded
-        #for _ in range(len(res_)):
-        
-        for _ in range(loaded_files_len):
-            res = m_client.delete( 
-            collection_name="demo_collection",
-            filter=f"subject == '{subject}'"
-        )
+    # delete ALL files, include preuploaded
+    #for _ in range(len(res_)):
+    
+    #for _ in range(loaded_files_len):
+    res = m_client.delete( 
+    collection_name="demo_collection",
+    filter=f"doc_type == 'upload'"
+    )
 
-        print(res)
+    #print(res) 
 
-        # a query that retrieves all entities matching filter expressions.
-        res = m_client.query(
-            collection_name="demo_collection",
-            filter=f"subject == '{subject}'",
-            output_fields=["text", "subject"],
-        )
-        print(f"DOCS after deletion:\n{res}")
+    # a query that retrieves all entities matching filter expressions.
+    res = m_client.query(
+        collection_name="demo_collection",
+        filter=f"doc_type == 'upload'",
+        output_fields=["text", "subject"],
+    )
+    print(f"DOCS after deletion:\n{res}")
 
     isRAG = False
+    loaded_files_counter = 0
 
     bag.uploaded_files = []
 
@@ -831,7 +835,7 @@ async def ws(data:str, send, model:str, strict:str):
     if isRAG:
         context = await do_rag(data)
 
-        #print(f"doing rag: {context}")
+        print(f"doing rag: {context}")
 
         for l in context:
             if len(l) == 0:
