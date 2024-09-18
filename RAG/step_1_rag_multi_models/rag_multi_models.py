@@ -357,9 +357,9 @@ async def reload_files(filename):
                 filter=f"subject == '{documents_[0]['subject']}'",
                 output_fields=["text", "subject"],
             )
-    print(res)
-    print("inserting...")
-    print(data) 
+    #print(res)
+    #print("inserting...")
+    #print(data) 
 
     # Assuming 'documents' is a list of dictionaries as in your db example
     res1 = m_client.insert(
@@ -397,8 +397,8 @@ async def load_files():
               for i in range(len(documents_)) ]
 
     # Assuming 'documents' is a list of dictionaries as in your db example
-    print("inserting...")
-    print(data)
+    #print("inserting...")
+    #print(data)
     res1 = m_client.insert(
     collection_name="demo_collection",
     data=data
@@ -468,15 +468,15 @@ async def post(request: Request):
                 filter=f"subject == '{uploaded_file.filename}'",
                 output_fields=["text", "subject"],
             )
-            print(res)
+            #print(res)
         except:
             pass
             
 
         if len(res) > 0:
-            print("deleting...")
+            #print("deleting...")
             delete_by_subject(uploaded_file.filename)
-            print("inserting...")
+            #print("inserting...")
 
             with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
                 f.write(uploaded_file.file.read())
