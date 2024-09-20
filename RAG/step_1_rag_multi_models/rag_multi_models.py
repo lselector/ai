@@ -106,8 +106,9 @@ def get():
                     cls="model-strict-container"),
                     Group( 
                      Input(id="new-prompt", type="text", name="data"),
-                     Button("Submit", onclick="setScrollFalse()")
+                     Button("Submit", id="submitButton", onclick="setScrollTrue();")
                      ),
+                     id="form-id",
                      ws_send=True, hx_ext="ws", ws_connect="/wscon", 
                      target_id='message-list',
                      hx_swap="beforeend",
@@ -199,51 +200,89 @@ def get():
         Script(
             """
 
-            //const messageList = document.getElementById('chatlist');
-            //let timeoutId; 
-
-            //const observer = new MutationObserver(() => {
-                // Clear any existing timeout
-            //    clearTimeout(timeoutId);
-
-                // Set a new timeout to trigger scrolling after 1 second of inactivity
-            //    timeoutId = setTimeout(() => {
-            //        scrollToBottom(); 
-            //    }, 1000);
-            //});
-
-            // Start observing the 'message-list' div for changes
-            //observer.observe(messageList, { childList: true, subtree: true });
-
-            //function scrollToBottom() {
-            //    messageList.scrollTop = messageList.scrollHeight;
-            //}
-
-            const messageList = document.getElementById('chatlist');
+            const messageList = document.getElementById('chatlist')
+            const parent = messageList.parentElement;
             let hasScrolled = false;
 
-            const observer = new MutationObserver(() => {
-            if (!hasScrolled) {
-                smoothScrollToBottom(); 
-                hasScrolled = true;
+            let scrolledPercent_ = 0       
+
+             messageList.addEventListener('scroll', () => {
+                const scrollTop = messageList.scrollTop; // Current scroll position from the top
+                const scrollHeight = messageList.scrollHeight; // Total height of scrollable content
+                const clientHeight = messageList.clientHeight; // Visible height of the div
+
+                scrolledPercent = (scrollTop / (scrollHeight - clientHeight)) * 100;
+                
+                
+                set_scrolled_percent(scrolledPercent)
+            });
+
+            function set_scrolled_percent(new_scrolledPercent_) {
+                scrolledPercent_ = new_scrolledPercent_
+                //console.log(scrolledPercent_);
             }
+
+            const observer = new MutationObserver(() => {
+                    
+                    if (hasScrolled) {
+                    if (scrolledPercent_ > 99) {
+                    scrollToBottom();
+                    } else {
+                    smoothScrollToBottom();
+                    }
+                    //alert("we did scroll");
+                    //hasScrolled = false;
+                    }
+                    
             });
 
             observer.observe(messageList, { childList: true, subtree: true });
+
+            function scrollToBottom() {
+                messageList.scrollTop = messageList.scrollHeight;
+            }
 
             function smoothScrollToBottom() {
                 messageList.scrollTo({
                     top: messageList.scrollHeight,
                     behavior: 'smooth'
                 });
-                }
-            
+              }
 
             function setScrollFalse() {
                 hasScrolled = false;
             }
+            function setScrollTrue() {
+                hasScrolled = true;
+                setFocus();
+            }
+
+            let previousScrollPosition = 0; 
+
+            function handleScroll() {
+            const currentScrollPosition = messageList.scrollTop;
+
+            if (currentScrollPosition < previousScrollPosition) {
+                // Scrolling up
+                setScrollFalse(); // Call your desired method here
+            }
+
+            previousScrollPosition = currentScrollPosition;
+            }
+
+            // Attach the scroll event listener
+            messageList.addEventListener('scroll', handleScroll);
+
+            function setFocus() { 
+                setTimeout(() => {
+                    const inputField = document.getElementById('new-prompt');
+                    inputField.focus();
+                }, 100); 
+            }
+
             """
         ),
+
         Script(
             """ 
                 function createDiv() {
@@ -500,45 +539,11 @@ async def post():
 
     os.system(f"find {bag.dir_out} -type f -delete")
 
-    # a query that retrieves all entities matching filter expressions.
-
-    #for subject in bag.uploaded_files:
-    # res= m_client.query(
-    #     collection_name="demo_collection",
-    #     filter=f"doc_type == 'upload''",
-    #     output_fields=["text", "subject", "year"],
-    # )
-    # print(f"DOCS before deletion:\n{res}")
-
-    # delete ALL files, include preuploaded
-    #for _ in range(len(res_)):
-    # res_ = m_client.delete( 
-    #         collection_name="demo_collection",
-    #         filter=f"doc_type == 'upload'"
-    #     )
-
     m_client.drop_collection("demo_collection")
     m_client.create_collection(
     collection_name="demo_collection",
     dimension=384  # The vectors we will use in this demo has 384 dimensions
     )
-
-    # while len(res_) > 0:
-        
-    #     res_ = m_client.delete( 
-    #         collection_name="demo_collection",
-    #         filter=f"doc_type == 'upload'"
-    #     )
-    #     print(f"res: {res_}") 
-
-    # a query that retrieves all entities matching filter expressions.
-     
-    # res = m_client.query(
-    #         collection_name="demo_collection",
-    #         filter=f"doc_type == 'upload'",
-    #         output_fields=["text", "subject", "doc_type"]
-    # )
-    #print(f"DOCS after deletion:\n{res}")
 
     isRAG = False
 
@@ -546,46 +551,6 @@ async def post():
 
     # Update the response to display all uploaded filenames
     return Ul(id='uploaded-files-list', cls="uploaded-files-list-cls", hx_swap_obb=True)
-
-
-# return Div(Div(id="upload-container"), Script(
-#             """
-#             const container = document.getElementById('upload-container');
-#             const fileInput = document.getElementById('file-upload_');
-#             const form = document.getElementById('upload-form');;
-            
-#             container.addEventListener('dragover', (event) => {
-#                 event.preventDefault();
-#             });
-
-#             container.addEventListener('drop', (event) => {
-#                 event.preventDefault();
-
-#                 //alert("here1");
-
-#                 const files = event.dataTransfer.files; 
-
-#                 fileInput.files = files; 
-
-#                 form.dispatchEvent(new Event('submit')); 
-#             });
-
-#             container.addEventListener('change', () => {
-#                 event.preventDefault(); 
-
-#                 const files = event.dataTransfer.files; 
-
-#                 fileInput.files = files; 
-
-#                 form.dispatchEvent(new Event('submit')); 
-#                 //here1
-
-#                 });
-#             """,
-#             id="upload-script"
-#         ),
-#     id="upload-container-wrapper", hx_obb_swap="true")
-
                     
 #---------------------------------------------------------------
 def get_uploaded_files_list():
@@ -826,7 +791,7 @@ async def ws(data:str, send, model:str, strict:str):
         Div(get_loading(), hx_swap_oob="beforeend", id="message-list")
     )
 
-     # Send the clear input field command to the user
+    # Send the clear input field command to the user
     await send(ChatInput())
 
     await asyncio.sleep(0)
