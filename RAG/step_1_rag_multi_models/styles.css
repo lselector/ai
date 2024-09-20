@@ -72,10 +72,18 @@ ul li {
     border: none;
 }
 
-/* .text-upload { */
-    /* padding: 15px; */
-    /* padding-left: 50px; */
-/* } */
+.text-upload {
+    margin-right: 10px;
+}
+
+.loading-container{
+    display: flex;
+    align-items: center;
+}
+
+.file-upload-line {
+    max-width: 220px;
+}
 
 @media (max-width: 1040px) {
    

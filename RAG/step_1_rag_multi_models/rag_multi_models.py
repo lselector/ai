@@ -47,7 +47,6 @@ model = "mistral:7b-instruct-v0.3-q4_0"
 messages = []
 messages_for_show = []
 bag.uploaded_files = []
-loaded_files_counter = 0
 loaded_files_len = 0
 m_client = None
 isRAG = False
@@ -63,9 +62,13 @@ async def init():
     """ Init vectorDB """
     global m_client
     m_client = MilvusClient("./milvus_demo.db")
+    m_client.create_collection(
+    collection_name="demo_collection",
+    dimension=384  # The vectors we will use in this demo has 384 dimensions
+    )
     # To preload files in Server. 
     # If you want to have RAG of some default docs
-    # await load_files()
+    # await load_file()
     
 # ---------------------------------------------------------------
 @app.on_event("startup")
@@ -117,7 +120,9 @@ def get():
                     ),
                     Div(
                     Div(
+                    Div(
                     Div("Uploaded Files:", cls="text-upload"),
+                    id="loading-container", cls="loading-container"),
                     Div(
                     Div(
                     get_uploaded_files_list(),
@@ -128,13 +133,18 @@ def get():
                     Form(
                     Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", onchange="document.getElementById('submit-upload-btn').click()"),
                     Button('Select Files', cls="select-files-btn", type='button', onclick="document.getElementById('file-upload_').click()"),
-                    Button(type="submit", id="submit-upload-btn", style="display: none"),
+                    Button(type="submit", 
+                           id="submit-upload-btn", 
+                           onclick="createDiv();", 
+                           style="display: none",
+                           ),
+                    **{'hx-on:htmx:after-request':"deleteUploadAnimation();"},
                     id="upload-form",
                     hx_post="/upload",
                     target_id="uploaded-files-list",
-                    hx_swap="innerHTML",
+                    hx_swap="beforeend",
                     enctype="multipart/form-data",
-                    cls="upload-cls"
+                    cls="upload-cls",
                     ),
                     Form(Group(
                     Button("Clear", type="submit", id="clear-files")
@@ -163,6 +173,8 @@ def get():
 
                 //alert("here1");
 
+                createDiv();
+
                 const files = event.dataTransfer.files; 
 
                 fileInput.files = files; 
@@ -172,6 +184,8 @@ def get():
 
             container.addEventListener('change', () => {
                 event.preventDefault(); 
+
+                createDiv();
 
                 const files = event.dataTransfer.files; 
 
@@ -232,7 +246,33 @@ def get():
         ),
         Script(
             """ 
-            
+                function createDiv() {
+                // Create the new div element
+                const newDiv = document.createElement('div');
+                //newDiv.textContent = "This is a new div!"; // Add some content to the new div
+
+                newDiv.id = 'loading-file-id';
+
+                newDiv.className = "loading-line file-upload-line";
+
+                // Get the parent div where you want to add the new div
+                const parentDiv = document.getElementById('loading-container');
+
+                // Append the new div to the parent div
+                parentDiv.appendChild(newDiv);
+                }
+
+
+                function deleteUploadAnimation() {
+                // 1. Get the div element by its ID
+                let divToDelete = document.getElementById("loading-file-id");
+
+                // 2. Check if the div exists
+                if (divToDelete) {
+                    // 3. Remove the div from its parent
+                    divToDelete.parentNode.removeChild(divToDelete); 
+                } 
+                }
             """
         ),
         cls="wrapper-uploaded-files-internal",
@@ -248,44 +288,38 @@ def get():
     return main_page
 
 # ---------------------------------------------------------------
-def read_files_from_folder():
-    """ Read files from folder and convert them into vectors/chunks """
+def read_files_from_folder(filename, file_path):
+    """ Read file from folder and convert it into vectors/chunks """
     docs = []
-    global loaded_files_counter
 
-    os.makedirs(bag.dir_out, exist_ok=True) 
-    for filename in os.listdir(bag.dir_out):
-        file_path = os.path.join(bag.dir_out, filename)
-        if os.path.isfile(file_path):  
-            with open(file_path, 'r') as file:
-                
-                text = file.read() 
+    if os.path.isfile(file_path):  
+        with open(file_path, 'r') as file:
+            
+            text = file.read() 
 
-                print(f"name:{filename} File added {text[:100]}, counter: {loaded_files_counter}")
+            print(f"name:{filename} File added {text[:100]}")
+            
+            chunks = text.split("\n\n") 
 
-                loaded_files_counter+=1
-                
-                chunks = text.split("\n\n") 
+            # 3. Generate Embeddings
+            model = SentenceTransformer('all-MiniLM-L6-v2') 
+            embeddings = model.encode(chunks)
 
-                # 3. Generate Embeddings
-                model = SentenceTransformer('all-MiniLM-L6-v2') 
-                embeddings = model.encode(chunks)
+            # 4. Format for db, including 'subject' field
+            # You'll need to determine the subject for each file. 
+            # Here, I'm just using the filename as a placeholder. 
+            # You might need more sophisticated logic to extract the subject from the file content.
+            subject = filename  # Replace with your actual subject extraction logic
 
-                # 4. Format for db, including 'subject' field
-                # You'll need to determine the subject for each file. 
-                # Here, I'm just using the filename as a placeholder. 
-                # You might need more sophisticated logic to extract the subject from the file content.
-                subject = filename  # Replace with your actual subject extraction logic
-
-                documents = [
-                    {
-                        "document": chunk,
-                        "embedding": embedding.tolist(),
-                        "subject": subject  # Add the subject field
-                    }
-                    for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
-                ]
-                docs.extend(documents)
+            documents = [
+                {
+                    "document": chunk,
+                    "embedding": embedding.tolist(),
+                    "subject": subject  # Add the subject field
+                }
+                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+            ]
+            docs.extend(documents)
 
     return docs
 
@@ -321,65 +355,14 @@ def get_chunks(filename):
     return documents
 
 # ---------------------------------------------------------------
-async def reload_files(filename):
-    """ Reload files to VectorDB """
-    
-    global m_client
-    global loaded_files_len
-    global isRAG
-
-    m_client.create_collection(
-    collection_name="demo_collection",
-    dimension=384  # The vectors we will use in this demo has 384 dimensions
-    )
-
-    documents_ = get_chunks(filename)
-
-    loaded_files_len = len(documents_)
-
-    if loaded_files_len > 0:
-        isRAG = True
-    
-    data = []
-    for i in range(len(documents_)):
-        data.append({
-                "id": i, 
-                "vector": documents_[i]['embedding'], 
-                "text": documents_[i]['document'], 
-                "subject": documents_[i]['subject'],
-                "year" : "2024"
-                })
-                
-
-    res = m_client.query(
-                collection_name="demo_collection",
-                filter=f"subject == '{documents_[0]['subject']}'",
-                output_fields=["text", "subject"],
-            )
-    #print(res)
-    #print("inserting...")
-    #print(data) 
-
-    # Assuming 'documents' is a list of dictionaries as in your db example
-    res1 = m_client.insert(
-    collection_name="demo_collection",
-    data=data
-)
-
-# ---------------------------------------------------------------
-async def load_files():
+async def load_file(filename, file_path):
     """ Load files to VectorDB """
     
     global m_client
     global loaded_files_len
     global isRAG
 
-    m_client.create_collection(
-    collection_name="demo_collection",
-    dimension=384  # The vectors we will use in this demo has 384 dimensions
-    )
-
-    documents_ = read_files_from_folder()
+    documents_ = read_files_from_folder(filename, file_path)
 
     loaded_files_len = len(documents_)
 
@@ -397,12 +380,10 @@ async def load_files():
               for i in range(len(documents_)) ]
 
     # Assuming 'documents' is a list of dictionaries as in your db example
-    #print("inserting...")
-    #print(data)
     res1 = m_client.insert(
     collection_name="demo_collection",
     data=data
-)
+    )
 
 # ---------------------------------------------------------------
 async def do_rag(query):
@@ -439,17 +420,35 @@ async def do_rag(query):
 
 def delete_by_subject(subject):
 
+    subject_ = subject.split('.')[0]
+
     res_ = m_client.query(
         collection_name="demo_collection",
-        filter=f"subject == '{subject}'",
+        filter=f"subject == '{subject_}'",
         output_fields=["text", "subject"],
     )
 
     for _ in range(len(res_)):
         res = m_client.delete( 
         collection_name="demo_collection",
-        filter=f"subject == '{subject}'"
+        filter=f"subject == '{subject_}'"
     )
+        
+async def isFileUploaded(filename):
+
+        try:
+            res = m_client.query(
+                collection_name="demo_collection",
+                filter=f"subject == '{filename}'",
+                output_fields=["text", "subject"],
+            )
+            print(f"res: {res}")
+            if len(res) > 0:
+                return True
+            else:
+                return False
+        except:
+            return False
 
 # ---------------------------------------------------------------
 @rt('/upload')
@@ -459,46 +458,37 @@ async def post(request: Request):
     form = await request.form()
 
     uploaded_files = form.getlist("files")  # Use getlist to get a list of files
-    print(form)
+    #print(form)
+
+    uploaded_files_to_show = []
 
     os.makedirs(bag.dir_out, exist_ok=True)
+
+    print(f"Files to upload: {uploaded_files}")
 
     for uploaded_file in uploaded_files:
         print(f"Uploaded file: {uploaded_file.filename}")
 
-        res = []
-        try:
-            res = m_client.query(
-                collection_name="demo_collection",
-                filter=f"subject == '{uploaded_file.filename}'",
-                output_fields=["text", "subject"],
-            )
-            #print(res)
-        except:
-            pass
-            
-
-        if len(res) > 0:
-            #print("deleting...")
-            delete_by_subject(uploaded_file.filename)
-            #print("inserting...")
-
-            #with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
-            #    f.write(uploaded_file.file.read())
-
-            #await reload_files(uploaded_file.filename)
-            continue
-            
-        if not len(res) > 0:
-            print(f"{len(res)} ... adding")
-            bag.uploaded_files.append(uploaded_file.filename)
-
         with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
             f.write(uploaded_file.file.read())
 
-    await load_files()
+        is_file_uploaded_ = await isFileUploaded(uploaded_file.filename)
 
-    return [Li(f"{uploaded_file}", id='uploaded-file') for uploaded_file in bag.uploaded_files]
+        print(f"is_file_uploaded_:{is_file_uploaded_}")
+
+        if is_file_uploaded_:
+            print(f"reloading...{uploaded_file.filename}")
+            delete_by_subject(uploaded_file.filename)
+            
+        else:
+            print(f"adding...{uploaded_file.filename}")
+            bag.uploaded_files.append(uploaded_file.filename)
+            uploaded_files_to_show.append(uploaded_file.filename)
+
+        
+        await load_file(uploaded_file.filename,f"{bag.dir_out}/{uploaded_file.filename}")
+
+    return [Li(f"{uploaded_file}", id='uploaded-file') for uploaded_file in uploaded_files_to_show]
 
 # ---------------------------------------------------------------
 @rt('/delete-all-docs')
@@ -507,46 +497,55 @@ async def post():
 
     global m_client
     global isRAG
-    global loaded_files_counter
 
     os.system(f"find {bag.dir_out} -type f -delete")
 
     # a query that retrieves all entities matching filter expressions.
 
     #for subject in bag.uploaded_files:
-    res_ = m_client.query(
-        collection_name="demo_collection",
-        filter=f"doc_type == 'upload''",
-        output_fields=["text", "subject", "year"],
-    )
-    print(f"DOCS before deletion:\n{res_}")
+    # res= m_client.query(
+    #     collection_name="demo_collection",
+    #     filter=f"doc_type == 'upload''",
+    #     output_fields=["text", "subject", "year"],
+    # )
+    # print(f"DOCS before deletion:\n{res}")
 
     # delete ALL files, include preuploaded
     #for _ in range(len(res_)):
-    
-    #for _ in range(loaded_files_len):
-    res = m_client.delete( 
+    # res_ = m_client.delete( 
+    #         collection_name="demo_collection",
+    #         filter=f"doc_type == 'upload'"
+    #     )
+
+    m_client.drop_collection("demo_collection")
+    m_client.create_collection(
     collection_name="demo_collection",
-    filter=f"doc_type == 'upload'"
+    dimension=384  # The vectors we will use in this demo has 384 dimensions
     )
 
-    #print(res) 
+    # while len(res_) > 0:
+        
+    #     res_ = m_client.delete( 
+    #         collection_name="demo_collection",
+    #         filter=f"doc_type == 'upload'"
+    #     )
+    #     print(f"res: {res_}") 
 
     # a query that retrieves all entities matching filter expressions.
-    res = m_client.query(
-        collection_name="demo_collection",
-        filter=f"doc_type == 'upload'",
-        output_fields=["text", "subject"],
-    )
-    print(f"DOCS after deletion:\n{res}")
+     
+    # res = m_client.query(
+    #         collection_name="demo_collection",
+    #         filter=f"doc_type == 'upload'",
+    #         output_fields=["text", "subject", "doc_type"]
+    # )
+    #print(f"DOCS after deletion:\n{res}")
 
     isRAG = False
-    loaded_files_counter = 0
 
     bag.uploaded_files = []
 
     # Update the response to display all uploaded filenames
-    return Div(Ul(id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_obb=True)
+    return Ul(id='uploaded-files-list', cls="uploaded-files-list-cls", hx_swap_obb=True)
 
 
 # return Div(Div(id="upload-container"), Script(
@@ -753,7 +752,7 @@ def get_loading():
     tid = f'message-{i}'
 
     loading = Div(
-        Div(cls="loading-line"),
+        Div(cls="loading-line", id="loading-line-id"),
         id=tid+"_")
 
     return loading
