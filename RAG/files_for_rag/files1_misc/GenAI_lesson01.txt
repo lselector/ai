@@ -1,0 +1,302 @@
+Lesson-01-notes
+July 31, 2023
+
+# --------------------------------------------------------------------------------------------------------------------
+What is the difference between transformer decoder model and transformer encoder decoder model?
+
+The terms "transformer decoder model" and "transformer encoder-decoder model" refer to different components or architectures within the transformer framework.
+
+1. **Transformer Decoder Model**: This typically refers to the decoding part of a transformer architecture, which is used in generating sequences, like in sequence-to-sequence tasks. A decoder-only model might be used in applications like text generation, where it generates a sequence of tokens based on a provided context or input sequence.
+
+2. **Transformer Encoder-Decoder Model**: This refers to the full transformer architecture that includes both an encoder and a decoder. The encoder takes an input sequence and compresses it into a continuous representation, known as the context or encoded sequence. The decoder then takes this encoded sequence and transforms it into an output sequence. This architecture is widely used in tasks like machine translation, where an input sequence in one language is encoded, and then decoded into an output sequence in another language.
+
+In summary, the transformer decoder model is just one part of the overall transformer architecture, whereas the transformer encoder-decoder model includes both the encoder and decoder parts, allowing for more complex sequence-to-sequence transformations.
+
+
+# --------------------------------------------------------------------------------------------------------------------
+How does encoding work in the decoder only model of transformer?
+
+In a decoder-only model of a transformer, like the architecture used in GPT models, there isn't a separate encoder component to process the input sequence. Instead, the input sequence is fed directly into the decoder.
+
+Here's a high-level overview of how it works:
+
+1. **Embedding Layer**: The input sequence, which could be a series of tokens representing words or characters, is first passed through an embedding layer. This converts each token into a continuous vector, which captures semantic information about the tokens.
+
+2. **Positional Encoding**: Since the transformer architecture doesn't inherently understand the order of tokens in a sequence, positional encodings are added to the embeddings. These provide information about the position of each token within the sequence.
+
+3. **Decoder Blocks**: The resulting sequence of embeddings, with positional encodings, is then passed through a series of decoder blocks. Each block consists of multi-head self-attention layers and feed-forward neural networks. The self-attention mechanism allows each token to focus on different parts of the input sequence, capturing dependencies between tokens.
+
+4. **Output Layer**: Finally, the output of the decoder is passed through a linear layer and a softmax activation to generate probabilities for each token in the vocabulary. The token with the highest probability can be selected as the output for that position in the sequence.
+
+In this architecture, the term "encoding" might be a bit misleading, as there's no separate encoding step like in an encoder-decoder model. Instead, the decoder itself handles both the interpretation of the input sequence and the generation of the output sequence. It's a more direct process that can be very effective for tasks like text generation or completion.
+
+
+# --------------------------------------------------------------------------------------------------------------------
+What is encoder-decoder transformer model used for?
+
+
+The encoder-decoder transformer model is a versatile architecture used for a variety of sequence-to-sequence tasks, where the input and output sequences may have different lengths or structures. Here are some common applications:
+
+1. **Machine Translation**: Translating a sentence from one language to another. The encoder processes the source language, and the decoder generates the translation in the target language.
+
+2. **Text Summarization**: Creating a concise summary of a longer piece of text. The encoder represents the original text, and the decoder generates the summary.
+
+3. **Speech Recognition**: Converting spoken language into written text. The encoder processes the audio signal, and the decoder translates it into text.
+
+4. **Image Captioning**: Generating a textual description of an image. The encoder can process the image, and the decoder produces a caption that describes it.
+
+5. **Question Answering**: Providing a concise answer to a question based on a given context or passage. The encoder represents the context, and the decoder generates the answer.
+
+6. **Video Description**: Describing the content of a video in text. The encoder processes the video frames, and the decoder generates a textual description.
+
+7. **Code Generation**: Converting natural language descriptions into computer code. The encoder understands the natural language, and the decoder generates the corresponding code.
+
+The encoder-decoder structure is effective for these tasks because it can capture complex relationships between input and output sequences. The encoder compresses the input sequence into a continuous representation that retains its essential information, and the decoder uses this representation to generate an output sequence that's appropriate for the task at hand.
+
+
+# --------------------------------------------------------------------------------------------------------------------
+What is the input to the embedding layer in transformer decoder model?
+
+In a transformer decoder model, the input to the embedding layer is typically a sequence of tokens representing the input text or sequence. These tokens are usually integers that correspond to words, subwords, or characters in a predefined vocabulary.
+
+Here's how the process generally works:
+
+1. **Tokenization**: The input text is broken down into smaller units, such as words, subwords, or characters. This process generates a sequence of tokens.
+
+2. **Mapping to Integer IDs**: Each token is mapped to a unique integer ID according to a predefined vocabulary. This vocabulary contains all the possible tokens that the model can recognize, and each token has a corresponding integer ID.
+
+3. **Input to Embedding Layer**: The sequence of integer IDs is then fed into the embedding layer of the transformer's decoder. The embedding layer consists of a lookup table that maps each integer ID to a continuous vector. These vectors are learned during training and capture the semantic meaning of the tokens.
+
+4. **Optional Additional Inputs**: In some sequence-to-sequence tasks using a full encoder-decoder architecture, the decoder may also receive additional information, such as encoder outputs or attention masks, to guide the decoding process.
+
+In a decoder-only model like GPT, the input sequence might be a prompt or context that you want the model to continue or respond to. In an encoder-decoder model, the input to the decoder might be a start token, previous output tokens, or other context depending on the specific task and implementation.
+
+# --------------------------------------------------------------------------------------------------------------------
+Explain difference between Attention and Self Attention?
+
+Attention and self-attention are mechanisms used in deep learning models, especially transformers, to capture relationships between different parts of a sequence. Here's how they differ:
+
+1. **Attention**:
+   - **General Concept**: Attention is a broad concept where a model learns to focus on certain parts of the input when processing it.
+   - **Different Sequences**: In standard attention mechanisms, the attention can be between two different sequences. For example, in an encoder-decoder architecture, the attention could be between the encoded input sequence and the generated output sequence.
+   - **Query, Key, Value**: The attention mechanism uses three components: query (from one sequence), key and value (from another sequence). The attention scores are computed based on the similarity between the query and the keys, and these scores are used to weight the values, allowing the model to focus on specific parts of the input.
+
+2. **Self-Attention**:
+   - **Specific Type of Attention**: Self-attention is a specific type of attention where the attention is computed within a single sequence, rather than between two different sequences.
+   - **Same Sequence**: In self-attention, the query, key, and value all come from the same sequence. This allows the model to understand relationships and dependencies between different parts of the same input.
+   - **Captures Internal Relationships**: By focusing on the same sequence, self-attention can capture internal relationships within the sequence, whether it's the relationship between words in a sentence or different parts of an image.
+
+In summary, while attention can refer to relationships between different parts of different sequences, self-attention specifically refers to relationships within the same sequence. Self-attention is a specialized case of attention and is a key component in modern transformer models, allowing them to understand the structure and meaning of the input data more effectively.
+
+
+# --------------------------------------------------------------------------------------------------------------------
+Single headed vs multiheaded self attention
+
+Self-attention can be implemented as either single-headed or multi-headed, and each approach has its characteristics and benefits:
+
+1. **Single-Headed Self-Attention**:
+   - **One Perspective**: Single-headed self-attention computes attention scores from one perspective or representation.
+   - **Simpler**: It's more straightforward and involves fewer parameters and computations compared to multi-headed attention.
+   - **Limited Focus**: Since it only has one head, it might not be able to capture multiple types of relationships between tokens simultaneously. It might focus on one particular aspect, like syntactic relationships, but miss others like semantic relationships.
+
+2. **Multi-Headed Self-Attention**:
+   - **Multiple Perspectives**: Multi-headed self-attention uses multiple attention heads, each with its weight matrices. This allows the model to attend to different parts of the input from different perspectives simultaneously.
+   - **Richer Representation**: By combining different attention patterns, multi-headed attention can capture more complex relationships between tokens, like both syntactic and semantic aspects at the same time.
+   - **More Parameters**: This approach involves more parameters and computations, as each head has its weight matrices. However, the increased complexity typically leads to better performance in many tasks.
+   - **Concatenation and Projection**: After computing attention scores using multiple heads, the results are concatenated and passed through a linear layer to project them into the expected output dimensionality.
+
+In summary, single-headed self-attention offers a simpler approach that looks at the input from one perspective, while multi-headed self-attention allows the model to capture different types of relationships simultaneously by looking at the input from multiple perspectives. Multi-headed attention is generally considered more powerful and is a standard component in modern transformer models like BERT and GPT.
+
+
+# --------------------------------------------------------------------------------------------------------------------
+Multiheaded attention in detail
+
+Multi-headed attention is a key mechanism in transformer models that enables the capture of different relationships in the input data simultaneously. Here's a detailed breakdown of how multi-headed attention works:
+
+1. **Dividing Into Heads**: In multi-headed attention, the model's attention is divided into multiple "heads." Each head computes its attention scores independently, allowing the model to focus on different aspects of the input simultaneously.
+
+2. **Query, Key, Value Matrices**: For each head, the input is projected into three different spaces: Query (Q), Key (K), and Value (V). These are computed using learned weight matrices that are unique to each head.
+
+   \[
+   Q = XW_Q, \quad K = XW_K, \quad V = XW_V
+   \]
+
+3. **Computing Attention Scores**: The attention scores for each head are computed by taking the dot product of the query and key matrices, followed by scaling and applying the softmax function. This gives a set of weights that represent how much each part of the input should be attended to.
+
+   \[
+   \text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+   \]
+
+   where \(d_k\) is the dimensionality of the key vectors, and the division by \(\sqrt{d_k}\) is a scaling factor that helps with training stability.
+
+4. **Applying Attention to Values**: The computed attention scores are used to weight the value matrix, resulting in a weighted sum of the values that reflects the attention pattern of that head.
+
+5. **Concatenating Heads**: The outputs from all the heads are concatenated together. This concatenation captures information from all the different perspectives provided by the heads.
+
+6. **Projection Layer**: Finally, the concatenated output is passed through a linear projection layer, which combines the information from different heads into a unified output representation.
+
+   \[
+   \text{MultiHead}(Q,K,V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_n)W^O
+   \]
+
+7. **Optional Components**: Multi-headed attention often includes additional components like residual connections and layer normalization, which can help with training stability and convergence.
+
+In summary, multi-headed attention allows a model to simultaneously focus on different parts of the input, capturing various types of relationships and patterns. This ability to attend to the input from multiple perspectives is part of what makes transformer models highly effective for many natural language processing and sequence-to-sequence tasks.
+
+# --------------------------------------------------------------------------------------------------------------------
+Stable diffusion
+
+Stable Diffusion is a process utilized in the context of generative modeling, particularly for generating complex data like images. It's a variant of the diffusion process, where random noise is gradually added to a data sample until it turns into pure noise, and then the process is reversed to generate new samples. Stable Diffusion modifies this process to make it more stable and efficient.
+
+Here's an outline of how Stable Diffusion typically works:
+
+1. **Noise Addition (Forward Process)**:
+   - Start with a real data sample (e.g., an image).
+   - Gradually add noise over a series of steps or iterations.
+   - Continue until the data becomes pure noise.
+   - This part of the process is often designed to follow a specific distribution (e.g., Gaussian), and the noise levels are carefully controlled to make the process stable and reversible.
+
+2. **Noise Removal (Reverse Process)**:
+   - Start with the pure noise generated in the forward process.
+   - Gradually remove the noise over a series of steps, similar to the forward process but in reverse.
+   - A neural network is trained to perform this reverse process, learning to generate data samples that resemble the real data.
+   - The reverse process often uses a specific schedule for noise removal, and additional constraints or regularization may be used to make the process stable and ensure that the generated samples follow the desired distribution.
+
+3. **Training the Model**:
+   - The model is typically trained using a combination of likelihood-based and adversarial training techniques.
+   - The training process aims to make the reverse process (from noise to data) match the true data distribution as closely as possible.
+
+4. **Generating New Samples**:
+   - To generate new samples, you can start with random noise and apply the trained reverse process.
+   - The resulting samples should resemble the real data but are newly generated and can vary widely based on the starting noise.
+
+Stable Diffusion aims to improve over other diffusion-based generative models by providing a more controlled and stable process. It can be particularly useful in tasks where traditional generative models like GANs and VAEs may struggle, and it can generate high-quality samples of complex data like high-resolution images.
+
+
+
+# --------------------------------------------------------------------------------------------------------------------
+How are query, key, value matrices calculated in self attention?
+
+In self-attention, part of the Transformer architecture, the query (Q), key (K), and value (V) matrices are derived from the input to the self-attention layer. Here's a step-by-step explanation of how they are calculated:
+
+1. **Input Representation**: The input to the self-attention layer is typically a matrix containing the embeddings of the tokens in a sequence. These embeddings are vector representations that capture the semantic information of the tokens.
+
+2. **Linear Transformation**: Three different linear (fully connected) layers are used to transform this input into the Q, K, and V matrices. Each of these linear layers has its own weight matrix (and optionally a bias vector), which are trainable parameters of the model.
+
+   - **Query Matrix (Q)**: Obtained by multiplying the input by the weight matrix associated with the queries, `W_q`. Mathematically, `Q = Input * W_q`.
+
+   - **Key Matrix (K)**: Obtained by multiplying the input by the weight matrix associated with the keys, `W_k`. Mathematically, `K = Input * W_k`.
+
+   - **Value Matrix (V)**: Obtained by multiplying the input by the weight matrix associated with the values, `W_v`. Mathematically, `V = Input * W_v`.
+
+3. **Size Considerations**: The dimensions of the Q, K, and V matrices are determined by the design of the self-attention layer. For example, if the input embeddings have a dimension of `d_model`, and you choose to have `d_k` dimensions for the keys and queries and `d_v` for the values, then the weight matrices will have corresponding shapes to achieve this transformation.
+
+4. **Multi-Head Attention (Optional)**: In a multi-head attention mechanism, the above process is done multiple times with different weight matrices for each "head." The results are then concatenated and linearly transformed to obtain the final Q, K, and V matrices.
+
+5. **Normalization (Optional)**: Some implementations might include normalization steps (e.g., Layer Normalization) either before or after the linear transformations.
+
+The Q, K, and V matrices are then used to calculate the attention scores, which determine how much focus each part of the input should have on every other part. The self-attention mechanism allows the model to consider the entire input sequence when processing each individual part, enabling it to capture long-range dependencies and relationships between tokens.
+
+
+# --------------------------------------------------------------------------------------------------------------------
+The ELI5 for attention head is really not easy.
+
+We start with one representation for each word, and with an MLP we produce 3 new representations for each word. Then we mix these representations in a way that allows us to produce one final contextualized representation for each word.
+
+The "not easy part" is how we mix it. In a way it doesn't really matter, we could say "we tried many things and this one is the best". We could also just show the maths. But that's not an explanation.
+
+One representation is "how I interpret this main word with all other secondary words", another representation is "how this word as a secondary word should be interpreted when all other words are perceived as the main word", and a final representation is "what should I keep from this word to build a final representation". It's hard to explain it if you didn't see the maths. I'm not able to do a real ELI5 on this. If you implement it by yourself it's usually more clear.
+
+The transformer is just a bunch of attention heads. If you get the attention head, the rest is easy.
+
+A(X) = softmax(Q @ K.T / sqrt(d)) @ V
+
+Q = X @ Wq
+K = X @ Wk
+V = X @ Wv
+
+There is a good explanation by Daniel Han-Chen
+
+https://github.com/danielhanchen 
+
+search for "danielhanchen" in this discussion
+
+https://www.reddit.com/r/MachineLearning/comments/r76igz/discussion_rant_most_of_us_just_pretend_to/ 
+
+
+The ChatGPT has 175 Billion parameters. All the knowledge it has is stored in these parameters. These parameters are part of different matrices in different layers. The values are also often shared between components - as shown in the above table presented by Google Bard.
+
+I asked Bard why the Input Embedding matrix is so big. 
+Here is the answer:
+
+The Input Embedding Matrix is so big because it needs to be able to represent a large vocabulary of words. The vocabulary of ChatGPT is over 500,000 words, so each word needs to be represented by a vector of 1024 dimensions. This means that the Input Embedding Matrix is a 500,000 x 1024 matrix, which is a very large matrix.
+
+And there are more reasons why it needs to be big (nuances of meaning, context sensitivity, efficiency, ...)
+
+# --------------------------------------------------------------------------------------------------------------------
+there are definite similarities in how chat models like ChatGPT and translation models like Google Translate are trained, since both rely on learning from textual examples:
+
+They are both trained on pairs or tuples of text data - (question, answer) pairs for chat and (sentence in language 1, sentence in language 2) for translation.
+The models learn to map associations between the paired examples - from question to answer for chat, and from one language to the other for translation.
+Large datasets of millions or billions of examples are needed to train both types of models.
+The training loss measures how well the model can reproduce the desired output text from the input, and parameters are optimized to minimize this loss.
+However, there are also some key differences:
+
+Chat models are trained to generate open-ended text as output, while translation models generate text in a different language by following strict rules.
+Chat training data requires more curation to ensure logical and consistent dialog. Translation data just needs accurate paired sentences.
+Chat models optimize conversation flow and coherence across multiple turns. Translation models focus on isolated sentence translation.
+Chat models are trained to reflect a consistent personality and background knowledge. Translation models do not need a consistent personality.
+So in summary, while both leverage paired textual examples as training data, chat and translation models have different objectives they optimize for during training, resulting in different capabilities. But the underlying machine learning approach of learning from example input-output pairs is very similar.
+
+# --------------------------------------------------------------------------------------------------------------------
+The intermediate vector representations generated by the encoder part of a translation model are typically not stored permanently. 
+
+Rather, they are generated dynamically during training and inference.
+
+Specifically:
+
+During training, for each input sentence, the encoder network converts it into a vector representation.
+
+This vector is passed to the decoder network, which tries to generate the output translation from it.
+
+The loss function compares the decoder's output to the reference translation and calculates the error.
+
+The error derivatives are backpropagated through the encoder and decoder to update their parameters.
+
+Once the training batch is complete, the intermediate vectors are discarded.
+
+The encoder and decoder have now learned a little better how to map between the languages.
+
+This continues for many iterations over the training data until the model is trained.
+
+At inference time, the trained encoder dynamically encodes a new input sentence into a vector, which the decoder converts to the output translation.
+
+So in summary, the intermediate vectors are not really stored as part of the model. They are temporary activations produced by the trained encoder network to ferry information from input to output.
+
+# --------------------------------------------------------------------------------------------------------------------
+A key part of training translation models is being able to evaluate whether a predicted translation is good or bad. Here are some common ways this is done:
+
+Cross-entropy loss: The model makes a prediction by outputting a probability for each possible translated word. The cross-entropy loss compares this distribution to the actual target words in the training data. Higher probability on wrong words leads to higher error.
+
+Attention mechanism: The model learns to pay attention to relevant parts of the input when generating the output. Errors in alignment between input and output are penalized.
+
+BLEU score: This measures overlap between predicted and actual reference translations using n-gram precision. More mismatch leads to lower BLEU score which is used as a training loss.
+
+Perplexity: This measures how surprised the model is by the reference translation. Higher perplexity indicates the model is making more incorrect predictions.
+
+Human evaluations: Samples of translations are verified by humans who score accuracy and fluency. Human scores provide a robust metric for model performance.
+
+# --------------------------------------------------------------------------------------------------------------------
+x
+
+
+# --------------------------------------------------------------------------------------------------------------------
+x
+
+
+# --------------------------------------------------------------------------------------------------------------------
+x
+
+
+# --------------------------------------------------------------------------------------------------------------------
+
