@@ -12,10 +12,14 @@ from starlette.requests import Request
 
 from mybag import *         # py_utils
 from myutils import *       # py_utils 
+import fitz, json, docx
+from bs4 import BeautifulSoup
+from io import BytesIO
 
-import ollama, asyncio, subprocess
+import ollama, asyncio
 from openai import OpenAI
 from pymilvus import MilvusClient
+import pandas as pd
 
 from sentence_transformers import SentenceTransformer
 
@@ -130,9 +134,12 @@ def get():
                     id="container", cls="upload-files"),
                     id="upload-container-wrapper"
                     ),
+                    Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",id="error-message", style="display: none; color: red;"),
+                    
                     Div(
                     Form(
-                    Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", onchange="document.getElementById('submit-upload-btn').click()"),
+                    Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", 
+                          onchange="document.getElementById('submit-upload-btn').click()", accept=".txt, .xlsx, .docx, .json, .pdf, .html"),
                     Button('Select Files', cls="select-files-btn", type='button', onclick="document.getElementById('file-upload_').click()"),
                     Button(type="submit", 
                            id="submit-upload-btn", 
@@ -169,18 +176,51 @@ def get():
                 event.preventDefault();
             });
 
+            //container.addEventListener('drop', (event) => {
+            //    event.preventDefault();
+//
+            //    //alert("here1");
+//
+            //    createDiv();
+//
+            //    const files = event.dataTransfer.files; 
+//
+            //    fileInput.files = files; 
+//
+            //    form.dispatchEvent(new Event('submit')); 
+            //});
+
+            function validateAndSubmit(input) {
+                const allowedExtensions = ['.txt', '.xlsx', '.docx', '.json', '.pdf', '.html'];
+                const files = input.files;
+                const errorMessage = document.getElementById('error-message');
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const fileExtension = file.name.split('.').pop().toLowerCase();
+
+                    if (!allowedExtensions.includes('.' + fileExtension)) {
+                        errorMessage.style.display = 'block';
+                        input.value = ''; 
+                        deleteUploadAnimation();
+                        return false; // Indicate invalid file type
+                    }
+                }
+
+                errorMessage.style.display = 'none';
+                return true; // Indicate all files are valid
+            }
+
             container.addEventListener('drop', (event) => {
                 event.preventDefault();
 
-                //alert("here1");
-
                 createDiv();
 
-                const files = event.dataTransfer.files; 
-
-                fileInput.files = files; 
-
-                form.dispatchEvent(new Event('submit')); 
+                if (validateAndSubmit(fileInput)) { // Check if validation passed
+                    const files = event.dataTransfer.files;
+                    fileInput.files = files;
+                    form.dispatchEvent(new Event('submit')); 
+                }
             });
 
             container.addEventListener('change', () => {
@@ -508,8 +548,17 @@ async def post(request: Request):
     for uploaded_file in uploaded_files:
         print(f"Uploaded file: {uploaded_file.filename}")
 
-        with open(f"{bag.dir_out}/{uploaded_file.filename}", "wb") as f:
-            f.write(uploaded_file.file.read())
+        file_bytes = await uploaded_file.read()
+
+        file_name = uploaded_file.filename.split('.')[0]
+        file_type = uploaded_file.headers.get("content-type") 
+        isCorrectType = convert_files(file_bytes, file_name, file_type)
+
+        if not isCorrectType:
+            print("Wrong Type!")
+            continue
+        
+        
 
         is_file_uploaded_ = await isFileUploaded(uploaded_file.filename)
 
@@ -523,7 +572,6 @@ async def post(request: Request):
             print(f"adding...{uploaded_file.filename}")
             bag.uploaded_files.append(uploaded_file.filename)
             uploaded_files_to_show.append(uploaded_file.filename)
-
         
         await load_file(uploaded_file.filename,f"{bag.dir_out}/{uploaded_file.filename}")
 
@@ -551,6 +599,138 @@ async def post():
 
     # Update the response to display all uploaded filenames
     return Ul(id='uploaded-files-list', cls="uploaded-files-list-cls", hx_swap_obb=True)
+
+#---------------------------------------------------------------
+def convert_files(file_bytes, file_name, file_type):
+    """ Converts different files to txt """
+    print(f"Filename: {file_name}, File type: {file_type}")
+
+    if file_type == "text/plain":
+        read_txt(file_bytes, file_name)
+        return True
+
+    elif file_type == "application/pdf":
+        read_pdf(file_bytes, file_name)
+        return True
+
+    elif file_type == "application/json":
+        read_json(file_bytes, file_name)
+        return True
+    
+    elif file_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        read_xlsx(file_bytes, file_name)
+        return True
+    
+    elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        read_docx(file_bytes, file_name)
+        return True
+    
+    elif file_type == "text/html":
+        read_html(file_bytes, file_name)
+        return True
+    
+    return False
+
+#---------------------------------------------------------------
+def read_html(file_bytes,filename):
+    """ Read MS Word file """
+
+    soup = BeautifulSoup(BytesIO(file_bytes), 'html.parser')
+
+    # Extract all the text from the HTML
+    all_text = soup.get_text(separator='\n')  # Use '\n' as separator for better readability
+
+    filename += "_html_"
+
+    write_txt(all_text.strip().encode('utf-8'), filename) 
+
+#---------------------------------------------------------------
+def read_docx(file_bytes,filename):
+    """ Read MS Word file """
+
+    doc = docx.Document(BytesIO(file_bytes))
+
+    # Extract text from the document
+    all_text = ""
+    for paragraph in doc.paragraphs:
+        all_text += paragraph.text + "\n"
+
+    filename += "_docx_"
+
+    write_txt(all_text.encode('utf-8'), filename) 
+
+#---------------------------------------------------------------
+def read_xlsx(file_bytes,filename):
+    """ Read Excel file """
+
+    excel_data = pd.read_excel(BytesIO(file_bytes))
+
+    output = BytesIO()
+    excel_data.to_excel(output, index=False)  # Write DataFrame to the BytesIO object
+    text_content = excel_data.to_csv(index=False, sep='\t').replace('\t', ' ')  
+
+    print(text_content)
+
+    filename += "_xlsx_"
+    write_txt(text_content.encode('utf-8'), filename) 
+
+
+#---------------------------------------------------------------
+def read_json(json_data, filename):
+    """ Read JSON file """
+
+    print(f"Text from pdf: {json_data}", flush=True) 
+
+    if isinstance(json_data, bytes):
+        json_data = json_data.decode('utf-8')
+        json_data = json.loads(json_data)  # Now parse the JSON string
+    
+    text_ = ""
+
+    def extract_text_recursive(data):
+        nonlocal text_
+
+        if isinstance(data, dict):
+            for value in data.values():
+                extract_text_recursive(value)
+        elif isinstance(data, list):
+            for item in data:
+                extract_text_recursive(item)
+        elif isinstance(data, str):
+            text_ += data + " "  
+
+    extract_text_recursive(json_data)
+    filename += "_json_"
+    write_txt(text_.strip().encode('utf-8'), filename)   
+
+#---------------------------------------------------------------
+def read_pdf(file_bytes,filename):
+    """ Read PDF file """
+    text = ""
+    with fitz.open(stream=file_bytes, filetype="pdf") as pdf:  # Open PDF from bytes
+        for page in pdf:
+            text += page.get_text()
+    
+    filename += "_pdf_"
+    bytes = text.encode('utf-8') 
+    write_txt(bytes, filename)
+
+#---------------------------------------------------------------
+def read_txt(file_bytes,filename):
+    """ Read txt file """
+    filename += "_txt_"
+    write_txt(file_bytes, filename)
+
+#---------------------------------------------------------------
+def write_txt(bytes, filename):
+    """ Write extracted text to txt file, use file name of original file """
+    #bag.write_dir = os.path.dirname(os.path.realpath(__file__))
+    write_path = bag.dir_out
+    os.makedirs(write_path, exist_ok=True)
+    write_path += "/"+filename+".txt"
+    print(f"saving file: {write_path}")
+    with open(write_path, "wb") as file:
+        file.write(bytes)
                     
 #---------------------------------------------------------------
 def get_uploaded_files_list():

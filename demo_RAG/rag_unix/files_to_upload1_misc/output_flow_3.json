@@ -1,0 +1,1370 @@
+{
+    "pages": [
+        {
+            "id": 1,
+            "page_name": "Title",
+            "perspective": "landscape",
+            "elements": [
+                {
+                    "id": 1,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(255, 255, 255)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "1 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 527.9999983104,
+                    "coord_y": 407.9999986944,
+                    "width": 1055.9999966208,
+                    "height": 815.9999973888,
+                    "connections": []
+                },
+                {
+                    "id": 2,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "transparent",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Insmed",
+                        "font_size": "60 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 336.8543989220659,
+                    "coord_y": 658.5983978924851,
+                    "width": 478.2719984695296,
+                    "height": 170.7839994534912,
+                    "connections": []
+                },
+                {
+                    "id": 3,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "type": "some type",
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "2024 Process Flow \n\n Process: 11 – Close the Books \n\n Audit Period: 12/31/2024 \n\n Final – 6/4/2024",
+                        "font_size": "20 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 395.9999987328,
+                    "coord_y": 406.59839869888515,
+                    "width": 431.9999986176,
+                    "height": 237.2063992409395,
+                    "connections": []
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "page_name": "Summary",
+            "perspective": "landscape",
+            "elements": [
+                {
+                    "id": 1,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(195, 216, 155)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Prepared By:\tInternal Audit\nReviewed By:\tManagement\nLast Edit:\t6/4/2024",
+                        "font_size": "10 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 329.99999894399997,
+                    "coord_y": 755.2511975831961,
+                    "width": 203.9999993472,
+                    "height": 59.999999808,
+                    "connections": []
+                },
+                {
+                    "id": 2,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(195, 216, 155)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Page 2 of 4",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 995.9999968128,
+                    "coord_y": 772.8767975267942,
+                    "width": 71.9999997696,
+                    "height": 23.9999999232,
+                    "connections": []
+                },
+                {
+                    "id": 3,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "transparent",
+                        "text_color": "RGB(96, 92, 172)"
+                    },
+                    "text_options": {
+                        "text": "Insmed",
+                        "font_size": "42 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 111.00479964478464,
+                    "coord_y": 753.0047975903846,
+                    "width": 185.9999994048,
+                    "height": 65.9999997888,
+                    "connections": []
+                },
+                {
+                    "id": 4,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(146, 205, 220)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Purpose\n\nThe purpose of this document is to identify the departments, systems and reports utilized in the Close the Books process and provide guidance on evidential matter and process / control owner responsibilities and management's judgment in documenting and sustaining a functioning internal control environment.\n\nDepartments, Systems and Reports\n\u2022[parg]Departments affecting this process\n[parg][parg]\u2022[parg]The Accounting function is responsible for:\n[parg][parg][parg][parg]\u2022[parg]Preparing month-end journal entries and reconciling balance sheet accounts\n[parg][parg][parg][parg]\u2022[parg]Producing monthly, quarterly, annual financial reports and related financial schedules / \t[parg][parg][parg]supporting documentation\n[parg][parg][parg][parg]\u2022[parg]Preparing and filing the necessary SEC filing requirements (10-Qs, 10K, etc.)\n[parg][parg][parg][parg]\u2022[parg]Vender or Service Provider analysis (SSAE 16 / SOC 1 review)\n[parg][parg][parg][parg]\u2022[parg]Reporting and Electronic Audit Evidence\n\u2022[parg]Systems utilized in this process are:\n[parg][parg]\u2022[parg]Oracle, EPM\n[parg]Reports - Insmed utilizes the following reports in the Financial Reporting Process and has identified those reports below;\n[parg][parg]\u2022[parg]System Generated\n[parg][parg][parg][parg]\u2022[parg]General Ledger Trial Balance\n[parg][parg][parg][parg]\u2022[parg]Balance Sheet\n[parg][parg][parg][parg]\u2022[parg]Income Statement\n[parg][parg][parg][parg]\u2022[parg]CFO Report by Department\n[parg][parg][parg][parg]\u2022[parg]Stock Based Compensation Report\n[parg][parg][parg][parg]\u2022[parg]Posted Journal Report\n[parg][parg]\u2022[parg]Manual\n[parg][parg][parg][parg]\u2022[parg]Various Reconciliations\n\nThe Finance department's monthly close process includes reconciliations and other data that is analyzed, reviewed and utilized as evidence to support the controls within Financial Reporting Process. Inherently the account reconciliations will support the completeness and accuracy of the account balances and be substantiated by copies of appropriate support (i.e. documents and/or calculations).",
+                        "font_size": "10 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 359.99999884799996,
+                    "coord_y": 367.4975988240077,
+                    "width": 599.99999808,
+                    "height": 663.0047978783846,
+                    "connections": []
+                },
+                {
+                    "id": 5,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(146, 205, 220)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Process Owners:\n\u2022[parg]CFO\n\u2022[parg]Corporate Controller\n\u2022[parg]Director, Technical Accounting\n\u2022[parg]Accounting Manager\n\u2022[parg]Senior Accountant\n\n\nSystems:\n\u2022[parg]Oracle\n\u2022[parg]Equity Edge",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 833.9999973312,
+                    "coord_y": 549.00479824318461,
+                    "width": 319.679998977024,
+                    "height": 299.99999904,
+                    "connections": []
+                },
+                {
+                    "id": 6,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(195, 216, 155)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "File Name:\nInsmed_11_Close_the_Books_Process_Flow_6.4.2024.vsdx\nLast Edit: 6/4/2024\nThis report provides management with information about the\ncondition or risks and internal controls at one point in time. Future\nchanges in environmental factors and actions by personnel will impact\nthese risks and internal controls in ways this report cannot anticipate.\n\nThis document is CONFIDENTIAL and for INTERNAL USE by\nManagement only and should not be used, relied upon or distributed\nto any third party without prior written approval.",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 843.8399972997119,
+                    "coord_y": 137.9999995584,
+                    "width": 319.679998977024,
+                    "height": 179.99999942399998,
+                    "connections": []
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "page_name": "Legend",
+            "perspective": "landscape",
+            "elements": [
+                {
+                    "id": 1,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(146, 205, 220)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "1 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 323.99999896319997,
+                    "coord_y": 393.0047987423846,
+                    "width": 599.99999808,
+                    "height": 641.9999979456,
+                    "connections": []
+                },
+                {
+                    "id": 2,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "transparent",
+                        "text_color": "RGB(96, 92, 172)"
+                    },
+                    "text_options": {
+                        "text": "Insmed",
+                        "font_size": "42 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 111.00479964478464,
+                    "coord_y": 753.0047975903846,
+                    "width": 185.9999994048,
+                    "height": 65.9999997888,
+                    "connections": []
+                },
+                {
+                    "id": 3,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(195, 216, 155)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Prepared By:\tInternal Audit\nReviewed By:\tManagement\nLast Edit:\t6/4/2024",
+                        "font_size": "10 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 329.99999894399997,
+                    "coord_y": 755.2511975831961,
+                    "width": 203.9999993472,
+                    "height": 59.999999808,
+                    "connections": []
+                },
+                {
+                    "id": 4,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(195, 216, 155)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "File Name:\nInsmed_11_Close_the_Books_Process_Flow_6.4.2024.vsdx\nLast Edit: 6/4/2024\nThis report provides management with information about the\ncondition or risks and internal controls at one point in time. Future\nchanges in environmental factors and actions by personnel will impact\nthese risks and internal controls in ways this report cannot anticipate.\n\nThis document is CONFIDENTIAL and for INTERNAL USE by\nManagement only and should not be used, relied upon or distributed\nto any third party without prior written approval.",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 843.8399972997119,
+                    "coord_y": 137.9999995584,
+                    "width": 319.679998977024,
+                    "height": 179.99999942399998,
+                    "connections": []
+                },
+                {
+                    "id": 5,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(195, 216, 155)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Page 3 of 4",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 995.9999968128,
+                    "coord_y": 772.8767975267942,
+                    "width": 71.9999997696,
+                    "height": 23.9999999232,
+                    "connections": []
+                },
+                {
+                    "id": 6,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(146, 205, 220)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 797.9999974464,
+                    "coord_y": 563.9999981952,
+                    "width": 319.679998977024,
+                    "height": 299.99999904,
+                    "connections": []
+                },
+                {
+                    "id": 7,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "step1 text _ 1",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 102.9983996704051,
+                    "coord_y": 624.9983980000051,
+                    "width": 71.9999997696,
+                    "height": 27.004799913584637,
+                    "connections": []
+                },
+                {
+                    "id": 8,
+                    "type": "Center Drag Circle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Rectangle",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "middle",
+                        "horizontal_alignment": "middle",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 241.19999922816,
+                    "coord_y": 630.6047979820646,
+                    "width": 35.9999998848,
+                    "height": 35.9999998848,
+                    "connections": []
+                },
+                {
+                    "id": 9,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "step3 text _ 1",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "bottom",
+                        "horizontal_alignment": "left",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 395.9999987328,
+                    "coord_y": 615.0047980319846,
+                    "width": 53.00159983039488,
+                    "height": 53.00159983039488,
+                    "connections": []
+                },
+                {
+                    "id": 10,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "step1 text _ 2",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 551.9999982336,
+                    "coord_y": 617.9999980224,
+                    "width": 71.9999997696,
+                    "height": 53.9999998272,
+                    "connections": []
+                },
+                {
+                    "id": 11,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "step2 text _ 2",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 102.9983996704051,
+                    "coord_y": 507.0047983775846,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 12,
+                    "type": "Hexagon",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "step3 text _ 2",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 246.99839920960514,
+                    "coord_y": 507.0047983775846,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 13,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "step1 text _ 3",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 401.0015987167949,
+                    "coord_y": 507.0047983775846,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 14,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "step2 text _ 3",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 551.9999982336,
+                    "coord_y": 507.0047983775846,
+                    "width": 78.64319974834176,
+                    "height": 52.42559983223808,
+                    "connections": []
+                },
+                {
+                    "id": 15,
+                    "type": "Parallelogram",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "step3 text _ 3",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 102.9983996704051,
+                    "coord_y": 382.0031987775898,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 16,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Title text",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 251.9999991936,
+                    "coord_y": 387.0047987615846,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 17,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Title text",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 401.0015987167949,
+                    "coord_y": 387.0047987615846,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 18,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Title text",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 551.9999982336,
+                    "coord_y": 387.0047987615846,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 19,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Title text",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 102.9983996704051,
+                    "coord_y": 237.00479924158464,
+                    "width": 113.9999996352,
+                    "height": 71.01119977276416,
+                    "connections": []
+                },
+                {
+                    "id": 20,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Title text",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 251.9999991936,
+                    "coord_y": 237.00479924158464,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 21,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Title text",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 401.0015987167949,
+                    "coord_y": 237.00479924158464,
+                    "width": 95.9999996928,
+                    "height": 59.999999808,
+                    "connections": []
+                },
+                {
+                    "id": 22,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "transparent",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Tickmark Legend\n\nRisk\n\nKey Control\n\nNon-Key Control\n\nIT Control\n\nEnhancement\n\nDesign Gap",
+                        "font_size": "10 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 759.0047975711846,
+                    "coord_y": 594.3743980980018,
+                    "width": 137.9999995584,
+                    "height": 222.74879928720384,
+                    "connections": []
+                },
+                {
+                    "id": 23,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 655.6895979017933,
+                    "coord_y": 668.812797859799,
+                    "width": 25.71839991770112,
+                    "height": 25.718399917701126,
+                    "connections": []
+                },
+                {
+                    "id": 24,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 655.68959790179333,
+                    "coord_y": 635.9407980193895,
+                    "width": 25.71839991770112,
+                    "height": 25.71839991770112,
+                    "connections": []
+                },
+                {
+                    "id": 25,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 655.68959790179333,
+                    "coord_y": 604.1919981369856,
+                    "width": 25.71839991770112,
+                    "height": 25.71839991770112,
+                    "connections": []
+                },
+                {
+                    "id": 26,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 655.68959790179333,
+                    "coord_y": 572.4431982545817,
+                    "width": 25.71839991770112,
+                    "height": 25.71839991770112,
+                    "connections": []
+                },
+                {
+                    "id": 27,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 655.68959790179333,
+                    "coord_y": 539.6943983721779,
+                    "width": 25.71839991770112,
+                    "height": 25.71839991770112,
+                    "connections": []
+                },
+                {
+                    "id": 28,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(154, 179, 209)",
+                        "lines_color": "RGB(255, 255, 255)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 655.68959790179333,
+                    "coord_y": 506.94559848977406,
+                    "width": 25.71839991770112,
+                    "height": 25.71839991770112,
+                    "connections": []
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "page_name": "CTB - AJE",
+            "perspective": "landscape",
+            "elements": [
+                {
+                    "id": 1,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Reviews Blackline task detailing all of close activities performed",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 623.62,
+                    "coord_y": 635.24,
+                    "width": 109.71839964890111,
+                    "height": 71.9999997696,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 5
+                        }
+                    ]
+                },
+                {
+                    "id": 2,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Quarterly, Corporate Controller reviews the consolidated results and also reviews any comments received for Finance team, including CFO",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 812.60,
+                    "coord_y": 635.24,
+                    "width": 165.00479947198465,
+                    "height": 71.9999997696,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 3
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "End",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 976.72,
+                    "coord_y": 635.24,
+                    "width": 59.999999808,
+                    "height": 22.502399927992318,
+                    "connections": []
+                },
+                {
+                    "id": 4,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Journal Entries reviewed and approved",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 415.75,
+                    "coord_y": 447.43,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 9
+                        }
+                    ]
+                },
+                {
+                    "id": 5,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Accounting Team members closes the period",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 623.62,
+                    "coord_y": 447.43,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 6
+                        }
+                    ]
+                },
+                {
+                    "id": 6,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Accounting Team members closes the period",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 812.60,
+                    "coord_y": 447.43,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 2
+                        }
+                    ]
+                },
+                {
+                    "id": 7,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Start",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 152.83,
+                    "coord_y": 251.49,
+                    "width": 59.999999808,
+                    "height": 22.502399927992318,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 8
+                        }
+                    ]
+                },
+                {
+                    "id": 8,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Manual journal entries are prepared",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 246.43,
+                    "coord_y": 251.43,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 4
+                        }
+                    ]
+                },
+                {
+                    "id": 9,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Journal Entries posted to general ledger",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 521.57,
+                    "coord_y": 251.43,
+                    "width": 95.9999996928,
+                    "height": 71.9999997696,
+                    "connections": []
+                },
+                {
+                    "id": 10,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "The Definition access is assigned",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 413.78,
+                    "coord_y": 91.75,
+                    "width": 147.00479952958466,
+                    "height": 77.51039975196672,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 4
+                        }
+                    ]
+                },
+                {
+                    "id": 11,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "RGB(255, 255, 255)",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Revaluation entries automatically calculate unrealized gains or losses when consolidation occurs",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 623.62,
+                    "coord_y": 91.75,
+                    "width": 185.87519940519934,
+                    "height": 91.93919970579455,
+                    "connections": [
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 9
+                        },
+                        {
+                            "type": "some type",
+                            "text": "",
+                            "target": 5
+                        }
+                    ]
+                }
+            ],
+            "background": [
+                {
+                    "id": 12,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "11 Close the Books",
+                        "font_size": "18 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 527.83,
+                    "coord_y": 768,
+                    "width": 1008,
+                    "height": 47.9999998464,
+                    "connections": []
+                },
+                {
+                    "id": 13,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Close the Books and Journal Entry Process",
+                        "font_size": "8 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 527.83,
+                    "coord_y": 732,
+                    "width": 1008,
+                    "height": 23.9999999232,
+                    "connections": []
+                },
+                {
+                    "id": 14,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Corparate Controller",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "90",
+                    "coord_x": 67.74,
+                    "coord_y": 635.24,
+                    "width": 169.52,
+                    "height": 87.47519972007936,
+                    "connections": []
+                },
+                {
+                    "id": 15,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Corparate Controller",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "90",
+                    "coord_x": 67.74,
+                    "coord_y": 447.43,
+                    "width": 206.09,
+                    "height": 87.47519972007936,
+                    "connections": []
+                },
+                {
+                    "id": 16,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "Accounting\nPreparer",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "90",
+                    "coord_x": 67.74,
+                    "coord_y": 251.47,
+                    "width": 185.79,
+                    "height": 87.47519972007936,
+                    "connections": []
+                },
+                {
+                    "id": 17,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "System",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "90",
+                    "coord_x": 67.74,
+                    "coord_y": 91.75,
+                    "width": 135.49,
+                    "height": 87.47519972007936,
+                    "connections": []
+                },
+                {
+                    "id": 18,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 571.70,
+                    "coord_y": 635.24,
+                    "width": 920.52,
+                    "height": 169.53,
+                    "connections": []
+                },
+                {
+                    "id": 19,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 571.70,
+                    "coord_y": 447.43,
+                    "width": 920.52,
+                    "height": 206.09,
+                    "connections": []
+                },
+                {
+                    "id": 20,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 571.70,
+                    "coord_y": 251.49,
+                    "width": 920.52,
+                    "height": 185.79,
+                    "connections": []
+                },
+                {
+                    "id": 21,
+                    "type": "Rectangle",
+                    "color_options": {
+                        "background_color": "transparent",
+                        "lines_color": "RGB(0, 0, 0)",
+                        "text_color": "RGB(0, 0, 0)"
+                    },
+                    "text_options": {
+                        "text": "",
+                        "font_size": "12 pt",
+                        "vertical_alignment": "top",
+                        "horizontal_alignment": "right",
+                        "comment": "for horizontal alignment we have 3 option: right, middle, left. For vertical alignment we have 3 optings: top, middle, bottom."
+                    },
+                    "angle": "0",
+                    "coord_x": 571.70,
+                    "coord_y": 91.81,
+                    "width": 920.52,
+                    "height": 135.49,
+                    "connections": []
+                }
+            ]
+        }
+    ]
+}
