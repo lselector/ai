@@ -199,6 +199,8 @@ def get():
                     const file = files[i];
                     const fileExtension = file.name.split('.').pop().toLowerCase();
 
+                    console.log(fileExtension)
+
                     if (!allowedExtensions.includes('.' + fileExtension)) {
                         errorMessage.style.display = 'block';
                         input.value = ''; 
@@ -206,33 +208,42 @@ def get():
                         return false; // Indicate invalid file type
                     }
                 }
-
-                errorMessage.style.display = 'none';
+                
                 return true; // Indicate all files are valid
             }
 
             container.addEventListener('drop', (event) => {
                 event.preventDefault();
+                const errorMessage = document.getElementById('error-message');
 
                 createDiv();
 
                 if (validateAndSubmit(fileInput)) { // Check if validation passed
                     const files = event.dataTransfer.files;
                     fileInput.files = files;
+                    errorMessage.style.display = 'none';
                     form.dispatchEvent(new Event('submit')); 
                 }
             });
 
             container.addEventListener('change', () => {
                 event.preventDefault(); 
+                const errorMessage = document.getElementById('error-message');
 
                 createDiv();
 
-                const files = event.dataTransfer.files; 
+                //const files = event.dataTransfer.files; 
 
-                fileInput.files = files; 
+                //fileInput.files = files; 
 
-                form.dispatchEvent(new Event('submit')); 
+                //form.dispatchEvent(new Event('submit')); 
+
+                if (validateAndSubmit(fileInput)) { // Check if validation passed
+                    const files = event.dataTransfer.files;
+                    fileInput.files = files;
+                    errorMessage.style.display = 'none';
+                    form.dispatchEvent(new Event('submit')); 
+                }
 
                 });
             """
