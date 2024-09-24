@@ -8,9 +8,9 @@ if ! python -m myutils &> /dev/null; then
   exit
 fi
 
-if ! (ollama list | grep -q "mistral-nemo:latest"); then
-  echo "Model 'mistral-nemo' is not available."
-  echo "Please download it by running 'ollama run mistral-nemo'"
+if ! (ollama list | grep -q "$OLLAMA_MODEL"); then
+  echo "Model '$OLLAMA_MODEL' is not available."
+  echo "Please download it by running 'ollama run $OLLAMA_MODEL'"
   exit 
 fi
 

@@ -12,7 +12,7 @@ from starlette.requests import Request
 
 from mybag import *         # py_utils
 from myutils import *       # py_utils 
-import fitz, json, docx
+import fitz, json, docx, os
 from bs4 import BeautifulSoup
 from io import BytesIO
 
@@ -43,7 +43,13 @@ bag = MyBunch()
 client_ollama = ollama.Client()
 client_openai = OpenAI()
 
-model = "mistral-nemo"
+env_var = os.environ.get('OLLAMA_MODEL')
+model = ""
+if env_var is None:
+    print("Environment variable OLLAMA_MODEL is not set.")
+    exit()
+else:
+   model = env_var
 
 #model = "mistral:7b-instruct-v0.3-q4_0"
 #model = "llama3:8b-instruct-q4_0"
@@ -51,6 +57,7 @@ model = "mistral-nemo"
 messages = []
 messages_for_show = []
 bag.uploaded_files = []
+bag.not_uploaded_files = []
 loaded_files_len = 0
 m_client = None
 isRAG = False
@@ -134,7 +141,7 @@ def get():
                     id="container", cls="upload-files"),
                     id="upload-container-wrapper"
                     ),
-                    Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", id="error-message", style="color: red;"),
+                    Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", id="error-message", style="color: red; display: none;"),
                     Div(
                     Form(
                     Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", 
@@ -213,36 +220,27 @@ def get():
 
             container.addEventListener('drop', (event) => {
                 event.preventDefault();
-                const errorMessage = document.getElementById('error-message');
 
                 createDiv();
 
-                if (validateAndSubmit(fileInput)) { // Check if validation passed
-                    const files = event.dataTransfer.files;
-                    fileInput.files = files;
-                    errorMessage.style.display = 'none';
-                    form.dispatchEvent(new Event('submit')); 
-                }
+                const files = event.dataTransfer.files;
+
+                fileInput.files = files; 
+
+                form.dispatchEvent(new Event('submit')); 
+                
             });
 
             container.addEventListener('change', () => {
                 event.preventDefault(); 
-                const errorMessage = document.getElementById('error-message');
 
                 createDiv();
 
-                //const files = event.dataTransfer.files; 
+                const files = event.dataTransfer.files; 
 
-                //fileInput.files = files; 
+                fileInput.files = files; 
 
-                //form.dispatchEvent(new Event('submit')); 
-
-                if (validateAndSubmit(fileInput)) { // Check if validation passed
-                    const files = event.dataTransfer.files;
-                    fileInput.files = files;
-                    errorMessage.style.display = 'none';
-                    form.dispatchEvent(new Event('submit')); 
-                }
+                form.dispatchEvent(new Event('submit')); 
 
                 });
             """
@@ -546,13 +544,17 @@ async def isFileUploaded(filename):
 async def post(request: Request):
     """ Upload file(s) from user """
 
+    print("here")
+
     form = await request.form()
 
     uploaded_files = form.getlist("files")  # Use getlist to get a list of files
-    #print(form)
-
+    
     uploaded_files_to_show = []
-    not_uploaded_files = []
+    not_uploaded_files_to_show = []
+
+    error_true = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", hx_swap_oob='true', id="error-message", style="color: red; font-size: 14px;"),
+    error_false = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",  hx_swap_oob='true', id="error-message", style="display: none; color: red; font-size: 14px;"),
 
     os.makedirs(bag.dir_out, exist_ok=True)
 
@@ -569,7 +571,8 @@ async def post(request: Request):
 
         if not isCorrectType:
             print("Wrong Type!")
-            not_uploaded_files.append(uploaded_file.filename+" is not uploaded")
+            not_uploaded_files_to_show.append(uploaded_file.filename+" is not uploaded")
+            bag.not_uploaded_files.append(uploaded_file.filename)
             continue
 
         is_file_uploaded_ = await isFileUploaded(uploaded_file.filename)
@@ -587,22 +590,26 @@ async def post(request: Request):
         
         await load_file(uploaded_file.filename,f"{bag.dir_out}/{filename}")
 
-    #return [Li(f"{uploaded_file}", id='uploaded-file') for uploaded_file in uploaded_files_to_show]
-
     list_items = []
+
+    #uploaded_files_to_show.extend(bag.uploaded_files)
     for uploaded_file in uploaded_files_to_show:
         list_item = Li(f"{uploaded_file}", id='uploaded-file')
         list_items.append(list_item)
 
-    for uploaded_file in not_uploaded_files:
-        list_item = Li(f"{uploaded_file}", id='uploaded-file', style="color: red")
-        list_items.append(list_item)
+    if len(not_uploaded_files_to_show) > 0:
+        for not_uploaded_file in not_uploaded_files_to_show:
+            list_item = Li(f"{not_uploaded_file}", id='not-uploaded-file', style="color: red")
+            list_items.append(list_item) 
 
-    t = Div("file1")
+        return list_items, error_true
+               
+    if len(bag.not_uploaded_files) > 0:
 
-    list_items_div = Div("error!", id='error-message', hx_obb_swap='true')
-    
-    return list_items
+        bag.not_uploaded_files = []
+        return get_uploaded_files_list(), error_false
+
+    return list_items, error_false
 
 # ---------------------------------------------------------------
 @rt('/delete-all-docs')
@@ -708,7 +715,7 @@ def read_xlsx(file_bytes,filename):
 def read_json(json_data, filename):
     """ Read JSON file """
 
-    print(f"Text from pdf: {json_data}", flush=True) 
+    #print(f"Text from json: {json_data}", flush=True) 
 
     if isinstance(json_data, bytes):
         json_data = json_data.decode('utf-8')
@@ -769,12 +776,10 @@ def get_uploaded_files_list():
             Li(filename, cls='uploaded-file-cls')
         )
 
-    #Ul(Li(filename, cls='uploaded-file-cls'), id='uploaded-files-list', cls="uploaded-files-list-cls")
-
     if len(lis) == 0:
-        return Div(Ul(id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_obb=True)
+        return Div(Ul(id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_oob='true')
 
-    return Div(Ul(*lis, id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_obb=True)
+    return Div(Ul(*lis, id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_oob='true')
 
 #---------------------------------------------------------------
 def get_history():
@@ -837,24 +842,6 @@ def print_all_messages():
     return Div(*bag.list_items, id='message-list')
 
 #---------------------------------------------------------------
-@rt('/about')
-def get():
-    """ second page """
-    main_page = (
-        Titled('About us',
-        Div(
-            H1("How Chatbot works:"),
-            Div(
-            P(Img(src="https://fastht.ml/assets/logo.svg", width=100, height=100)),
-            ),
-            P("Hi!"),
-            A("Home page", href="/"),
-        ))
-    )
-
-    return main_page
-
-#---------------------------------------------------------------
 def ChatInput():
     """ Clear the input """
     return Input(id="new-prompt", type="text", name='data',
@@ -868,8 +855,6 @@ async def chat_ollama(send):
     await send(
         add_message("", "start")
     )
-
-    #await asyncio.sleep(0)
 
     # Model response (streaming)
     stream = ollama.chat(
