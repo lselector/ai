@@ -1,0 +1,45 @@
+{
+    "Popular Flowers": [
+        {
+            "Name": "Rose",
+            "Description": "Often called the 'Queen of Flowers', roses are known for their velvety petals and intoxicating scent.",
+            "Symbolism": "Love, Romance"
+        },
+        {
+            "Name": "Tulip",
+            "Description": "These cheerful blooms herald the arrival of spring with their cup-shaped petals and vibrant hues.",
+            "Symbolism": "Perfect Love, Passion"
+        },
+        {
+            "Name": "Sunflower",
+            "Description": "With their large, sunny faces, sunflowers bring a touch of warmth and happiness wherever they bloom. These towering plants are known for their ability to track the sun across the sky.",
+            "Symbolism": "Adoration, Loyalty, Longevity"
+        },
+        {
+            "Name": "Orchid",
+            "Description": "Orchids are prized for their exotic beauty and intricate blooms. These delicate flowers come in a vast array of colors, shapes, and sizes.",
+            "Symbolism": "Luxury, Beauty, Strength"
+        },
+        {
+            "Name": "Lily",
+            "Description": "Lilies are elegant flowers with a sweet fragrance. Their meaning varies depending on their color.",
+            "Symbolism": "Purity, Innocence, Love, Admiration"
+        },
+        {
+            "Name": "Carnation",
+            "Description": "Carnations are versatile flowers that come in a wide range of colors, making them suitable for various occasions. They are known for their long vase life and ruffled petals.",
+            "Symbolism": "Love, Fascination, Distinction"
+        },
+        {
+            "Name": "Daisy",
+            "Description": "These cheerful blooms with their bright yellow centers and white petals evoke feelings of innocence and purity.",
+            "Symbolism": "Innocence, Purity, New Beginnings"
+        },
+        {
+            "Name": "Hydrangea",
+            "Description": "Hydrangeas are beloved for their large, showy clusters of blooms that change color depending on the soil pH.",
+            "Symbolism": "Gratitude, Beauty, Heartfelt Emotions"
+        }
+    ]
+}
+

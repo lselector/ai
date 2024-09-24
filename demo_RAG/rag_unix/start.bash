@@ -8,6 +8,13 @@ if ! python -m myutils &> /dev/null; then
   exit
 fi
 
+if [ -z "${OLLAMA_MODEL}" ] ; then 
+    echo "please set env variable to preferred model";
+    echo "for example: ";
+    echo "export OLLAMA_MODEL=llama3.1"; 
+    exit
+fi
+
 if ! (ollama list | grep -q "$OLLAMA_MODEL"); then
   echo "Model '$OLLAMA_MODEL' is not available."
   echo "Please download it by running 'ollama run $OLLAMA_MODEL'"
