@@ -43,9 +43,9 @@ bag = MyBunch()
 client_ollama = ollama.Client()
 client_openai = OpenAI()
 
-#model = "mistral-nemo"
+model = "mistral-nemo"
 
-model = "mistral:7b-instruct-v0.3-q4_0"
+#model = "mistral:7b-instruct-v0.3-q4_0"
 #model = "llama3:8b-instruct-q4_0"
 
 messages = []
@@ -134,8 +134,7 @@ def get():
                     id="container", cls="upload-files"),
                     id="upload-container-wrapper"
                     ),
-                    Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",id="error-message", style="display: none; color: red;"),
-                    
+                    Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", id="error-message", style="color: red;"),
                     Div(
                     Form(
                     Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", 
@@ -456,6 +455,8 @@ async def load_file(filename, file_path):
 
     loaded_files_len = len(documents_)
 
+    print(f"file is loaded! {loaded_files_len}")
+
     if loaded_files_len > 0:
         isRAG = True
 
@@ -551,6 +552,7 @@ async def post(request: Request):
     #print(form)
 
     uploaded_files_to_show = []
+    not_uploaded_files = []
 
     os.makedirs(bag.dir_out, exist_ok=True)
 
@@ -563,13 +565,12 @@ async def post(request: Request):
 
         file_name = uploaded_file.filename.split('.')[0]
         file_type = uploaded_file.headers.get("content-type") 
-        isCorrectType = convert_files(file_bytes, file_name, file_type)
+        isCorrectType, filename = convert_files(file_bytes, file_name, file_type)
 
         if not isCorrectType:
             print("Wrong Type!")
+            not_uploaded_files.append(uploaded_file.filename+" is not uploaded")
             continue
-        
-        
 
         is_file_uploaded_ = await isFileUploaded(uploaded_file.filename)
 
@@ -584,9 +585,24 @@ async def post(request: Request):
             bag.uploaded_files.append(uploaded_file.filename)
             uploaded_files_to_show.append(uploaded_file.filename)
         
-        await load_file(uploaded_file.filename,f"{bag.dir_out}/{uploaded_file.filename}")
+        await load_file(uploaded_file.filename,f"{bag.dir_out}/{filename}")
 
-    return [Li(f"{uploaded_file}", id='uploaded-file') for uploaded_file in uploaded_files_to_show]
+    #return [Li(f"{uploaded_file}", id='uploaded-file') for uploaded_file in uploaded_files_to_show]
+
+    list_items = []
+    for uploaded_file in uploaded_files_to_show:
+        list_item = Li(f"{uploaded_file}", id='uploaded-file')
+        list_items.append(list_item)
+
+    for uploaded_file in not_uploaded_files:
+        list_item = Li(f"{uploaded_file}", id='uploaded-file', style="color: red")
+        list_items.append(list_item)
+
+    t = Div("file1")
+
+    list_items_div = Div("error!", id='error-message', hx_obb_swap='true')
+    
+    return list_items
 
 # ---------------------------------------------------------------
 @rt('/delete-all-docs')
@@ -617,30 +633,36 @@ def convert_files(file_bytes, file_name, file_type):
     print(f"Filename: {file_name}, File type: {file_type}")
 
     if file_type == "text/plain":
+        file_name += "__txt.txt"
         read_txt(file_bytes, file_name)
-        return True
+        return True, file_name
 
     elif file_type == "application/pdf":
+        file_name += "__pdf.txt"
         read_pdf(file_bytes, file_name)
-        return True
+        return True, file_name
 
     elif file_type == "application/json":
+        file_name += "__json.txt"
         read_json(file_bytes, file_name)
-        return True
+        return True, file_name
     
     elif file_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        file_name += "__xlsx.txt"
         read_xlsx(file_bytes, file_name)
-        return True
+        return True, file_name
     
     elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        file_name += "__docx.txt"
         read_docx(file_bytes, file_name)
-        return True
+        return True, file_name
     
     elif file_type == "text/html":
+        file_name += "__docx.txt"
         read_html(file_bytes, file_name)
-        return True
+        return True, file_name
     
-    return False
+    return False, None
 
 #---------------------------------------------------------------
 def read_html(file_bytes,filename):
@@ -666,8 +688,6 @@ def read_docx(file_bytes,filename):
     for paragraph in doc.paragraphs:
         all_text += paragraph.text + "\n"
 
-    filename += "_docx_"
-
     write_txt(all_text.encode('utf-8'), filename) 
 
 #---------------------------------------------------------------
@@ -680,9 +700,7 @@ def read_xlsx(file_bytes,filename):
     excel_data.to_excel(output, index=False)  # Write DataFrame to the BytesIO object
     text_content = excel_data.to_csv(index=False, sep='\t').replace('\t', ' ')  
 
-    print(text_content)
-
-    filename += "_xlsx_"
+    #print(text_content)
     write_txt(text_content.encode('utf-8'), filename) 
 
 
@@ -711,8 +729,7 @@ def read_json(json_data, filename):
             text_ += data + " "  
 
     extract_text_recursive(json_data)
-    filename += "_json_"
-    write_txt(text_.strip().encode('utf-8'), filename)   
+    write_txt(text_.strip().encode('utf-8'), filename)
 
 #---------------------------------------------------------------
 def read_pdf(file_bytes,filename):
@@ -722,14 +739,12 @@ def read_pdf(file_bytes,filename):
         for page in pdf:
             text += page.get_text()
     
-    filename += "_pdf_"
     bytes = text.encode('utf-8') 
     write_txt(bytes, filename)
 
 #---------------------------------------------------------------
 def read_txt(file_bytes,filename):
     """ Read txt file """
-    filename += "_txt_"
     write_txt(file_bytes, filename)
 
 #---------------------------------------------------------------
@@ -738,7 +753,7 @@ def write_txt(bytes, filename):
     #bag.write_dir = os.path.dirname(os.path.realpath(__file__))
     write_path = bag.dir_out
     os.makedirs(write_path, exist_ok=True)
-    write_path += "/"+filename+".txt"
+    write_path += "/"+filename
     print(f"saving file: {write_path}")
     with open(write_path, "wb") as file:
         file.write(bytes)
@@ -998,14 +1013,19 @@ async def ws(data:str, send, model:str, strict:str):
                 
             else:
                 if strict == "strict":
-                   messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document"})
-                   #print("strict++")
+                   messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document. If the answer is in history - use history to create answer"})
+                   print("strict++")
                 else:
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
-                    #print("strict--")
+                    print("strict--")
                     
     else:
-        messages.append({"role": "user", "content": f"Question: \n {data}"})  
+        if strict == "strict":
+            messages.append({"role": "user", "content": f"Say: In strict mode I answer only using uploaded files. Please appload files"})
+            print("strict+++")
+        else:
+            messages.append({"role": "user", "content": f"Question: \n {data}answer the question even if it not in the context"})
+            print("strict---")  
 
     if model == "ollama":
         await chat_ollama(send)

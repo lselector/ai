@@ -8,6 +8,12 @@ if ! python -m myutils &> /dev/null; then
   exit
 fi
 
+if ! (ollama list | grep -q "mistral-nemo:latest"); then
+  echo "Model 'mistral-nemo' is not available."
+  echo "Please download it by running 'ollama run mistral-nemo'"
+  exit 
+fi
+
 echo "removing milvus_demo.db"
 rm -rf ./milvus_demo.db
 echo "removing milvus_demo.db.lock"
