@@ -29,6 +29,6 @@ echo "removing uploaded_files/"
 rm -rf uploaded_files/*
 
 echo "starting python script"
-python rag_multi_models.py
+python rag_milvus.py
 
 

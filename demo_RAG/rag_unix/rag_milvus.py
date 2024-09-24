@@ -1,6 +1,6 @@
 
 """
-# rag_multi_models.py
+# rag_milvus.py
 # Example of chatbot using fasthtml and ollama or openai
 # Using Milvus as VectorDB
 # Additional modules:
@@ -1021,4 +1021,4 @@ async def ws(data:str, send, model:str, strict:str):
 # MAIN
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    uvicorn.run("rag_multi_models:app", host='localhost', port=5001, reload=True)
+    uvicorn.run("rag_milvus:app", host='localhost', port=5001, reload=True)
