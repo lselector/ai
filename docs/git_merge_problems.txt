@@ -1,0 +1,29 @@
+
+If I have tried to do "uu" and got a merge conflict
+
+    <some file> needs merge
+    error: could not write index
+    error: Pulling is not possible because you have unmerged files.
+    hint: Fix them up in the work tree, and then use 'git add/rm <file>'
+    hint: as appropriate to mark resolution and make a commit.
+    fatal: Exiting because of an unresolved conflict.
+
+And you want to disregard your changes and just accept incoming,
+then you can do the following:
+
+Solution 1:
+
+    git reset --hard HEAD
+    uu
+
+Solution 2:
+
+    git merge --abort
+    git pull --no-commit --no-ff
+
+    --no-commit option prevents Git from creating a merge commit, 
+    --no-ff option ensures that a merge commit is always created, 
+            even if the merge could be fast-forwarded.
+    After running these commands, your local repository will be updated 
+    with the incoming files from the remote repository, 
+    and your local changes will be discarded.

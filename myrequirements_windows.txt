@@ -1,0 +1,37 @@
+
+# --------------------------------------
+# pip install --upgrade pip
+# pip install -Ur myrequirements.txt
+# --------------------------------------
+# pip install -U pip-autoremove
+# pip-autoremove -y somepackage
+# pip freeze | grep somepackage
+# --------------------------------------
+pip
+notebook
+jupyterlab
+ipywidgets
+numpy
+pandas
+ipython
+matplotlib
+python-dotenv
+pip-autoremove
+nltk
+# --------------------------------------
+openai
+ollama
+anthropic
+# --------------------------------------
+uvicorn
+python-fasthtml
+# --------------------------------------
+unidecode
+openpyxl     # parse excel files
+python-docx  # parse MS Word files
+pymupdf      # parse PDF files
+sentence-transformers # embedding vectors
+pymilvus
+chromadb
+# --------------------------------------
+pywin32
