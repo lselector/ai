@@ -6,8 +6,10 @@
 
 from fasthtml.common import *
 
-from mybag import *         # py_utils
-from myutils import *       # py_utils 
+import levutils
+from levutils.mybag import *
+from levutils.myutils import *
+ 
 import ollama, asyncio
 
 app, rt, = fast_app(live=True, ws_hdr=True)

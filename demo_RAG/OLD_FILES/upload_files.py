@@ -6,8 +6,10 @@
 
 import os
 
-from mybag import *         # py_utils
-from myutils import *       # py_utils 
+import levutils
+from levutils.mybag import *
+from levutils.myutils import *
+
 from pymilvus import MilvusClient
 
 from sentence_transformers import SentenceTransformer

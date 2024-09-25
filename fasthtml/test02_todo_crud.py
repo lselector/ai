@@ -13,8 +13,9 @@ At this moment implemented:
 
 from fasthtml.common import *
 
-from mybag import *         # py_utils
-from myutils import *       # py_utils 
+import levutils
+from levutils.mybag import *
+from levutils.myutils import *
 
 app, rt, = fast_app(live=True)
 bag = MyBunch()
