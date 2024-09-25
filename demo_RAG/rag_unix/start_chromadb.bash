@@ -2,12 +2,6 @@
 
 # wrapper to start the demo using chromadb
 
-if ! python -m myutils &> /dev/null; then
-  echo "Please add absolute path of directory 'ai/py_lib'"
-  echo "to PATH and PYTHOPATH environmental variables"
-  exit
-fi
-
 if [ -z "${OLLAMA_MODEL}" ] ; then 
     echo "please set env variable to preferred model";
     echo "for example: ";
