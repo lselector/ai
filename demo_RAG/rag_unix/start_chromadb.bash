@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# wrapper to start the demo
+# wrapper to start the demo using chromadb
 
 if ! python -m myutils &> /dev/null; then
   echo "Please add absolute path of directory 'ai/py_lib'"

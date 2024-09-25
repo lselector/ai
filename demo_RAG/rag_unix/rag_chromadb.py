@@ -57,6 +57,7 @@ else:
 #model = "llama3:8b-instruct-q4_0"
 
 nltk.download('punkt')
+nltk.download('punkt_tab')
 
 messages = []
 messages_for_show = []
