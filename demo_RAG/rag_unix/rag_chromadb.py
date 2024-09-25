@@ -18,7 +18,9 @@ from io import BytesIO
 
 import ollama, asyncio
 from openai import OpenAI
-from pymilvus import MilvusClient
+import chromadb
+import nltk
+
 import pandas as pd
 
 from sentence_transformers import SentenceTransformer
@@ -60,6 +62,7 @@ bag.uploaded_files = []
 bag.not_uploaded_files = []
 loaded_files_len = 0
 m_client = None
+collection = None
 isRAG = False
 chunks_id = 0
 
@@ -72,11 +75,9 @@ sp = {"role": "system", "content": "You are a helpful and concise assistant."}
 async def init():
     """ Init vectorDB """
     global m_client
-    m_client = MilvusClient("./milvus_demo.db")
-    m_client.create_collection(
-    collection_name="demo_collection",
-    dimension=384  # The vectors we will use in this demo has 384 dimensions
-    )
+    global collection
+    m_client = chromadb.Client()
+    collection = m_client.create_collection(name="file_collection")
     # To preload files in Server. 
     # If you want to have RAG of some default docs
     # await load_file()
@@ -365,33 +366,38 @@ def read_files_from_folder(filename, file_path):
     """ Read file from folder and convert it into vectors/chunks """
     docs = []
 
+    global chunks_id
+
     if os.path.isfile(file_path):  
         with open(file_path, 'r') as file:
             
             text = file.read() 
 
             print(f"name:{filename} File added {text[:100]}")
-            
-            chunks = text.split("\n\n") 
 
-            # 3. Generate Embeddings
+            sentences = nltk.sent_tokenize(text)
+
+            chunk_size = 3 
+            chunks = [' '.join(sentences[i:i+chunk_size]) for i in range(0, len(sentences), chunk_size)] 
+
             model = SentenceTransformer('all-MiniLM-L6-v2') 
             embeddings = model.encode(chunks)
 
-            # 4. Format for db, including 'subject' field
-            # You'll need to determine the subject for each file. 
-            # Here, I'm just using the filename as a placeholder. 
-            # You might need more sophisticated logic to extract the subject from the file content.
-            subject = filename  # Replace with your actual subject extraction logic
-
-            documents = [
-                {
+            documents = []
+            for _, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+                document = {
+                    "id": str(chunks_id),
                     "document": chunk,
                     "embedding": embedding.tolist(),
-                    "subject": subject  # Add the subject field
+                    "metadata": {
+                        "subject": filename,
+                        "year": "2024",
+                        "doc_type": "upload"
+                    }
                 }
-                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
-            ]
+                chunks_id +=1
+                documents.append(document)
+
             docs.extend(documents)
 
     return docs
@@ -428,12 +434,13 @@ def get_chunks(filename):
     return documents
 
 # ---------------------------------------------------------------
-async def load_file(filename, file_path):
+async def load_file(filename, file_path, ids_to_reload):
     """ Load files to VectorDB """
     
     global m_client
     global loaded_files_len
     global isRAG
+    global collection
 
     documents_ = read_files_from_folder(filename, file_path)
 
@@ -444,27 +451,31 @@ async def load_file(filename, file_path):
     if loaded_files_len > 0:
         isRAG = True
 
-    data = [{
-              "id": i, 
-              "vector": documents_[i]['embedding'], 
-              "text": documents_[i]['document'], 
-              "subject": documents_[i]['subject'],
-              "year" : "2024",
-              "doc_type" : "upload"
-              } 
-              for i in range(len(documents_)) ]
 
-    # Assuming 'documents' is a list of dictionaries as in your db example
-    res1 = m_client.insert(
-    collection_name="demo_collection",
-    data=data
-    )
+    if len(ids_to_reload) == 0:
+
+        # Assuming 'documents' is a list of dictionaries as in your db example
+        collection.add(
+            documents=[item['document'] for item in documents_],
+            embeddings=[item['embedding'] for item in documents_],
+            metadatas=[item['metadata'] for item in documents_],
+            ids=[item['id'] for item in documents_]
+        )
+    else:
+        collection.add(
+            documents=[item['document'] for item in documents_],
+            embeddings=[item['embedding'] for item in documents_],
+            metadatas=[item['metadata'] for item in documents_],
+            ids=[item for item in ids_to_reload]
+        )
+        
 
 # ---------------------------------------------------------------
 async def do_rag(query):
     """ Get data from VectorDB """
 
     global m_client
+    global collection
     
     res_ = []
     # for subject in bag.uploaded_files:
@@ -475,55 +486,55 @@ async def do_rag(query):
     # )
     # res_.extend(res)
     
-    model = SentenceTransformer('all-MiniLM-L6-v2') 
-    query_vector = model.encode(query)
-    query_vector = np.array([query_vector]) 
+    # model = SentenceTransformer('all-MiniLM-L6-v2') 
+    # query_vector = model.encode(query)
+    # query_vector = np.array([query_vector]) 
 
-    
-    for subject in bag.uploaded_files:
-        search_results = m_client.search(
-        collection_name="demo_collection",
-        data=query_vector,
-        filter=f"subject == '{subject}'",  
-        output_fields=["text", "subject"],
-        #anns_field="superheroes", # Specify the field containing your vectors
-        #param={"metric_type": "IP"}, # Or other similarity metric as needed
-        limit=5  # Number of top results to return
+    results = collection.query(
+        query_texts=[f"{query}"],
+        n_results=3
     )
-        res_.extend(search_results)
-    return res_ 
+        
+        #res_.extend(results)
+    return results 
 
 def delete_by_subject(subject):
 
-    subject_ = subject.split('.')[0]
+    global collection
+    global chunks_id
 
-    res_ = m_client.query(
-        collection_name="demo_collection",
-        filter=f"subject == '{subject_}'",
-        output_fields=["text", "subject"],
+    #subject_ = subject.split('.')[0]
+
+    res = collection.get(
+        where={"subject": f"{subject}"}
     )
 
-    for _ in range(len(res_)):
-        res = m_client.delete( 
-        collection_name="demo_collection",
-        filter=f"subject == '{subject_}'"
+    deleted_count = len(res["ids"])
+
+    #print(f"deleting by name: {subject}")
+    res_delete = collection.delete(
+        where={"subject": f"{subject}"} 
     )
+
+    #deleted_count = len(res_delete['ids'])
+    chunks_id -= deleted_count
+
         
 async def isFileUploaded(filename):
+        
+    global collection
 
-        try:
-            res = m_client.query(
-                collection_name="demo_collection",
-                filter=f"subject == '{filename}'",
-                output_fields=["text", "subject"],
-            )
-            print(f"res: {res}")
-            if len(res) > 0:
-                return True
-            else:
-                return False
-        except:
-            return False
+    res = collection.get(
+        where={"subject": f"{filename}"}
+    )
+    #results = collection.get()
+
+    #print(f"filename {filename}, res: {res}, full: {results}")
+    if len(res["ids"]) > 0:
+        return True, res["ids"]
+    else:
+        return False, []
+
 
 # ---------------------------------------------------------------
 @rt('/upload')
@@ -538,6 +549,8 @@ async def post(request: Request):
     
     uploaded_files_to_show = []
     not_uploaded_files_to_show = []
+
+    ids_to_reload = []
 
     error_true = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", hx_swap_oob='true', id="error-message", style="color: red; font-size: 14px;"),
     error_false = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",  hx_swap_oob='true', id="error-message", style="display: none; color: red; font-size: 14px;"),
@@ -561,20 +574,20 @@ async def post(request: Request):
             bag.not_uploaded_files.append(uploaded_file.filename)
             continue
 
-        is_file_uploaded_ = await isFileUploaded(uploaded_file.filename)
+        is_file_uploaded_, ids_to_reload = await isFileUploaded(filename)
 
-        print(f"is_file_uploaded_:{is_file_uploaded_}")
+        #print(f"is_file_uploaded_:{is_file_uploaded_}")
 
         if is_file_uploaded_:
             print(f"reloading...{uploaded_file.filename}")
-            delete_by_subject(uploaded_file.filename)
+            delete_by_subject(filename)
             
         else:
             print(f"adding...{uploaded_file.filename}")
             bag.uploaded_files.append(uploaded_file.filename)
             uploaded_files_to_show.append(uploaded_file.filename)
         
-        await load_file(uploaded_file.filename,f"{bag.dir_out}/{filename}")
+        await load_file(filename,f"{bag.dir_out}/{filename}", ids_to_reload)
 
     list_items = []
 
@@ -604,21 +617,23 @@ async def post():
 
     global m_client
     global isRAG
+    global chunks_id
+    global collection
 
     os.system(f"find {bag.dir_out} -type f -delete")
 
-    m_client.drop_collection("demo_collection")
-    m_client.create_collection(
-    collection_name="demo_collection",
-    dimension=384  # The vectors we will use in this demo has 384 dimensions
-    )
+    m_client.delete_collection(name="file_collection")
+    collection = m_client.create_collection(name="file_collection")
 
     isRAG = False
 
     bag.uploaded_files = []
 
+    chunks_id = 0
+
     # Update the response to display all uploaded filenames
-    return Ul(id='uploaded-files-list', cls="uploaded-files-list-cls", hx_swap_obb=True)
+    return Ul(id='uploaded-files-list', cls="uploaded-files-list-cls", hx_swap_obb=True), Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",  hx_swap_oob='true', id="error-message", style="display: none; color: red; font-size: 14px;"),
+
 
 #---------------------------------------------------------------
 def convert_files(file_bytes, file_name, file_type):
@@ -984,9 +999,11 @@ async def ws(data:str, send, model:str, strict:str):
                 if strict == "strict":
                    messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document. If the answer is in history - use history to create answer"})
                    print("strict++")
+                   break
                 else:
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
                     print("strict--")
+                    break
                     
     else:
         if strict == "strict":
@@ -1005,4 +1022,4 @@ async def ws(data:str, send, model:str, strict:str):
 # MAIN
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    uvicorn.run("rag_milvus:app", host='localhost', port=5001, reload=True)
+    uvicorn.run("rag_chromadb:app", host='localhost', port=5001, reload=True)
