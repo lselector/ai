@@ -56,6 +56,8 @@ else:
 #model = "mistral:7b-instruct-v0.3-q4_0"
 #model = "llama3:8b-instruct-q4_0"
 
+nltk.download('punkt')
+
 messages = []
 messages_for_show = []
 bag.uploaded_files = []
