@@ -18,6 +18,7 @@ matplotlib
 python-dotenv
 pip-autoremove
 nltk
+levutils
 # --------------------------------------
 openai
 ollama

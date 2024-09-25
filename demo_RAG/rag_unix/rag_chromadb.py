@@ -10,8 +10,10 @@
 from fasthtml.common import *
 from starlette.requests import Request
 
-from mybag import *         # py_utils
-from myutils import *       # py_utils 
+import levutils
+from levutils.mybag import *
+from levutils.myutils import *
+
 import fitz, json, docx, os
 from bs4 import BeautifulSoup
 from io import BytesIO
