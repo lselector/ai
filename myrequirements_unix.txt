@@ -31,7 +31,9 @@ unidecode
 openpyxl     # parse excel files
 python-docx  # parse MS Word files
 pymupdf      # parse PDF files
+# --------------------------------------
 sentence-transformers # embedding vectors
 pymilvus
 chromadb
+faiss-cpu
 # --------------------------------------
