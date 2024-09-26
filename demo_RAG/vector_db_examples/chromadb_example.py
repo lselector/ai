@@ -9,6 +9,7 @@ import nltk
 from sentence_transformers import SentenceTransformer
 
 nltk.download('punkt')
+nltk.download('punkt_tab')
 
 # Create a Chroma client
 client = chromadb.Client()

@@ -1,8 +1,8 @@
 
 """
-# rag_chromadb.py
+# rag_faiss.py
 # Example of chatbot using fasthtml and ollama or openai
-# Using chromadb as VectorDB
+# Using Faiss as VectorDB
 # Additional modules:
 #  - RAG
 """
@@ -20,7 +20,7 @@ from io import BytesIO
 
 import ollama, asyncio
 from openai import OpenAI
-import chromadb
+import faiss
 import nltk
 
 import pandas as pd
@@ -69,6 +69,9 @@ loaded_files_len = 0
 m_client = None
 collection = None
 isRAG = False
+all_chunks = {
+    
+}
 chunks_id = 0
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -81,8 +84,11 @@ async def init():
     """ Init vectorDB """
     global m_client
     global collection
-    m_client = chromadb.Client()
-    collection = m_client.create_collection(name="file_collection")
+    #nlist = 10
+    #quantizer = faiss.IndexFlatL2(384)  # Using L2 distance for the search
+    #m_client = faiss.IndexIVFFlat(quantizer, 384, nlist)
+    m_client = faiss.IndexFlatL2(384)
+    #collection = m_client.create_collection(name="file_collection")
     # To preload files in Server. 
     # If you want to have RAG of some default docs
     # await load_file()
@@ -389,23 +395,30 @@ def read_files_from_folder(filename, file_path):
             embeddings = model.encode(chunks)
 
             documents = []
-            for _, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-                document = {
-                    "id": str(chunks_id),
-                    "document": chunk,
-                    "embedding": embedding.tolist(),
-                    "metadata": {
-                        "subject": filename,
-                        "year": "2024",
-                        "doc_type": "upload"
-                    }
+            # for _, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            #     document = {
+            #         "id": str(chunks_id),
+            #         "document": chunk,
+            #         "embedding": embedding.tolist(),
+            #         "metadata": {
+            #             "subject": filename,
+            #             "year": "2024",
+            #             "doc_type": "upload"
+            #         }
+            #     }
+            
+                #chunks_id +=1
+                #documents.ex(document)
+
+            for chunk in chunks:
+            
+                all_chunks[chunks_id] = {
+                    "chunk": chunk,
+                    "filename": filename
                 }
                 chunks_id +=1
-                documents.append(document)
 
-            docs.extend(documents)
-
-    return docs
+            return embeddings
 
 def get_chunks(filename):
     #text = text.encode('utf-8')
@@ -460,12 +473,9 @@ async def load_file(filename, file_path, ids_to_reload):
     if len(ids_to_reload) == 0:
 
         # Assuming 'documents' is a list of dictionaries as in your db example
-        collection.add(
-            documents=[item['document'] for item in documents_],
-            embeddings=[item['embedding'] for item in documents_],
-            metadatas=[item['metadata'] for item in documents_],
-            ids=[item['id'] for item in documents_]
-        )
+        m_client.add(documents_)
+        dimension = documents_.shape[1]
+        print(f"dm: {dimension}")
     else:
         collection.add(
             documents=[item['document'] for item in documents_],
@@ -481,7 +491,8 @@ async def do_rag(query):
 
     global m_client
     global collection
-    
+    global all_chunks
+
     res_ = []
     # for subject in bag.uploaded_files:
     #     res = m_client.query(
@@ -493,15 +504,22 @@ async def do_rag(query):
     
     # model = SentenceTransformer('all-MiniLM-L6-v2') 
     # query_vector = model.encode(query)
-    # query_vector = np.array([query_vector]) 
+    # query_vector = np.array([query_vector])
+    # 
+    model = SentenceTransformer('all-MiniLM-L6-v2') 
+    query_vector = model.encode([query]).astype('float32')
 
-    results = collection.query(
-        query_texts=[f"{query}"],
-        n_results=3
-    )
+    dimension = query_vector.shape[1]
+    print(f"dm: {dimension}")
+
+    distances, indices = m_client.search(query_vector, 5)
+
+    print(f"all_chunks: {all_chunks}\n indeces: {indices}")
+    for idx in indices[0]:
+        res_.append(all_chunks[idx])
         
         #res_.extend(results)
-    return results 
+    return res_ 
 
 def delete_by_subject(subject):
 
@@ -525,18 +543,16 @@ def delete_by_subject(subject):
     chunks_id -= deleted_count
 
         
-async def isFileUploaded(filename):
+def isFileUploaded(filename):
         
     global collection
 
-    res = collection.get(
-        where={"subject": f"{filename}"}
-    )
+    chunk_ids = [chunk_id for chunk_id, chunk_data in all_chunks.items() if chunk_data["filename"] == filename]
     #results = collection.get()
 
     #print(f"filename {filename}, res: {res}, full: {results}")
-    if len(res["ids"]) > 0:
-        return True, res["ids"]
+    if len(chunk_ids) > 0:
+        return True, chunk_ids
     else:
         return False, []
 
@@ -579,7 +595,7 @@ async def post(request: Request):
             bag.not_uploaded_files.append(uploaded_file.filename)
             continue
 
-        is_file_uploaded_, ids_to_reload = await isFileUploaded(filename)
+        is_file_uploaded_, ids_to_reload = isFileUploaded(filename)
 
         #print(f"is_file_uploaded_:{is_file_uploaded_}")
 
@@ -627,8 +643,7 @@ async def post():
 
     os.system(f"find {bag.dir_out} -type f -delete")
 
-    m_client.delete_collection(name="file_collection")
-    collection = m_client.create_collection(name="file_collection")
+    m_client = faiss.IndexFlatL2(384)
 
     isRAG = False
 
@@ -1002,7 +1017,7 @@ async def ws(data:str, send, model:str, strict:str):
                 
             else:
                 if strict == "strict":
-                   messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document. If the answer is in history - use history to create answer"})
+                   messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n If there is answer and there is no information about it in the document. If the answer is in history - use history to create answer"})
                    print("strict++")
                    break
                 else:
@@ -1015,7 +1030,7 @@ async def ws(data:str, send, model:str, strict:str):
             messages.append({"role": "user", "content": f"Say: In strict mode I answer only using uploaded files. Please appload files"})
             print("strict+++")
         else:
-            messages.append({"role": "user", "content": f"Question: \n {data}answer the question even if it not in the context"})
+            messages.append({"role": "user", "content": f"Question: \n {data} Instructions: If no question - speak as always. If there is an question - answer the question even if it not in the context. Never say Understood or something like that after reading instrucitons."})
             print("strict---")  
 
     if model == "ollama":
@@ -1027,4 +1042,4 @@ async def ws(data:str, send, model:str, strict:str):
 # MAIN
 # ---------------------------------------------------------------
 if __name__ == "__main__":
-    uvicorn.run("rag_chromadb:app", host='localhost', port=5001, reload=True)
+    uvicorn.run("rag_faiss:app", host='localhost', port=5001, reload=True)
