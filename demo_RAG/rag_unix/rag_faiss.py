@@ -69,10 +69,12 @@ loaded_files_len = 0
 m_client = None
 collection = None
 isRAG = False
+isTrainned = False
 all_chunks = {
     
 }
-chunks_id = 0
+
+faiss_data_wrapper = []
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
 bag.dir_out = bag.script_dir + "/uploaded_files"
@@ -84,11 +86,11 @@ async def init():
     """ Init vectorDB """
     global m_client
     global collection
-    #nlist = 10
-    #quantizer = faiss.IndexFlatL2(384)  # Using L2 distance for the search
-    #m_client = faiss.IndexIVFFlat(quantizer, 384, nlist)
-    m_client = faiss.IndexFlatL2(384)
-    #collection = m_client.create_collection(name="file_collection")
+    nlist = 5
+    quantizer = faiss.IndexFlatL2(384)  # Using L2 distance for the search
+    m_client = faiss.IndexIVFFlat(quantizer, 384, nlist)
+
+    #m_client = faiss.IndexFlatL2(384)
     # To preload files in Server. 
     # If you want to have RAG of some default docs
     # await load_file()
@@ -373,11 +375,11 @@ def get():
     return main_page
 
 # ---------------------------------------------------------------
-def read_files_from_folder(filename, file_path):
+def read_files_from_folder(filename, file_path, is_file_uploaded):
     """ Read file from folder and convert it into vectors/chunks """
-    docs = []
 
-    global chunks_id
+    chunks_id = 0
+    global faiss_data_wrapper
 
     if os.path.isfile(file_path):  
         with open(file_path, 'r') as file:
@@ -391,34 +393,39 @@ def read_files_from_folder(filename, file_path):
             chunk_size = 3 
             chunks = [' '.join(sentences[i:i+chunk_size]) for i in range(0, len(sentences), chunk_size)] 
 
-            model = SentenceTransformer('all-MiniLM-L6-v2') 
-            embeddings = model.encode(chunks)
+            model = SentenceTransformer('all-MiniLM-L6-v2')  
+            vectors = model.encode(chunks).astype('float32')
 
-            documents = []
-            # for _, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-            #     document = {
-            #         "id": str(chunks_id),
-            #         "document": chunk,
-            #         "embedding": embedding.tolist(),
-            #         "metadata": {
-            #             "subject": filename,
-            #             "year": "2024",
-            #             "doc_type": "upload"
-            #         }
-            #     }
-            
-                #chunks_id +=1
-                #documents.ex(document)
-
+            int_vectors_ids = []
+      
             for chunk in chunks:
-            
-                all_chunks[chunks_id] = {
-                    "chunk": chunk,
-                    "filename": filename
-                }
-                chunks_id +=1
 
-            return embeddings
+                int_vectors_ids.append(chunks_id)
+
+                if not is_file_uploaded:
+
+                    metadata = {
+                            "filename": filename,
+                            "year": "2024",
+                            "doc_type": "upload"
+                    }
+
+                    print(f"size: {len(vectors)}")
+                    new_data = {
+                            "chunk": chunk, 
+                            "vector_id": chunks_id, 
+                            "vector": vectors[chunks_id], 
+                            "metadata": metadata
+                    }
+
+                    # Append the new data
+                    faiss_data_wrapper.append(new_data)
+
+                    chunks_id +=1
+
+            vector_ids = np.array(int_vectors_ids)
+
+            return vectors, vector_ids
 
 def get_chunks(filename):
     #text = text.encode('utf-8')
@@ -432,7 +439,7 @@ def get_chunks(filename):
             chunks = text.split("\n\n")
 
             # 3. Generate Embeddings
-            model = SentenceTransformer('all-MiniLM-L6-v2') 
+            model = SentenceTransformer('stella_en_400M_v5') 
             embeddings = model.encode(chunks)
 
             # 4. Format for db, including 'subject' field
@@ -452,37 +459,34 @@ def get_chunks(filename):
     return documents
 
 # ---------------------------------------------------------------
-async def load_file(filename, file_path, ids_to_reload):
+async def load_file(filename, file_path, ids_to_reload, is_file_uploaded_):
     """ Load files to VectorDB """
     
     global m_client
     global loaded_files_len
     global isRAG
     global collection
+    global isTrainned
 
-    documents_ = read_files_from_folder(filename, file_path)
+    vectors, vectors_ids = read_files_from_folder(filename, file_path, is_file_uploaded_)
 
-    loaded_files_len = len(documents_)
-
-    print(f"file is loaded! {loaded_files_len}")
-
-    if loaded_files_len > 0:
+    if len(vectors) > 0:
         isRAG = True
 
+    if isTrainned == False:
+        m_client.train(vectors)
+        isTrainned == True
 
     if len(ids_to_reload) == 0:
 
         # Assuming 'documents' is a list of dictionaries as in your db example
-        m_client.add(documents_)
-        dimension = documents_.shape[1]
+        m_client.add_with_ids(vectors, vectors_ids)
+        dimension = vectors.shape[1]
         print(f"dm: {dimension}")
     else:
-        collection.add(
-            documents=[item['document'] for item in documents_],
-            embeddings=[item['embedding'] for item in documents_],
-            metadatas=[item['metadata'] for item in documents_],
-            ids=[item for item in ids_to_reload]
-        )
+        m_client.add_with_ids(vectors, ids_to_reload)
+        dimension = vectors.shape[1]
+        print(f"dm: {dimension}")
         
 
 # ---------------------------------------------------------------
@@ -491,21 +495,10 @@ async def do_rag(query):
 
     global m_client
     global collection
-    global all_chunks
+    global faiss_data_wrapper
 
     res_ = []
-    # for subject in bag.uploaded_files:
-    #     res = m_client.query(
-    #     collection_name="demo_collection",
-    #     filter=f"subject == '{subject}'",
-    #     output_fields=["text", "subject"],
-    # )
-    # res_.extend(res)
-    
-    # model = SentenceTransformer('all-MiniLM-L6-v2') 
-    # query_vector = model.encode(query)
-    # query_vector = np.array([query_vector])
-    # 
+
     model = SentenceTransformer('all-MiniLM-L6-v2') 
     query_vector = model.encode([query]).astype('float32')
 
@@ -514,45 +507,32 @@ async def do_rag(query):
 
     distances, indices = m_client.search(query_vector, 5)
 
-    print(f"all_chunks: {all_chunks}\n indeces: {indices}")
-    for idx in indices[0]:
-        res_.append(all_chunks[idx])
+    for i, idx in enumerate(indices[0]):
+        if idx == -1:  # FAISS returns -1 if no match is found
+            continue
+        elif faiss_data_wrapper[idx]['metadata']['year'] == "2024":
+            res_.append(faiss_data_wrapper[idx]['chunk'])
         
         #res_.extend(results)
     return res_ 
 
-def delete_by_subject(subject):
+def delete_by_id(ids_to_reload):
 
-    global collection
-    global chunks_id
+    global m_client
 
-    #subject_ = subject.split('.')[0]
+    m_client.remove_ids(ids_to_reload)
 
-    res = collection.get(
-        where={"subject": f"{subject}"}
-    )
-
-    deleted_count = len(res["ids"])
-
-    #print(f"deleting by name: {subject}")
-    res_delete = collection.delete(
-        where={"subject": f"{subject}"} 
-    )
-
-    #deleted_count = len(res_delete['ids'])
-    chunks_id -= deleted_count
-
-        
+    
 def isFileUploaded(filename):
         
-    global collection
+    global faiss_data_wrapper
 
-    chunk_ids = [chunk_id for chunk_id, chunk_data in all_chunks.items() if chunk_data["filename"] == filename]
-    #results = collection.get()
+    chunk_ids = [data['vector_id'] for data in faiss_data_wrapper if data["metadata"]["filename"] == filename]
 
-    #print(f"filename {filename}, res: {res}, full: {results}")
+    #print(f"filename {filename}, ids: {chunk_ids}")
     if len(chunk_ids) > 0:
-        return True, chunk_ids
+        
+        return True, np.array(chunk_ids)
     else:
         return False, []
 
@@ -561,8 +541,6 @@ def isFileUploaded(filename):
 @rt('/upload')
 async def post(request: Request):
     """ Upload file(s) from user """
-
-    print("here")
 
     form = await request.form()
 
@@ -601,14 +579,14 @@ async def post(request: Request):
 
         if is_file_uploaded_:
             print(f"reloading...{uploaded_file.filename}")
-            delete_by_subject(filename)
+            delete_by_id(ids_to_reload)
             
         else:
             print(f"adding...{uploaded_file.filename}")
             bag.uploaded_files.append(uploaded_file.filename)
             uploaded_files_to_show.append(uploaded_file.filename)
         
-        await load_file(filename,f"{bag.dir_out}/{filename}", ids_to_reload)
+        await load_file(filename,f"{bag.dir_out}/{filename}", ids_to_reload, is_file_uploaded_)
 
     list_items = []
 
@@ -638,18 +616,22 @@ async def post():
 
     global m_client
     global isRAG
-    global chunks_id
     global collection
+    global faiss_data_wrapper
+    global isTrainned
 
     os.system(f"find {bag.dir_out} -type f -delete")
 
-    m_client = faiss.IndexFlatL2(384)
+    nlist = 5
+    quantizer = faiss.IndexFlatL2(384)  # Using L2 distance for the search
+    m_client = faiss.IndexIVFFlat(quantizer, 384, nlist)
+    isTrainned = False
 
     isRAG = False
 
     bag.uploaded_files = []
 
-    chunks_id = 0
+    faiss_data_wrapper = []
 
     # Update the response to display all uploaded filenames
     return Ul(id='uploaded-files-list', cls="uploaded-files-list-cls", hx_swap_obb=True), Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",  hx_swap_oob='true', id="error-message", style="display: none; color: red; font-size: 14px;"),
