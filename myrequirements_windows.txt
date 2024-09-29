@@ -33,7 +33,7 @@ python-docx  # parse MS Word files
 pymupdf      # parse PDF files
 # --------------------------------------
 sentence-transformers # embedding vectors
-pymilvus
+# pymilvus
 chromadb
 faiss-cpu
 # --------------------------------------
