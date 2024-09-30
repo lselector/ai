@@ -3,6 +3,11 @@ from fasthtml.common import *
 from levutils.mybag import *
 from levutils.myutils import *
 
+from bs4 import BeautifulSoup
+from io import BytesIO
+
+import fitz, json, docx, os
+
 
 def get_main_page(get_history, get_uploaded_files_list):
     main_page = (Title("Document Q&A"),
@@ -274,86 +279,129 @@ def get_main_page(get_history, get_uploaded_files_list):
     return main_page
 
 #---------------------------------------------------------------
-def add_message(data, role):
-    """ Add message """
-    i = len(messages_for_show)
-    tid = f'message-{i}'
- 
-    cls_ = ""
+def convert_files(file_bytes, file_name, file_type, dir_out):
+    """ Converts different files to txt """
+    print(f"Filename: {file_name}, File type: {file_type}")
 
-    if role == "end":
-        cls_ = "primary"
-    elif role =="start":
-        cls_ = "secondary"
+    if file_type == "text/plain":
+        file_name += "__txt.txt"
+        read_txt(file_bytes, file_name)
+        return True, file_name
 
-    list_item = Div(
-                Div(data,
-                cls=f"chat-bubble chat-bubble-{cls_}",
-                id=tid,
-                hx_swap_oob="true"
-                ),
-                cls = f"chat chat-{role}"
-                )
-    bag.list_items.append(list_item)
+    elif file_type == "application/pdf":
+        file_name += "__pdf.txt"
+        read_pdf(file_bytes, file_name)
+        return True, file_name
 
-    return list_item
+    elif file_type == "application/json":
+        file_name += "__json.txt"
+        read_json(file_bytes, file_name)
+        return True, file_name
     
-async def return_answer(isRAG, ):
-
-    print(f"isRag: {isRAG}, strict: {strict}")
-
-    await send(
-        Div(add_message(data, "end"), hx_swap_oob="beforeend", id="message-list")
-    )
+    elif file_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        file_name += "__xlsx.txt"
+        read_xlsx(file_bytes, file_name)
+        return True, file_name
     
-    messages_for_show.append({"role": "user", "content": f"{data}"})
+    elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        file_name += "__docx.txt"
+        read_docx(file_bytes, file_name)
+        return True, file_name
     
-    await send(
-        Div(get_loading(), hx_swap_oob="beforeend", id="message-list")
-    )
+    elif file_type == "text/html":
+        file_name += "__docx.txt"
+        read_html(file_bytes, file_name)
+        return True, file_name
+    
+    return False, None
 
-    # Send the clear input field command to the user
-    await send(ChatInput())
+#---------------------------------------------------------------
+def read_html(file_bytes,filename, dir_out):
+    """ Read MS Word file """
 
-    await asyncio.sleep(0)
+    soup = BeautifulSoup(BytesIO(file_bytes), 'html.parser')
 
-    if isRAG:
-        context = await do_rag(data)
+    # Extract all the text from the HTML
+    all_text = soup.get_text(separator='\n')  # Use '\n' as separator for better readability
 
-        print(f"doing rag: {context}")
+    write_txt(all_text.strip().encode('utf-8'), filename, dir_out) 
 
-        for l in context:
-            if len(l) == 0:
-                if strict == "strict":
-                    messages.append({"role": "user", "content": f"Say: In strict mode I answer only using uploaded files. Please appload files"})
-                    print("strict+")
-                    break
-                else:
-                    messages.append({"role": "user", "content": f"Question: \n {data}"})
-                    print("strict-") 
-                    break 
-                        
-            else:
-                if strict == "strict":
-                   messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document. If the answer is in history - use history to create answer"})
-                   print("strict++")
-                   break
-                else:
-                    messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
-                    print("strict--")
-                    break
-                    
-    else:
-        if strict == "strict":
-            messages.append({"role": "user", "content": f"Say: In strict mode I answer only using uploaded files. Please appload files"})
-            print("strict+++")
-        else:
-            messages.append({"role": "user", "content": f"Question: \n {data}answer the question even if it not in the context"})
-            print("strict---")  
+#---------------------------------------------------------------
+def read_docx(file_bytes,filename, dir_out):
+    """ Read MS Word file """
 
-    if model == "ollama":
-        await chat_ollama(send)
-    elif model == "openai":
-        await chat_openai(send)
+    doc = docx.Document(BytesIO(file_bytes))
+
+    # Extract text from the document
+    all_text = ""
+    for paragraph in doc.paragraphs:
+        all_text += paragraph.text + "\n"
+
+    write_txt(all_text.encode('utf-8'), filename, dir_out) 
+
+#---------------------------------------------------------------
+def read_xlsx(file_bytes,filename, dir_out):
+    """ Read Excel file """
+
+    excel_data = pd.read_excel(BytesIO(file_bytes))
+
+    output = BytesIO()
+    excel_data.to_excel(output, index=False)  # Write DataFrame to the BytesIO object
+    text_content = excel_data.to_csv(index=False, sep='\t').replace('\t', ' ')  
+
+    #print(text_content)
+    write_txt(text_content.encode('utf-8'), filename, dir_out) 
 
 
+#---------------------------------------------------------------
+def read_json(json_data, filename, dir_out):
+    """ Read JSON file """
+
+    #print(f"Text from json: {json_data}", flush=True) 
+
+    if isinstance(json_data, bytes):
+        json_data = json_data.decode('utf-8')
+        json_data = json.loads(json_data)  # Now parse the JSON string
+    
+    text_ = ""
+
+    def extract_text_recursive(data):
+        nonlocal text_
+
+        if isinstance(data, dict):
+            for value in data.values():
+                extract_text_recursive(value)
+        elif isinstance(data, list):
+            for item in data:
+                extract_text_recursive(item)
+        elif isinstance(data, str):
+            text_ += data + " "  
+
+    extract_text_recursive(json_data)
+    write_txt(text_.strip().encode('utf-8'), filename, dir_out)
+
+#---------------------------------------------------------------
+def read_pdf(file_bytes,filename,dir_out):
+    """ Read PDF file """
+    text = ""
+    with fitz.open(stream=file_bytes, filetype="pdf") as pdf:  # Open PDF from bytes
+        for page in pdf:
+            text += page.get_text()
+    
+    bytes = text.encode('utf-8') 
+    write_txt(bytes, filename, dir_out)
+
+#---------------------------------------------------------------
+def read_txt(file_bytes,filename,dir_out):
+    """ Read txt file """
+    write_txt(file_bytes, filename,dir_out)
+
+#---------------------------------------------------------------
+def write_txt(bytes, filename, dir_out):
+    """ Write extracted text to txt file, use file name of original file """
+    write_path = dir_out
+    os.makedirs(write_path, exist_ok=True)
+    write_path += "/"+filename
+    print(f"saving file: {write_path}")
+    with open(write_path, "wb") as file:
+        file.write(bytes)
