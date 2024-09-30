@@ -7,16 +7,18 @@
 #  - RAG
 """
 
-from fasthtml.common import *
-from starlette.requests import Request
-
 import levutils
 from levutils.mybag import *
 from levutils.myutils import *
+bag = MyBunch()
 
-import fitz, json, docx, os
+from fasthtml.common import *
+from starlette.requests import Request
+
+import fitz, json, docx, os, nltk
 from bs4 import BeautifulSoup
 from io import BytesIO
+import common_tools as ct
 
 import ollama, asyncio
 from openai import OpenAI
@@ -40,7 +42,6 @@ app, rt, = fast_app(live=True, pico=False, ws_hdr=True, hdrs=[
         )
     
 ])
-bag = MyBunch()
 
 client_ollama = ollama.Client()
 client_openai = OpenAI()
@@ -59,11 +60,13 @@ else:
 messages = []
 messages_for_show = []
 bag.uploaded_files = []
+bag.uploaded_files_to_show_history = []
 bag.not_uploaded_files = []
 loaded_files_len = 0
 m_client = None
 isRAG = False
 chunks_id = 0
+bag.embedding_model = SentenceTransformer('all-MiniLM-L6-v2') 
 
 bag.script_dir = os.path.dirname(os.path.realpath(__file__))
 bag.dir_out = bag.script_dir + "/uploaded_files"
@@ -82,7 +85,7 @@ async def init():
     # To preload files in Server. 
     # If you want to have RAG of some default docs
     # await load_file()
-    
+
 # ---------------------------------------------------------------
 @app.on_event("startup")
 async def startup_event():
@@ -93,304 +96,26 @@ async def startup_event():
 @rt('/')
 def get():
     """ Main page """
+    global bag
     bag.list_items = []
-    main_page = (Title("Document Q&A"),
-        Div(
-        Div(
-        Div( 
-            H1("Interactive Document Q&A"),
-            Div(
-            get_history(),
-            cls="history-container"),
-            Div(
-                Form(
-                    Div(
-                        Select(id="shapeInput", name="model")(
-                            Option("Ollama", value="ollama", selected=True),
-                            Option("OpenAI", value="openai", selected=False),
-                           id="select-model"), 
-                    Label("Strict:", cls='px-2'),
-                        Input(type="checkbox", 
-                              cls="checkboxer", 
-                              value="strict", 
-                              name="strict", 
-                              data_foo="bar"
-                              ),
-                    cls="model-strict-container"),
-                    Group( 
-                     Input(id="new-prompt", type="text", name="data"),
-                     Button("Submit", id="submitButton", onclick="setScrollTrue();")
-                     ),
-                     id="form-id",
-                     ws_send=True, hx_ext="ws", ws_connect="/wscon", 
-                     target_id='message-list',
-                     hx_swap="beforeend",
-                     enctype="multipart/form-data",
-                     hx_trigger="submit"
-                    )
-                    ),
-                    cls="wrapper-chat column",
-                    id="wrapper-chat-id"
-                    ),
-                    Div(
-                    Div(
-                    Div(
-                    Div("Uploaded Files:", cls="text-upload"),
-                    id="loading-container", cls="loading-container"),
-                    Div(
-                    Div(
-                    get_uploaded_files_list(),
-                    id="container", cls="upload-files"),
-                    id="upload-container-wrapper"
-                    ),
-                    Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", id="error-message", style="color: red; display: none;"),
-                    Div(
-                    Form(
-                    Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", 
-                          onchange="document.getElementById('submit-upload-btn').click()", accept=".txt, .xlsx, .docx, .json, .pdf, .html"),
-                    Button('Select Files', cls="select-files-btn", type='button', onclick="document.getElementById('file-upload_').click()"),
-                    Button(type="submit", 
-                           id="submit-upload-btn", 
-                           onclick="createDiv();", 
-                           style="display: none",
-                           ),
-                    **{'hx-on:htmx:after-request':"deleteUploadAnimation();"},
-                    id="upload-form",
-                    hx_post="/upload",
-                    target_id="uploaded-files-list",
-                    hx_swap="beforeend",
-                    enctype="multipart/form-data",
-                    cls="upload-cls",
-                    ),
-                    Form(Group(
-                    Button("Clear", type="submit", id="clear-files")
-                    ),
-                    hx_post="/delete-all-docs",
-                    target_id='uploaded-files-list',
-                    hx_swap="outerHTML"
-                    # cls="upload-button-container"
-                    ),
-                    cls="forms-container"
-                    ),
-                    
-                
-            Script(
-            """
-            const container = document.getElementById('container');
-            const fileInput = document.getElementById('file-upload_');
-            const form = document.getElementById('upload-form');;
-            
-            container.addEventListener('dragover', (event) => {
-                event.preventDefault();
-            });
-
-            function validateAndSubmit(input) {
-                const allowedExtensions = ['.txt', '.xlsx', '.docx', '.json', '.pdf', '.html'];
-                const files = input.files;
-                const errorMessage = document.getElementById('error-message');
-
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const fileExtension = file.name.split('.').pop().toLowerCase();
-
-                    console.log(fileExtension)
-
-                    if (!allowedExtensions.includes('.' + fileExtension)) {
-                        errorMessage.style.display = 'block';
-                        input.value = ''; 
-                        deleteUploadAnimation();
-                        return false; // Indicate invalid file type
-                    }
-                }
-                
-                return true; // Indicate all files are valid
-            }
-
-            container.addEventListener('drop', (event) => {
-                event.preventDefault();
-
-                createDiv();
-
-                const files = event.dataTransfer.files;
-
-                fileInput.files = files; 
-
-                form.dispatchEvent(new Event('submit')); 
-                
-            });
-
-            container.addEventListener('change', () => {
-                event.preventDefault(); 
-
-                createDiv();
-
-                const files = event.dataTransfer.files; 
-
-                fileInput.files = files; 
-
-                form.dispatchEvent(new Event('submit')); 
-
-                });
-            """
-        ),
-        Script(
-            """
-
-            const messageList = document.getElementById('chatlist')
-            const parent = messageList.parentElement;
-            let hasScrolled = false;
-
-            let scrolledPercent_ = 0       
-
-             messageList.addEventListener('scroll', () => {
-                const scrollTop = messageList.scrollTop; // Current scroll position from the top
-                const scrollHeight = messageList.scrollHeight; // Total height of scrollable content
-                const clientHeight = messageList.clientHeight; // Visible height of the div
-
-                scrolledPercent = (scrollTop / (scrollHeight - clientHeight)) * 100;
-                
-                
-                set_scrolled_percent(scrolledPercent)
-            });
-
-            function set_scrolled_percent(new_scrolledPercent_) {
-                scrolledPercent_ = new_scrolledPercent_
-                //console.log(scrolledPercent_);
-            }
-
-            const observer = new MutationObserver(() => {
-                    
-                    if (hasScrolled) {
-                    if (scrolledPercent_ > 99) {
-                    scrollToBottom();
-                    } else {
-                    smoothScrollToBottom();
-                    }
-                    //alert("we did scroll");
-                    //hasScrolled = false;
-                    }
-                    
-            });
-
-            observer.observe(messageList, { childList: true, subtree: true });
-
-            function scrollToBottom() {
-                messageList.scrollTop = messageList.scrollHeight;
-            }
-
-            function smoothScrollToBottom() {
-                messageList.scrollTo({
-                    top: messageList.scrollHeight,
-                    behavior: 'smooth'
-                });
-              }
-
-            function setScrollFalse() {
-                hasScrolled = false;
-            }
-            function setScrollTrue() {
-                hasScrolled = true;
-                setFocus();
-            }
-
-            let previousScrollPosition = 0; 
-
-            function handleScroll() {
-            const currentScrollPosition = messageList.scrollTop;
-
-            if (currentScrollPosition < previousScrollPosition) {
-                // Scrolling up
-                setScrollFalse(); // Call your desired method here
-            }
-
-            previousScrollPosition = currentScrollPosition;
-            }
-
-            // Attach the scroll event listener
-            messageList.addEventListener('scroll', handleScroll);
-
-            function setFocus() { 
-                setTimeout(() => {
-                    const inputField = document.getElementById('new-prompt');
-                    inputField.focus();
-                }, 100); 
-            }
-
-            """
-        ),
-
-        Script(
-            """ 
-                function createDiv() {
-                // Create the new div element
-                const newDiv = document.createElement('div');
-                //newDiv.textContent = "This is a new div!"; // Add some content to the new div
-
-                newDiv.id = 'loading-file-id';
-
-                newDiv.className = "loading-line file-upload-line";
-
-                // Get the parent div where you want to add the new div
-                const parentDiv = document.getElementById('loading-container');
-
-                // Append the new div to the parent div
-                parentDiv.appendChild(newDiv);
-                }
-
-
-                function deleteUploadAnimation() {
-                // 1. Get the div element by its ID
-                let divToDelete = document.getElementById("loading-file-id");
-
-                // 2. Check if the div exists
-                if (divToDelete) {
-                    // 3. Remove the div from its parent
-                    divToDelete.parentNode.removeChild(divToDelete); 
-                } 
-                }
-            """
-        ),
-        cls="wrapper-uploaded-files-internal",
-        id="uploaded-files-internal"
-                    ),
-                    cls="wrapper-uploaded-files column",
-
-                    ),                             
-        cls="wrapper-content"),
-        cls="wrapper-main")
-    )
     
-    return main_page
+    return ct.get_main_page(get_history(), get_uploaded_files_list())
 
 # ---------------------------------------------------------------
 def read_files_from_folder(filename, file_path):
     """ Read file from folder and convert it into vectors/chunks """
     docs = []
-
     if os.path.isfile(file_path):  
         with open(file_path, 'r') as file:
-            
             text = file.read() 
-
             print(f"name:{filename} File added {text[:100]}")
-            
             chunks = text.split("\n\n") 
-
-            # 3. Generate Embeddings
-            model = SentenceTransformer('all-MiniLM-L6-v2') 
-            embeddings = model.encode(chunks)
-
-            # 4. Format for db, including 'subject' field
-            # You'll need to determine the subject for each file. 
-            # Here, I'm just using the filename as a placeholder. 
-            # You might need more sophisticated logic to extract the subject from the file content.
-            subject = filename  # Replace with your actual subject extraction logic
-
+            embeddings = bag.embedding_model.encode(chunks)
             documents = [
                 {
                     "document": chunk,
                     "embedding": embedding.tolist(),
-                    "subject": subject  # Add the subject field
+                    "filename": filename 
                 }
                 for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
             ]
@@ -398,39 +123,37 @@ def read_files_from_folder(filename, file_path):
 
     return docs
 
-def get_chunks(filename):
-    #text = text.encode('utf-8')
+# ---------------------------------------------------------------
+def get_data_to_load(documents_, ids_to_reload):
+    """ Prepare data for VectorDB insert """
+    data = []
 
-    file_path = os.path.join(bag.dir_out, filename)
-    if os.path.isfile(file_path):  
-        with open(file_path, 'r') as file:
-            
-            text = file.read() 
+    if len(ids_to_reload) == 0:
+        data = [{
+                    "id": i, 
+                    "vector": documents_[i]['embedding'], 
+                    "text": documents_[i]['document'], 
+                    "filename": documents_[i]['filename'],
+                    "year" : "2024",
+                    "doc_type" : "upload"
+                    } 
+                    for i in range(len(documents_)) ]
 
-            chunks = text.split("\n\n")
+    else:
+        for i in range(len(documents_)):
+            data.append({
+                        "id": ids_to_reload[i], 
+                        "vector": documents_[i]['embedding'], 
+                        "text": documents_[i]['document'], 
+                        "filename": documents_[i]['filename'],
+                        "year" : "2024",
+                        "doc_type" : "upload"    
+            })
 
-            # 3. Generate Embeddings
-            model = SentenceTransformer('all-MiniLM-L6-v2') 
-            embeddings = model.encode(chunks)
-
-            # 4. Format for db, including 'subject' field
-            # You'll need to determine the subject for each file. 
-            # Here, I'm just using the filename as a placeholder. 
-            # You might need more sophisticated logic to extract the subject from the file content.
-            subject = filename  # Replace with your actual subject extraction logic
-
-            documents = [
-                {
-                    "document": chunk,
-                    "embedding": embedding.tolist(),
-                    "subject": subject  # Add the subject field
-                }
-                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
-            ]
-    return documents
+    return data
 
 # ---------------------------------------------------------------
-async def load_file(filename, file_path):
+async def load_file(filename, file_path, ids_to_reload):
     """ Load files to VectorDB """
     
     global m_client
@@ -438,23 +161,12 @@ async def load_file(filename, file_path):
     global isRAG
 
     documents_ = read_files_from_folder(filename, file_path)
-
     loaded_files_len = len(documents_)
-
     print(f"file is loaded! {loaded_files_len}")
-
     if loaded_files_len > 0:
         isRAG = True
-
-    data = [{
-              "id": i, 
-              "vector": documents_[i]['embedding'], 
-              "text": documents_[i]['document'], 
-              "subject": documents_[i]['subject'],
-              "year" : "2024",
-              "doc_type" : "upload"
-              } 
-              for i in range(len(documents_)) ]
+    
+    data = get_data_to_load(documents_, ids_to_reload)
 
     # Assuming 'documents' is a list of dictionaries as in your db example
     res1 = m_client.insert(
@@ -467,120 +179,119 @@ async def do_rag(query):
     """ Get data from VectorDB """
 
     global m_client
-    
     res_ = []
-    # for subject in bag.uploaded_files:
-    #     res = m_client.query(
-    #     collection_name="demo_collection",
-    #     filter=f"subject == '{subject}'",
-    #     output_fields=["text", "subject"],
-    # )
-    # res_.extend(res)
-    
-    model = SentenceTransformer('all-MiniLM-L6-v2') 
-    query_vector = model.encode(query)
+
+    query_vector = bag.embedding_model.encode(query)
     query_vector = np.array([query_vector]) 
 
-    
-    for subject in bag.uploaded_files:
+    for filename in bag.uploaded_files:
         search_results = m_client.search(
         collection_name="demo_collection",
         data=query_vector,
-        filter=f"subject == '{subject}'",  
-        output_fields=["text", "subject"],
-        #anns_field="superheroes", # Specify the field containing your vectors
-        #param={"metric_type": "IP"}, # Or other similarity metric as needed
+        filter=f"filename == '{filename}'",  
+        output_fields=["text", "filename"],
         limit=5  # Number of top results to return
-    )
+        )
+    
         res_.extend(search_results)
     return res_ 
 
-def delete_by_subject(subject):
+# ---------------------------------------------------------------
+def delete_by_filename(filename):
+    """ Delete by filename """
 
-    subject_ = subject.split('.')[0]
+    filename_ = filename.split('.')[0]
 
     res_ = m_client.query(
         collection_name="demo_collection",
-        filter=f"subject == '{subject_}'",
-        output_fields=["text", "subject"],
+        filter=f"filename == '{filename_}'",
+        output_fields=["text", "filename"],
     )
 
     for _ in range(len(res_)):
         res = m_client.delete( 
         collection_name="demo_collection",
-        filter=f"subject == '{subject_}'"
+        filter=f"filename == '{filename_}'"
     )
-        
-async def isFileUploaded(filename):
 
-        try:
-            res = m_client.query(
-                collection_name="demo_collection",
-                filter=f"subject == '{filename}'",
-                output_fields=["text", "subject"],
-            )
-            print(f"res: {res}")
-            if len(res) > 0:
-                return True
+# ---------------------------------------------------------------
+async def isFileUploaded(filename):
+    """ Check is file upload"""
+    try:
+        res = m_client.query(
+            collection_name="demo_collection",
+            filter=f"filename == '{filename}'",
+            output_fields=["text", "filename"],
+        )
+
+        ids_to_reload = []
+
+        for obj in res:
+            ids_to_reload.append(obj['id'])
+
+        if len(ids_to_reload) > 0:
+        
+            return True, ids_to_reload
+        else:
+            return False, []
+    except:
+        return False, []
+    
+# ---------------------------------------------------------------
+async def save_or_reload_file(uploaded_files):
+        """ Save or reload uploaded file """
+        
+        uploaded_files_to_show = []
+        not_uploaded_files_to_show = []
+        
+        for uploaded_file in uploaded_files:
+
+            print(f"Uploaded file: {uploaded_file.filename}")
+
+            file_bytes = await uploaded_file.read()
+
+            file_name = uploaded_file.filename.split('.')[0]
+            file_type = uploaded_file.headers.get("content-type") 
+            isCorrectType, filename = convert_files(file_bytes, file_name, file_type)
+
+            if not isCorrectType:
+                print("Wrong Type!")
+                not_uploaded_files_to_show.append(uploaded_file.filename+" is not uploaded")
+                bag.not_uploaded_files.append(uploaded_file.filename)
+                continue
+
+            is_file_uploaded_, ids_to_reload = await isFileUploaded(filename)
+
+            print(f"is_file_uploaded_:{is_file_uploaded_}")
+
+            if is_file_uploaded_:
+                print(f"reloading...{uploaded_file.filename}")
+                delete_by_filename(filename)
+                
             else:
-                return False
-        except:
-            return False
+                print(f"adding...{uploaded_file.filename}")
+                bag.uploaded_files.append(filename)
+                bag.uploaded_files_to_show_history.append(uploaded_file.filename)
+                uploaded_files_to_show.append(uploaded_file.filename)
+            
+            await load_file(filename,f"{bag.dir_out}/{filename}", ids_to_reload)
+
+        return uploaded_files_to_show, not_uploaded_files_to_show
 
 # ---------------------------------------------------------------
 @rt('/upload')
 async def post(request: Request):
     """ Upload file(s) from user """
 
-    print("here")
-
     form = await request.form()
-
     uploaded_files = form.getlist("files")  # Use getlist to get a list of files
-    
-    uploaded_files_to_show = []
-    not_uploaded_files_to_show = []
-
-    error_true = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", hx_swap_oob='true', id="error-message", style="color: red; font-size: 14px;"),
-    error_false = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",  hx_swap_oob='true', id="error-message", style="display: none; color: red; font-size: 14px;"),
-
+    error_true = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", hx_swap_oob='true', id="error-message", style="color: red; font-size: 14px;")
+    error_false = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",  hx_swap_oob='true', id="error-message", style="display: none; color: red; font-size: 14px;")
     os.makedirs(bag.dir_out, exist_ok=True)
-
     print(f"Files to upload: {uploaded_files}")
-
-    for uploaded_file in uploaded_files:
-        print(f"Uploaded file: {uploaded_file.filename}")
-
-        file_bytes = await uploaded_file.read()
-
-        file_name = uploaded_file.filename.split('.')[0]
-        file_type = uploaded_file.headers.get("content-type") 
-        isCorrectType, filename = convert_files(file_bytes, file_name, file_type)
-
-        if not isCorrectType:
-            print("Wrong Type!")
-            not_uploaded_files_to_show.append(uploaded_file.filename+" is not uploaded")
-            bag.not_uploaded_files.append(uploaded_file.filename)
-            continue
-
-        is_file_uploaded_ = await isFileUploaded(uploaded_file.filename)
-
-        print(f"is_file_uploaded_:{is_file_uploaded_}")
-
-        if is_file_uploaded_:
-            print(f"reloading...{uploaded_file.filename}")
-            delete_by_subject(uploaded_file.filename)
-            
-        else:
-            print(f"adding...{uploaded_file.filename}")
-            bag.uploaded_files.append(uploaded_file.filename)
-            uploaded_files_to_show.append(uploaded_file.filename)
-        
-        await load_file(uploaded_file.filename,f"{bag.dir_out}/{filename}")
-
+    uploaded_files_to_show, not_uploaded_files_to_show = await save_or_reload_file(uploaded_files)
     list_items = []
 
-    #uploaded_files_to_show.extend(bag.uploaded_files)
     for uploaded_file in uploaded_files_to_show:
         list_item = Li(f"{uploaded_file}", id='uploaded-file')
         list_items.append(list_item)
@@ -618,6 +329,7 @@ async def post():
     isRAG = False
 
     bag.uploaded_files = []
+    bag.uploaded_files_to_show_history = []
 
     # Update the response to display all uploaded filenames
     return Ul(id='uploaded-files-list', cls="uploaded-files-list-cls", hx_swap_obb=True)
@@ -756,7 +468,7 @@ def get_uploaded_files_list():
     """ Get all uploaded files names """ 
     
     lis = []
-    for filename in bag.uploaded_files:
+    for filename in bag.uploaded_files_to_show_history:
 
         lis.append(
             Li(filename, cls='uploaded-file-cls')
@@ -960,10 +672,9 @@ async def ws(data:str, send, model:str, strict:str):
     await send(
         Div(add_message(data, "end"), hx_swap_oob="beforeend", id="message-list")
     )
-
+    
     messages_for_show.append({"role": "user", "content": f"{data}"})
-
-
+    
     await send(
         Div(get_loading(), hx_swap_oob="beforeend", id="message-list")
     )
@@ -980,15 +691,24 @@ async def ws(data:str, send, model:str, strict:str):
 
         for l in context:
             if len(l) == 0:
-                messages.append({"role": "user", "content": f"Question: \n {data}"})
-                
+                if strict == "strict":
+                    messages.append({"role": "user", "content": f"Say: In strict mode I answer only using uploaded files. Please appload files"})
+                    print("strict+")
+                    break
+                else:
+                    messages.append({"role": "user", "content": f"Question: \n {data}"})
+                    print("strict-") 
+                    break 
+                        
             else:
                 if strict == "strict":
                    messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document. If the answer is in history - use history to create answer"})
                    print("strict++")
+                   break
                 else:
                     messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
                     print("strict--")
+                    break
                     
     else:
         if strict == "strict":
@@ -1002,6 +722,7 @@ async def ws(data:str, send, model:str, strict:str):
         await chat_ollama(send)
     elif model == "openai":
         await chat_openai(send)
+
 
 # ---------------------------------------------------------------
 # MAIN
