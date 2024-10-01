@@ -6,17 +6,55 @@ from levutils.myutils import *
 from bs4 import BeautifulSoup
 from io import BytesIO
 
-import fitz, json, docx, os
+import fitz, json, docx, os, asyncio, nltk
+import ollama, asyncio
+from openai import OpenAI
+
+import pandas as pd
+from sentence_transformers import SentenceTransformer
+
+bag = MyBunch()
+
+messages = []
+messages_for_show = []
+bag.uploaded_files = []
+bag.uploaded_files_to_show_history = []
+bag.not_uploaded_files = []
+
+client_ollama = ollama.Client()
+client_openai = OpenAI()
+
+env_var = os.environ.get('OLLAMA_MODEL')
+model = ""
+if env_var is None:
+    print("Environment variable OLLAMA_MODEL is not set.")
+    exit()
+else:
+   model = env_var
+
+#model = "mistral:7b-instruct-v0.3-q4_0"
+#model = "llama3:8b-instruct-q4_0"
+
+bag.embedding_model = SentenceTransformer('all-MiniLM-L6-v2') 
 
 
-def get_main_page(get_history, get_uploaded_files_list):
+loaded_files_len = 0
+chunks_id = 0
+bag.script_dir = os.path.dirname(os.path.realpath(__file__))
+bag.dir_out = bag.script_dir + "/uploaded_files"
+
+sp = {"role": "system", "content": "You are a helpful and concise assistant."}
+
+def get_main_page():
+    global bag
+    bag.list_items = []
     main_page = (Title("Document Q&A"),
         Div(
         Div(
         Div( 
             H1("Interactive Document Q&A"),
             Div(
-            get_history,
+            get_history(),
             cls="history-container"),
             Div(
                 Form(
@@ -55,7 +93,7 @@ def get_main_page(get_history, get_uploaded_files_list):
                     id="loading-container", cls="loading-container"),
                     Div(
                     Div(
-                    get_uploaded_files_list,
+                    get_uploaded_files_list(),
                     id="container", cls="upload-files"),
                     id="upload-container-wrapper"
                     ),
@@ -285,32 +323,32 @@ def convert_files(file_bytes, file_name, file_type, dir_out):
 
     if file_type == "text/plain":
         file_name += "__txt.txt"
-        read_txt(file_bytes, file_name)
+        read_txt(file_bytes, file_name, dir_out)
         return True, file_name
 
     elif file_type == "application/pdf":
         file_name += "__pdf.txt"
-        read_pdf(file_bytes, file_name)
+        read_pdf(file_bytes, file_name, dir_out)
         return True, file_name
 
     elif file_type == "application/json":
         file_name += "__json.txt"
-        read_json(file_bytes, file_name)
+        read_json(file_bytes, file_name, dir_out)
         return True, file_name
     
     elif file_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
         file_name += "__xlsx.txt"
-        read_xlsx(file_bytes, file_name)
+        read_xlsx(file_bytes, file_name, dir_out)
         return True, file_name
     
     elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         file_name += "__docx.txt"
-        read_docx(file_bytes, file_name)
+        read_docx(file_bytes, file_name, dir_out)
         return True, file_name
     
     elif file_type == "text/html":
         file_name += "__docx.txt"
-        read_html(file_bytes, file_name)
+        read_html(file_bytes, file_name, dir_out)
         return True, file_name
     
     return False, None
@@ -405,3 +443,333 @@ def write_txt(bytes, filename, dir_out):
     print(f"saving file: {write_path}")
     with open(write_path, "wb") as file:
         file.write(bytes)
+
+# ---------------------------------------------------------------
+def get_loading():
+    """ Send loading animation """
+    
+    i = len(messages_for_show)
+    tid = f'message-{i}'
+
+    loading = Div(
+        Div(cls="loading-line", id="loading-line-id"),
+        id=tid+"_")
+
+    return loading
+
+#---------------------------------------------------------------
+def get_uploaded_files_list():
+    """ Get all uploaded files names """ 
+    
+    lis = []
+    for filename in bag.uploaded_files_to_show_history:
+
+        lis.append(
+            Li(filename, cls='uploaded-file-cls')
+        )
+
+    if len(lis) == 0:
+        return Div(Ul(id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_oob='true')
+
+    return Div(Ul(*lis, id='uploaded-files-list', cls="uploaded-files-list-cls"), id="files-container", hx_swap_oob='true')
+
+#---------------------------------------------------------------
+def get_history():
+    """ Get all history messages """ 
+    listed_messages = print_all_messages()
+    history = Div(listed_messages, id="chatlist", cls="list-of-messages")
+
+    return history
+
+#---------------------------------------------------------------
+def add_message(data, role):
+    """ Add message """
+    i = len(messages_for_show)
+    tid = f'message-{i}'
+ 
+    cls_ = ""
+
+    if role == "end":
+        cls_ = "primary"
+    elif role =="start":
+        cls_ = "secondary"
+
+    list_item = Div(
+                Div(data,
+                cls=f"chat-bubble chat-bubble-{cls_}",
+                id=tid,
+                hx_swap_oob="true"
+                ),
+                cls = f"chat chat-{role}"
+                )
+    bag.list_items.append(list_item)
+
+    return list_item
+
+#---------------------------------------------------------------
+def print_all_messages():
+    """ Create ul from messages and return them to main page """
+    
+    i = 0
+    for message in messages_for_show:
+        tid = f'message-{i}'
+
+        if message['role'] == "assistant":
+            list_item = Div(
+                Div(message['content'], id=tid,
+                    cls="chat-bubble chat-bubble-secondary"),
+                cls = "chat chat-start")
+            bag.list_items.append(list_item)  # Add the Li element to the list
+        
+        elif message['role'] == "user":
+            list_item = Div(
+                Div(message['content'], id=tid,
+                    cls="chat-bubble chat-bubble-primary"),
+                cls = "chat chat-end")
+            bag.list_items.append(list_item)  # Add the Li element to the list
+        
+        i +=1
+        
+
+    return Div(*bag.list_items, id='message-list')
+
+    
+# ---------------------------------------------------------------
+async def save_or_reload_file(uploaded_files, isFileUploaded, load_file, delete_file):
+        """ Save or reload uploaded file """
+        
+        uploaded_files_to_show = []
+        not_uploaded_files_to_show = []
+        
+        for uploaded_file in uploaded_files:
+
+            print(f"Uploaded file: {uploaded_file.filename}")
+
+            file_bytes = await uploaded_file.read()
+
+            file_name = uploaded_file.filename.split('.')[0]
+            file_type = uploaded_file.headers.get("content-type") 
+            isCorrectType, filename = convert_files(file_bytes, file_name, file_type, bag.dir_out)
+
+            if not isCorrectType:
+                print("Wrong Type!")
+                not_uploaded_files_to_show.append(uploaded_file.filename+" is not uploaded")
+                bag.not_uploaded_files.append(uploaded_file.filename)
+                continue
+
+            is_file_uploaded_, ids_to_reload = await isFileUploaded(filename)
+
+            print(f"is_file_uploaded_:{is_file_uploaded_}")
+
+            if is_file_uploaded_:
+                print(f"reloading...{uploaded_file.filename}")
+                delete_file(filename)
+                
+            else:
+                print(f"adding...{uploaded_file.filename}")
+                bag.uploaded_files.append(filename)
+                bag.uploaded_files_to_show_history.append(uploaded_file.filename)
+                uploaded_files_to_show.append(uploaded_file.filename)
+            
+            await load_file(filename,f"{bag.dir_out}/{filename}", ids_to_reload)
+
+        return uploaded_files_to_show, not_uploaded_files_to_show
+
+# ---------------------------------------------------------------
+async def upload_file(request, isFileUploaded, load_file, delete_file): 
+    """ Upload file """
+    form = await request.form()
+    uploaded_files = form.getlist("files")  # Use getlist to get a list of files
+    error_true = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", hx_swap_oob='true', id="error-message", style="color: red; font-size: 14px;")
+    error_false = Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html",  hx_swap_oob='true', id="error-message", style="display: none; color: red; font-size: 14px;")
+    os.makedirs(bag.dir_out, exist_ok=True)
+    print(f"Files to upload: {uploaded_files}")
+    uploaded_files_to_show, not_uploaded_files_to_show = await save_or_reload_file(uploaded_files, isFileUploaded, load_file, delete_file)
+    list_items = []
+
+    for uploaded_file in uploaded_files_to_show:
+        list_item = Li(f"{uploaded_file}", id='uploaded-file')
+        list_items.append(list_item)
+
+    if len(not_uploaded_files_to_show) > 0:
+        for not_uploaded_file in not_uploaded_files_to_show:
+            list_item = Li(f"{not_uploaded_file}", id='not-uploaded-file', style="color: red")
+            list_items.append(list_item) 
+
+        return list_items, error_true
+               
+    if len(bag.not_uploaded_files) > 0:
+
+        bag.not_uploaded_files = []
+        return get_uploaded_files_list(), error_false
+    
+    return list_items, error_false
+
+# ---------------------------------------------------------------
+async def chat_ollama(send):
+    """ Send message to Ollama model """
+
+    await send(
+        add_message("", "start")
+    )
+
+    # Model response (streaming)
+    stream = ollama.chat(
+        model=model,
+        messages=[sp] + messages,
+        stream=True,
+    )
+    
+    # Send an empty message with the assistant response
+    messages.append({"role": "assistant", "content": ""})
+
+    i = len(messages_for_show)
+    tid = f'message-{i}'
+
+    msg = ""
+
+    await send(
+                Div(Div(
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    ),
+                cls = "chat chat-start",
+                hx_swap_oob="outerHTML",
+                id=tid+"_"
+            )
+        )
+
+    # Fill in the message content
+    for chunk in stream:
+        chunk = chunk["message"]["content"]
+        msg = msg + chunk
+        messages[-1]["content"] += chunk
+        await send(
+                Div(
+                    chunk,
+                    hx_swap_oob="beforeend",
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    )
+        )
+        await asyncio.sleep(0.01)  # simulate a brief delay
+
+    messages.append({"role": "assistant", "content": ''.join(msg)})
+    messages_for_show.append({"role": "assistant", "content": ''.join(msg)})
+    
+# ---------------------------------------------------------------
+async def chat_openai(send):
+    """ Send message to OpenAI model """
+
+    await send(
+        add_message("", "start")
+    )
+
+    stream = client_openai.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=messages,
+    stream=True,
+    )
+
+    messages.append({"role": "assistant", "content": ""})
+    
+    
+    collected_chunks = []
+
+    i = len(messages_for_show)
+    tid = f'message-{i}'
+
+    await send(
+                Div(Div(
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    ),
+                cls = "chat chat-start",
+                hx_swap_oob="outerHTML",
+                id=tid+"_"
+            )
+        )
+
+    for chunk in stream:
+        if chunk.choices[0].delta.content is not None:
+            ss = chunk.choices[0].delta.content
+            collected_chunks.append(ss)
+            await send(
+                Div(
+                    ss,
+                    hx_swap_oob="beforeend",
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    )
+        )
+            await asyncio.sleep(0.01)  # simulate a brief delay
+
+    messages.append({"role": "assistant", "content": ''.join(collected_chunks)})
+    messages_for_show.append({"role": "assistant", "content": ''.join(collected_chunks)})
+
+#---------------------------------------------------------------
+def ChatInput():
+    """ Clear the input """
+    return Input(id="new-prompt", type="text", name='data',
+                 placeholder="Type a message",
+                 cls="input input-bordered w-full", hx_swap_oob='true')
+
+#---------------------------------------------------------------
+async def do_chat(data, isRAG, strict, model, send, do_rag):
+    """ Chat between LLM and User """
+
+    print(f"isRag: {isRAG}, strict: {strict}")
+
+    await send(
+        Div(add_message(data, "end"), hx_swap_oob="beforeend", id="message-list")
+    )
+    
+    messages_for_show.append({"role": "user", "content": f"{data}"})
+    
+    await send(
+        Div(get_loading(), hx_swap_oob="beforeend", id="message-list")
+    )
+
+    # Send the clear input field command to the user
+    await send(ChatInput())
+
+    await asyncio.sleep(0)
+
+    if isRAG:
+        context = await do_rag(data)
+
+        print(f"doing rag: {context}")
+
+        for l in context:
+            if len(l) == 0:
+                if strict == "strict":
+                    messages.append({"role": "user", "content": f"Say: In strict mode I answer only using uploaded files. Please appload files"})
+                    print("strict+")
+                    break
+                else:
+                    messages.append({"role": "user", "content": f"Question: \n {data}"})
+                    print("strict-") 
+                    break 
+                        
+            else:
+                if strict == "strict":
+                   messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}\n\n Generate your answer only using context. If meaning of the question is not in the context say: \n There is no information about it in the document. If the answer is in history - use history to create answer"})
+                   print("strict++")
+                   break
+                else:
+                    messages.append({"role": "user", "content": f"Context: \n {context}, Question: \n {data}answer the question even if it not in the context"})
+                    print("strict--")
+                    break
+                    
+    else:
+        if strict == "strict":
+            messages.append({"role": "user", "content": f"Say: In strict mode I answer only using uploaded files. Please appload files"})
+            print("strict+++")
+        else:
+            messages.append({"role": "user", "content": f"Question: \n {data}answer the question even if it not in the context"})
+            print("strict---")  
+
+    if model == "ollama":
+        await chat_ollama(send)
+    elif model == "openai":
+        await chat_openai(send)
