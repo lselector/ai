@@ -14,8 +14,9 @@ import levutils
 from levutils.mybag import *
 from levutils.myutils import *
 
-import os
-
+import fitz, json, docx, os
+from bs4 import BeautifulSoup
+from io import BytesIO
 
 import ollama, asyncio
 from openai import OpenAI

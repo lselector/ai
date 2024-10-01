@@ -35,8 +35,10 @@ else:
 #model = "mistral:7b-instruct-v0.3-q4_0"
 #model = "llama3:8b-instruct-q4_0"
 
-bag.embedding_model = SentenceTransformer('all-MiniLM-L6-v2') 
+nltk.download('punkt')
+nltk.download('punkt_tab')
 
+bag.embedding_model = SentenceTransformer('all-MiniLM-L6-v2') 
 
 loaded_files_len = 0
 chunks_id = 0
@@ -534,6 +536,11 @@ def print_all_messages():
     return Div(*bag.list_items, id='message-list')
 
     
+async def split_to_chunks(text):
+    sentences = nltk.sent_tokenize(text)
+    chunk_size = 3 
+    chunks = [' '.join(sentences[i:i+chunk_size]) for i in range(0, len(sentences), chunk_size)] 
+    return chunks
 # ---------------------------------------------------------------
 async def save_or_reload_file(uploaded_files, isFileUploaded, load_file, delete_file):
         """ Save or reload uploaded file """

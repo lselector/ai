@@ -66,14 +66,14 @@ def get():
     return ct.get_main_page()
 
 # ---------------------------------------------------------------
-def read_files_from_folder(filename, file_path):
+async def read_files_from_folder(filename, file_path):
     """ Read file from folder and convert it into vectors/chunks """
     docs = []
     if os.path.isfile(file_path):  
         with open(file_path, 'r') as file:
             text = file.read() 
             print(f"name:{filename} File added {text[:100]}")
-            chunks = text.split("\n\n") 
+            chunks = await ct.split_to_chunks(text)
             embeddings = ct.bag.embedding_model.encode(chunks)
             documents = [
                 {
@@ -123,7 +123,7 @@ async def load_file(filename, file_path, ids_to_reload):
     global m_client
     global isRAG
 
-    documents_ = read_files_from_folder(filename, file_path)
+    documents_ = await read_files_from_folder(filename, file_path)
     loaded_files_len = len(documents_)
     print(f"file is loaded! {loaded_files_len}")
     if loaded_files_len > 0:
