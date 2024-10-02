@@ -1,7 +1,7 @@
 
 """
-common_tools.py 
-common methods for chatbots
+# common_tools.py 
+# common methods for chatbots
 """
 
 from fasthtml.common import *
