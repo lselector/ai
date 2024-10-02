@@ -462,7 +462,7 @@ def get_loading():
 #---------------------------------------------------------------
 def get_uploaded_files_list():
     """ Get all uploaded files names """ 
-    
+
     lis = []
     for filename in bag.uploaded_files_to_show_history:
 
@@ -542,7 +542,7 @@ async def split_to_chunks(text):
     chunks = [' '.join(sentences[i:i+chunk_size]) for i in range(0, len(sentences), chunk_size)] 
     return chunks
 # ---------------------------------------------------------------
-async def save_or_reload_file(uploaded_files, isFileUploaded, load_file, delete_file):
+async def save_or_reload_file(uploaded_files, isFileUploaded, load_file, delete_file, is_file_uploaded_=None):
         """ Save or reload uploaded file """
         
         uploaded_files_to_show = []
@@ -563,7 +563,7 @@ async def save_or_reload_file(uploaded_files, isFileUploaded, load_file, delete_
                 not_uploaded_files_to_show.append(uploaded_file.filename+" is not uploaded")
                 bag.not_uploaded_files.append(uploaded_file.filename)
                 continue
-
+            print(f"Method: {isFileUploaded}")
             is_file_uploaded_, ids_to_reload = await isFileUploaded(filename)
 
             print(f"is_file_uploaded_:{is_file_uploaded_}")
@@ -578,7 +578,7 @@ async def save_or_reload_file(uploaded_files, isFileUploaded, load_file, delete_
                 bag.uploaded_files_to_show_history.append(uploaded_file.filename)
                 uploaded_files_to_show.append(uploaded_file.filename)
             
-            await load_file(filename,f"{bag.dir_out}/{filename}", ids_to_reload)
+            await load_file(filename,f"{bag.dir_out}/{filename}", ids_to_reload, is_file_uploaded_)
 
         return uploaded_files_to_show, not_uploaded_files_to_show
 

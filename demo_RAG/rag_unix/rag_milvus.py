@@ -117,7 +117,7 @@ def get_data_to_load(documents_, ids_to_reload):
     return data
 
 # ---------------------------------------------------------------
-async def load_file(filename, file_path, ids_to_reload):
+async def load_file(filename, file_path, ids_to_reload, is_file_uploaded_=None):
     """ Load files to VectorDB """
     
     global m_client
