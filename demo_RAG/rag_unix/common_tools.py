@@ -1,3 +1,9 @@
+
+"""
+common_tools.py 
+common methods for chatbots
+"""
+
 from fasthtml.common import *
 
 from levutils.mybag import *
@@ -535,12 +541,14 @@ def print_all_messages():
 
     return Div(*bag.list_items, id='message-list')
 
-    
+# ---------------------------------------------------------------
 async def split_to_chunks(text):
+    """ Spit txt to chunks """
     sentences = nltk.sent_tokenize(text)
     chunk_size = 3 
     chunks = [' '.join(sentences[i:i+chunk_size]) for i in range(0, len(sentences), chunk_size)] 
     return chunks
+
 # ---------------------------------------------------------------
 async def save_or_reload_file(uploaded_files, isFileUploaded, load_file, delete_file, is_file_uploaded_=None):
         """ Save or reload uploaded file """
