@@ -1,0 +1,30 @@
+{
+    "nodes": {
+        "rect1": {
+            "label": "Rectangle 59",
+            "x": 100,
+            "y": 100,
+            "edges": [
+                {
+                    "target": "diamond"
+                }
+            ]
+        },
+        "diamond": {
+            "label": "Diamond",
+            "x": 300,
+            "y": 250,
+            "edges": [
+                {
+                    "target": "rect2"
+                }
+            ]
+        },
+        "rect2": {
+            "label": "Rectangle 2",
+            "x": 100,
+            "y": 400,
+            "edges": []
+        }
+    }
+}
