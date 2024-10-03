@@ -16,61 +16,87 @@ app, rt = fast_app(live=True)
 @rt('/')
 def get():
     return (
-        Html(
-            Head(
-                Meta(charset='UTF-8'),
-                Meta(name='viewport', content='width=device-width, initial-scale=1.0'),
+        Div(
+            Div(
                 Title('Cytoscape.js Interactive Flowchart'),
-                #  Form(
-                #     Label("Shape:", for_="shapeInput"),
-                #     Select(
-                #             Option("Rectangle", value="rectangle"),
-                #             Option("Diamond", value="diamond"),
-                #             id="shapeInput"
-                #            ),
-                #     Br(),
-                #     Label("Label:", for_="labelInput"),
-                #     Input(id="labelInput", type="text"),
-                #     Br(),
-                #     Label("X Position:", for_="xInput"),
-                #     Input(id="xInput", type="number", value="200"),
-                #     Br(),
-                #     Label("Y Position:", for_="yInput"),
-                #     Input(id="yInput", type="number", value="200"),
-                #     Br(),
-                #     Button("Add Shape", type="button", onclick="addShape()"),
-                # ),
-                Div(id='uploaded-file'),
-                Div("Uploaded Files:", id="container", 
-                style="width: 300px; height: 200px; background-color: #ced3db"),
+                Div("Uploaded File:", id="uploaded-file"),
                 Form(
-                    Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", 
+                    Input(type='file', id='file-upload_', name='files', style="display: none", 
                           onchange="document.getElementById('submit-upload-btn').click()", accept=".txt, .xlsx, .docx, .json, .pdf, .html"),
                     Button('Select Files', cls="select-files-btn", type='button', onclick="document.getElementById('file-upload_').click()"),
                     Button(type="submit", 
                            id="submit-upload-btn", 
                            style="display: none",
                            ),
-                    #**{'hx-on:htmx:after-request':"deleteUploadAnimation();"},
+                    **{'hx-on:htmx:after-request':"draw();"},
                     id="upload-form",
                     hx_post="/upload",
-                    target_id="uploaded-file",
+                    target_id="flowchart-demo",
                     hx_swap="outerHTML",
-                    enctype="multipart/form-data",
-                    cls="upload-cls",
+                    enctype="multipart/form-data"
                 ),
                 Script(src='https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js'),
                 Style('#flowchart-demo {\r\n            width: 800px;\r\n            height: 600px;\r\n            border: 1px solid #ccc;\r\n        }'),
-            
+                
             ),
-            Body(
-                Div(id='flowchart-demo'),
+            Div(id='flowchart-demo')
+        )      
+    )
+
+def get_diagram(filename):
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    dir_out = script_dir + "/uploaded_diagram"
+    file_path = dir_out + "/" + filename 
+
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+        return data
+
+
+def generate_elements(filename):
+
+    elements = get_diagram(filename)
+
+    cytoscape_elements = []
+    for node_id, node_data in elements['nodes'].items():
+        cytoscape_elements.append({
+            'data': {'id': node_id, 'label': node_data['label']},
+            'position': {'x': node_data['x'], 'y': node_data['y']}
+        })
+        for edge_data in node_data.get('edges', []):
+            cytoscape_elements.append({
+                'data': {'source': node_id, 'target': edge_data['target']}
+            })
+
+    return cytoscape_elements
+
+@rt('/upload')
+async def post(request: Request):
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    dir_out = script_dir + "/uploaded_diagram"
+    
+    form = await request.form()
+   
+    uploaded_files = form.getlist("files")  # Use getlist to get a list of files
+
+    print(f"uploaded_files: {form}")
+    uploaded_file = uploaded_files[0]
+    print(f"uploaded file: {uploaded_file}")
+
+    os.makedirs(dir_out, exist_ok=True)
+
+    with open(f"{dir_out}/{uploaded_file.filename}", "wb") as f:
+        f.write(uploaded_file.file.read()) 
+
+    diagram = Div(
                 Script(
                     """
-                    document.addEventListener('DOMContentLoaded', function() {
+                    function draw() {
+                    //alert("1");
+                    //document.addEventListener('DOMContentLoaded', function() {
                         var cy = cytoscape({
                             container: document.getElementById('flowchart-demo'),
-                            elements: """ + json.dumps(generate_elements()) + """,
+                            elements: """ + json.dumps(generate_elements(uploaded_file.filename)) + """,
                             style: [
                                 {
                                     selector: 'node',
@@ -115,6 +141,7 @@ def get():
                             autoungrabify: false,
                             autounselectify: true
                         });
+                        
 
                         // Add Shape Function:
                         window.addShape = function() {
@@ -147,69 +174,13 @@ def get():
                                 duration: 100
                             });
                         });
-                    });
+                    //});
+                    }
                     """
                 ),
-                  Script(
-            """
-            const container = document.getElementById('container');
-            const fileInput = document.getElementById('file-upload_');
-            const form = document.getElementById('upload-form');;
-            
-            container.addEventListener('dragover', (event) => {
-                event.preventDefault();
-            });
 
-            container.addEventListener('drop', (event) => {
-                event.preventDefault();
-
-                const files = event.dataTransfer.files;  
-
-                fileInput.files = files; 
-
-                form.dispatchEvent(new Event('submit')); 
-            });
-            """
-        ),
-            lang='en'
-        )      
-    ))
-
-def generate_elements():
+                id='flowchart-demo')
     
-    with open('diagrams.json', 'r') as f:
-        elements = json.load(f)
-
-    cytoscape_elements = []
-    for node_id, node_data in elements['nodes'].items():
-        cytoscape_elements.append({
-            'data': {'id': node_id, 'label': node_data['label']},
-            'position': {'x': node_data['x'], 'y': node_data['y']}
-        })
-        for edge_data in node_data.get('edges', []):
-            cytoscape_elements.append({
-                'data': {'source': node_id, 'target': edge_data['target']}
-            })
-
-    return cytoscape_elements
-
-@rt('/upload')
-async def post(request: Request):
-    form = await request.form()
-    print(f"TEST:")
-   
-    uploaded_files = form.getlist("file")  # Use getlist to get a list of files
-
-    for uploaded_file in uploaded_files:
-        print(f"TEST:")
-        
-        print(uploaded_file)
-
-        with open(uploaded_file.filename, "wb") as f:
-            f.write(uploaded_file.file.read()) 
-
-    # Update the response to display all uploaded filenames
-    return Div(
-               *[P(f"{uploaded_file.filename}") for uploaded_file in uploaded_files]) 
+    return diagram, Div(f"Uploaded File: {uploaded_file.filename}", id="uploaded-file", hx_swap_oob='true')
 
 serve()
