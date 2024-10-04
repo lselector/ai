@@ -1,0 +1,37 @@
+{
+    "elements": [
+      {
+        "id": "window1",
+        "class": "window rectangle",
+        "style": "top:50px;left:50px;",
+        "text": "Rectangle",
+        "connections": [
+          {
+            "target": "window2",
+            "anchor": ["Bottom", "Top"],
+            "connector": ["Bezier", { "curviness": 50 }]
+          }
+        ]
+      },
+      {
+        "id": "window2",
+        "class": "window diamond",
+        "style": "top:200px;left:250px;",
+        "text": "Diamond",
+        "connections": [
+          {
+            "target": "window3",
+            "anchor": ["Bottom", "Top"],
+            "connector": ["Straight"]
+          }
+        ]
+      },
+      {
+        "id": "window3",
+        "class": "window rectangle",
+        "style": "top:350px;left:50px;",
+        "text": "Rectangle",
+        "connections": []
+      }
+    ]
+  }
