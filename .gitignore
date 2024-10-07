@@ -17,3 +17,6 @@ llm_leaderboard_*.xlsx
 **/*.db.lock
 **/uploaded_files
 **/preuploaded_files
+**/.venv/
+**/.env
+demo_AI_NEWSLETTER/scrape_master_3/output
