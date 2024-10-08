@@ -101,14 +101,16 @@ async def post(request: Request):
                                 {
                                     selector: 'node',
                                     style: {
+                                        'shape': 'rectangle',
                                         'background-color': '#f0f0f0',
                                         'border-color': '#346789',
                                         'border-width': 1,
                                         'label': 'data(label)',
                                         'text-valign': 'center',
                                         'text-halign': 'center',
-                                        'width': 150,
-                                        'height': 80
+                                        'width': 80,
+                                        'height': 40,
+                                        'font-size': 10
                                     }
                                 },
                                 {
@@ -122,11 +124,12 @@ async def post(request: Request):
                                 {
                                     selector: 'edge',
                                     style: {
-                                        'width': 2,
+                                        'width': 1,
                                         'line-color': '#999',
                                         'target-arrow-color': '#999',
                                         'target-arrow-shape': 'triangle',
-                                        'curve-style': 'bezier'
+                                        'curve-style': 'bezier',
+                                        'arrow-scale': 0.8
                                     }
                                 }
                             ],
