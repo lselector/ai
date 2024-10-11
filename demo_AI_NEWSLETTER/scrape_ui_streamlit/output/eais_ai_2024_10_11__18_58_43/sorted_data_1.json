@@ -1,0 +1,36 @@
+{
+    "listings": [
+        {
+            "name": "Lev Selector Ph. D.",
+            "email": "",
+            "message": "",
+            "link": "https://www.linkedin.com/in/levselector/",
+            "links": [
+                {
+                    "url": "https://youtube.com/@lev-selector",
+                    "icon": ""
+                },
+                {
+                    "url": "https://github.com/lselector",
+                    "icon": ""
+                }
+            ]
+        },
+        {
+            "name": "Dima Borovikov Ph. D.",
+            "email": "",
+            "message": "",
+            "link": "https://www.linkedin.com/in/d-borovikov",
+            "links": [
+                {
+                    "url": "",
+                    "icon": ""
+                },
+                {
+                    "url": "",
+                    "icon": ""
+                }
+            ]
+        }
+    ]
+}

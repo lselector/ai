@@ -34,7 +34,7 @@ model_selection = st.sidebar.selectbox("Select Model", options=list(PRICING.keys
 url_input = st.sidebar.text_input("Enter URL(s) separated by whitespace")
 
 # Add toggle to show/hide tags field
-show_tags = st.sidebar.toggle("Enable Scraping")
+show_tags = st.sidebar.toggle("Tags only")
 
 # Conditionally show tags input based on the toggle
 tags = []
@@ -76,7 +76,7 @@ def generate_unique_folder_name(url):
     
     return f"{clean_domain}_{timestamp}"
 
-def scrape_multiple_urls(urls, fields, selected_model):
+def scrape_multiple_urls(urls, fields, selected_model, tags=None):
     output_folder = os.path.join('output', generate_unique_folder_name(urls[0]))
     os.makedirs(output_folder, exist_ok=True)
     
@@ -92,7 +92,7 @@ def scrape_multiple_urls(urls, fields, selected_model):
         if i == 1:
             first_url_markdown = markdown
         
-        input_tokens, output_tokens, cost, formatted_data = scrape_url(url, fields, selected_model, output_folder, i, markdown)
+        input_tokens, output_tokens, cost, formatted_data = scrape_url(url, fields, selected_model, output_folder, i, markdown, tags)
         total_input_tokens += input_tokens
         total_output_tokens += output_tokens
         total_cost += cost
@@ -128,7 +128,7 @@ def perform_scrape():
         DynamicListingModel = create_dynamic_listing_model(tags)
         DynamicListingsContainer = create_listings_container_model(DynamicListingModel)
         formatted_data, tokens_count = format_data(
-            markdown, DynamicListingsContainer, DynamicListingModel, model_selection
+            markdown, DynamicListingsContainer, DynamicListingModel, model_selection, tags
         )
         input_tokens, output_tokens, total_cost = calculate_price(tokens_count, model=model_selection)
         df = save_formatted_data(formatted_data, timestamp)
@@ -142,7 +142,7 @@ if st.sidebar.button("Scrape"):
     with st.spinner('Please wait... Data is being scraped.'):
         urls = url_input.split()
         field_list = tags
-        output_folder, total_input_tokens, total_output_tokens, total_cost, all_data, first_url_markdown = scrape_multiple_urls(urls, field_list, model_selection)
+        output_folder, total_input_tokens, total_output_tokens, total_cost, all_data, first_url_markdown = scrape_multiple_urls(urls, field_list, model_selection, tags)
         
         # Perform pagination if enabled and only one URL is provided
         #pagination_info = None
@@ -183,19 +183,19 @@ if st.sidebar.button("Scrape"):
                     "price": 0.0
                 }
 
-        print("all data start:")
-        print(all_data)
-        #print(first_url_markdown)
-        for elem in all_data:
-            if type(elem) == list:
-                print(f"list of len: {len(elem)}")
-                for x in elem:
-                    print(type(x))
-            else:
-                print("no list")
-                print(type(elem))
+        # print("all data start:")
+        # print(all_data)
+        # #print(first_url_markdown)
+        # for elem in all_data:
+        #     if type(elem) == list:
+        #         print(f"list of len: {len(elem)}")
+        #         for x in elem:
+        #             print(type(x))
+        #     else:
+        #         print("no list")
+        #         print(type(elem))
             
-        print("all data end:")
+        # print("all data end:")
         
         st.session_state['results'] = (all_data, None, first_url_markdown, total_input_tokens, total_output_tokens, total_cost, output_folder, pagination_info)
         st.session_state['perform_scrape'] = True
@@ -223,40 +223,40 @@ if st.session_state['results']:
         st.subheader(f"*Input Tokens:* {input_tokens}")
         st.subheader(f"*Output Tokens:* {output_tokens}")
         st.subheader(f"**Total Cost:** :green-background[**${total_cost:.4f}**]")
-        st.write(f"{first_url_markdown}")
+        st.json(f"{all_data}")
        
-
         # Display scraped data in main area
         print("Display scraped data in main area")
-        st.subheader("Scraped/Parsed Data")
-        for i, data in enumerate(all_data, start=1):
-            print(f"Data from URL {i}:")
-            st.write(f"Data from URL {i}:")
+        st.subheader("Links from site:")
+        all_data_ = json.loads(all_data[0])
+        for data in all_data_['all-links']:
+            print(f"Data from URL {data}:")
+            st.write(f"{data}:")
             
             # Handle string data (convert to dict if it's JSON)
-            if isinstance(data, str):
-                try:
-                    data = json.loads(data)
-                except json.JSONDecodeError:
-                    st.error(f"Failed to parse data as JSON for URL {i}")
-                    continue
+            # if isinstance(data, str):
+            #     try:
+            #         data = json.loads(data)
+            #     except json.JSONDecodeError:
+            #         st.error(f"Failed to parse data as JSON for URL {data}")
+            #         continue
             
-            if isinstance(data, dict):
-                if 'listings' in data and isinstance(data['listings'], list):
-                    df = pd.DataFrame(data['listings'])
-                else:
-                    # If 'listings' is not in the dict or not a list, use the entire dict
-                    df = pd.DataFrame([data])
-            elif hasattr(data, 'listings') and isinstance(data.listings, list):
-                # Handle the case where data is a Pydantic model
-                listings = [item.dict() for item in data.listings]
-                df = pd.DataFrame(listings)
-            else:
-                st.error(f"Unexpected data format for URL {i}")
-                continue
+            # if isinstance(data, dict):
+            #     if 'listings' in data and isinstance(data['listings'], list):
+            #         df = pd.DataFrame(data['listings'])
+            #     else:
+            #         # If 'listings' is not in the dict or not a list, use the entire dict
+            #         df = pd.DataFrame([data])
+            # elif hasattr(data, 'listings') and isinstance(data.listings, list):
+            #     # Handle the case where data is a Pydantic model
+            #     listings = [item.dict() for item in data.listings]
+            #     df = pd.DataFrame(listings)
+            # else:
+            #     st.error(f"Unexpected data format for URL {data}")
+            #     continue
             
             # Display the dataframe
-            st.dataframe(df, use_container_width=True)
+            #st.dataframe(df, use_container_width=True)
 
         # Download options
         st.subheader("Download Options")
