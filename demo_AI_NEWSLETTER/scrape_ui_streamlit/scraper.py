@@ -88,7 +88,9 @@ def click_accept_cookies(driver):
 def fetch_html_selenium(url):
     driver = setup_selenium()
     try:
+        print(f"URL: {url}")
         driver.get(url)
+        
         
         # Add random delays to mimic human behavior
         time.sleep(1)  # Adjust this to simulate time for user to read or interact

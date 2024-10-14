@@ -1,0 +1,154 @@
+ul li {
+    list-style: none;
+}
+
+.wrapper-content {
+    display: flex;
+    padding-right: 20px;
+    padding-left: 20px;
+    padding-top: 50px;
+    justify-content: center; /* This centers the container horizontally */
+
+    flex-wrap: wrap;
+}
+
+.wrapper-uploaded-files-internal {
+    position: sticky;
+    top: 0; /* Adjust this value as needed to control the sticky position */
+    padding-top: 20px;
+}
+
+.wrapper-chat {
+    width: 900px;
+    padding-right: 70px;
+}
+
+.list-of-messages {
+    max-height: 500px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.model-strict-container {
+    display: flex;
+    align-items: center;
+}
+
+.px-2 {
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+    padding-bottom: 10px;
+}
+
+.checkboxer {
+    margin-bottom: 15px;
+}
+
+#select-model {
+    max-width: 200px;
+    padding: 0px;
+    padding-inline-start: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+.column {
+    min-height: 300px;
+}
+
+.upload-files {
+    width: 400px;
+    min-height: 150px;
+    max-height: 325px;
+    border: solid #a5a5a5;
+    border-radius: 5px;
+    background-color: #eaeaea;
+    padding-top: 10px;
+    padding-left: 0.3rem;
+    overflow-y: auto;
+}
+
+.wrapper-content button {
+    background-color: #5189a8;
+    border: none;
+}
+
+.text-upload {
+    margin-right: 10px;
+}
+
+.loading-container{
+    display: flex;
+    align-items: center;
+}
+
+.file-upload-line {
+    max-width: 220px;
+}
+
+@media (max-width: 1040px) {
+   
+    .wrapper-chat {
+        padding-right: 0px;
+    }  
+}
+
+.loading-line {
+    width: 0; /* Initially no width */
+    height: 5px;
+    background-color: #aecef3; /* Light gray */
+    margin: 20px 0;
+    animation: loading 1.7s ease-in-out infinite; /* Animation settings */
+  }
+  
+  @keyframes loading {
+    0% {
+      width: 0;
+      opacity: 0; /* Start invisible */
+    }
+    50% {
+      width: 100%; /* Expand to full width */
+      opacity: 1; /* Fully visible */
+    }
+    100% {
+      width: 0;
+      opacity: 0; /* Fade out */
+    }
+  }
+
+.chat-bubble-primary {
+    background-color: #d4efff;
+    color: #222720;
+}
+
+.chat-bubble-secondary {
+    background-color: #eaeaea;
+    color: #222720;
+}
+
+.uploaded-files-list-cls {
+    list-style: disc;
+}
+
+.uploaded-files-list-cls li {
+    list-style: disc;
+    margin-left: 25px;
+}
+
+.forms-container {
+    display: flex;
+    margin-top: 10px;
+}
+
+#clear-files {
+     margin-left: 12px;
+}
+
+#clear-files:active {
+    /* Styles when the button is clicked */
+    /* transform: scale(0.95); */
+  }
+
+.select-files-btn {
+    margin: 0px;
+}
+  

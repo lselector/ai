@@ -27,6 +27,7 @@ from openai import OpenAI
 import google.generativeai as genai
 from groq import Groq
 
+import ollama
 
 from assets import USER_AGENTS,PRICING,HEADLESS_OPTIONS,SYSTEM_MESSAGE,USER_MESSAGE,LLAMA_MODEL_FULLNAME,GROQ_LLAMA_MODEL_FULLNAME
 load_dotenv()
@@ -87,6 +88,7 @@ def click_accept_cookies(driver):
 def fetch_html_selenium(url):
     driver = setup_selenium()
     try:
+        print(f"URL: {url}")
         driver.get(url)
         
         # Add random delays to mimic human behavior
@@ -231,110 +233,97 @@ def generate_system_message(listing_model: BaseModel) -> str:
 
 
 
-def format_data(data, DynamicListingsContainer, DynamicListingModel, selected_model):
+async def format_data(data, selected_model, tags=None):
     token_counts = {}
-    
-    if selected_model in ["gpt-4o-mini", "gpt-4o-2024-08-06"]:
-        # Use OpenAI API
-        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-        completion = client.beta.chat.completions.parse(
-            model=selected_model,
-            messages=[
-                {"role": "system", "content": SYSTEM_MESSAGE},
-                {"role": "user", "content": USER_MESSAGE + data},
-            ],
-            response_format=DynamicListingsContainer
-        )
-        # Calculate tokens using tiktoken
-        encoder = tiktoken.encoding_for_model(selected_model)
-        input_token_count = len(encoder.encode(USER_MESSAGE + data))
-        output_token_count = len(encoder.encode(json.dumps(completion.choices[0].message.parsed.dict())))
-        token_counts = {
-            "input_tokens": input_token_count,
-            "output_tokens": output_token_count
-        }
-        return completion.choices[0].message.parsed, token_counts
 
-    elif selected_model == "gemini-1.5-flash":
-        # Use Google Gemini API
-        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel('gemini-1.5-flash',
-                generation_config={
-                    "response_mime_type": "application/json",
-                    "response_schema": DynamicListingsContainer
-                })
-        prompt = SYSTEM_MESSAGE + "\n" + USER_MESSAGE + data
-        # Count input tokens using Gemini's method
-        input_tokens = model.count_tokens(prompt)
-        completion = model.generate_content(prompt)
-        # Extract token counts from usage_metadata
-        usage_metadata = completion.usage_metadata
-        token_counts = {
-            "input_tokens": usage_metadata.prompt_token_count,
-            "output_tokens": usage_metadata.candidates_token_count
-        }
-        return completion.text, token_counts
+    print(f"Model choosing: {selected_model}")
+
+    delimiter = " "
+    result_string = ""
+    if tags:
+        result_string = delimiter.join("TAGS: \n")
+        result_string += delimiter.join(tags)
+    
+    print(f"TAGS: {result_string}")
+    if selected_model in ["gpt-4o-mini", "gpt-4o-2024-08-06"]:
+        pass
+
+    # elif selected_model == "gemini-1.5-flash":
+    #     # Use Google Gemini API
+    #     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+    #     model = genai.GenerativeModel('gemini-1.5-flash',
+    #             generation_config={
+    #                 "response_mime_type": "application/json",
+    #                 "response_schema": DynamicListingsContainer
+    #             })
+    #     prompt = SYSTEM_MESSAGE + "\n" + USER_MESSAGE + data
+    #     # Count input tokens using Gemini's method
+    #     input_tokens = model.count_tokens(prompt)
+    #     completion = model.generate_content(prompt)
+    #     # Extract token counts from usage_metadata
+    #     usage_metadata = completion.usage_metadata
+    #     token_counts = {
+    #         "input_tokens": usage_metadata.prompt_token_count,
+    #         "output_tokens": usage_metadata.candidates_token_count
+    #     }
+    #     return completion.text, token_counts
     
     elif selected_model == "Llama3.1 8B":
 
+        client = ollama.Client()
+
+        #llama3.1:8b-instruct-q4_1
+
         # Dynamically generate the system message based on the schema
-        sys_message = generate_system_message(DynamicListingModel)
+        #sys_message = generate_system_message(DynamicListingModel)
         # print(SYSTEM_MESSAGE)
         # Point to the local server
-        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        #client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
-        completion = client.chat.completions.create(
-            model=LLAMA_MODEL_FULLNAME, #change this if needed (use a better model)
-            messages=[
-                {"role": "system", "content": sys_message},
-                {"role": "user", "content": USER_MESSAGE + data}
-            ],
-            temperature=0.7,
-            
-        )
+        response_content = client.generate(model="llama3.1:8b-instruct-q4_1", prompt=SYSTEM_MESSAGE + USER_MESSAGE + data)['response']
 
         # Extract the content from the response
-        response_content = completion.choices[0].message.content
+        #response_content = completion.choices[0].message.content
         print(response_content)
         # Convert the content from JSON string to a Python dictionary
         parsed_response = json.loads(response_content)
         
         # Extract token usage
         token_counts = {
-            "input_tokens": completion.usage.prompt_tokens,
-            "output_tokens": completion.usage.completion_tokens
+            "input_tokens": 0,
+            "output_tokens": 0
         }
 
         return parsed_response, token_counts
-    elif selected_model== "Groq Llama3.1 70b":
+    # elif selected_model== "Groq Llama3.1 70b":
         
-        # Dynamically generate the system message based on the schema
-        sys_message = generate_system_message(DynamicListingModel)
-        # print(SYSTEM_MESSAGE)
-        # Point to the local server
-        client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
+    #     # Dynamically generate the system message based on the schema
+    #     sys_message = generate_system_message(DynamicListingModel)
+    #     # print(SYSTEM_MESSAGE)
+    #     # Point to the local server
+    #     client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
 
-        completion = client.chat.completions.create(
-        messages=[
-            {"role": "system","content": sys_message},
-            {"role": "user","content": USER_MESSAGE + data}
-        ],
-        model=GROQ_LLAMA_MODEL_FULLNAME,
-    )
+    #     completion = client.chat.completions.create(
+    #     messages=[
+    #         {"role": "system","content": sys_message},
+    #         {"role": "user","content": USER_MESSAGE + data}
+    #     ],
+    #     model=GROQ_LLAMA_MODEL_FULLNAME,
+    # )
 
-        # Extract the content from the response
-        response_content = completion.choices[0].message.content
+    #     # Extract the content from the response
+    #     response_content = completion.choices[0].message.content
         
-        # Convert the content from JSON string to a Python dictionary
-        parsed_response = json.loads(response_content)
+    #     # Convert the content from JSON string to a Python dictionary
+    #     parsed_response = json.loads(response_content)
         
-        # completion.usage
-        token_counts = {
-            "input_tokens": completion.usage.prompt_tokens,
-            "output_tokens": completion.usage.completion_tokens
-        }
+    #     # completion.usage
+    #     token_counts = {
+    #         "input_tokens": completion.usage.prompt_tokens,
+    #         "output_tokens": completion.usage.completion_tokens
+    #     }
 
-        return parsed_response, token_counts
+    #     return parsed_response, token_counts
     else:
         raise ValueError(f"Unsupported model: {selected_model}")
 
@@ -402,8 +391,8 @@ def generate_unique_folder_name(url):
     return f"{url_name}_{timestamp}"
 
 
-def scrape_multiple_urls(urls, fields, selected_model):
-    output_folder = os.path.join('output', generate_unique_folder_name(urls[0]))
+def scrape_multiple_urls(url, fields, selected_model):
+    output_folder = os.path.join('output', generate_unique_folder_name(url))
     os.makedirs(output_folder, exist_ok=True)
     
     total_input_tokens = 0
@@ -412,42 +401,16 @@ def scrape_multiple_urls(urls, fields, selected_model):
     all_data = []
     markdown = None  # We'll store the markdown for the first (or only) URL
     
-    for i, url in enumerate(urls, start=1):
-        raw_html = fetch_html_selenium(url)
-        current_markdown = html_to_markdown_with_readability(raw_html)
-        if i == 1:
-            markdown = current_markdown  # Store markdown for the first URL
-        
-        input_tokens, output_tokens, cost, formatted_data = scrape_url(url, fields, selected_model, output_folder, i, current_markdown)
-        total_input_tokens += input_tokens
-        total_output_tokens += output_tokens
-        total_cost += cost
-        all_data.append(formatted_data)
+    # for i, url in enumerate(urls, start=1):
+    #     raw_html = fetch_html_selenium(url)
+    #     current_markdown = html_to_markdown_with_readability(raw_html)
+    #     if i == 1:
+    #         markdown = current_markdown  # Store markdown for the first URL
     
-    return output_folder, total_input_tokens, total_output_tokens, total_cost, all_data, markdown
+    raw_html = fetch_html_selenium(url)
+    current_markdown = html_to_markdown_with_readability(raw_html)
+    scrape_url(url, fields, selected_model, output_folder, 0, current_markdown)
 
-def scrape_url(url: str, fields: List[str], selected_model: str, output_folder: str, file_number: int, markdown: str):
+def scrape_url(output_folder: str, file_number: int, markdown: str):
     """Scrape a single URL and save the results."""
-    try:
-        # Save raw data
-        save_raw_data(markdown, output_folder, f'rawData_{file_number}.md')
-
-        # Create the dynamic listing model
-        DynamicListingModel = create_dynamic_listing_model(fields)
-
-        # Create the container model that holds a list of the dynamic listing models
-        DynamicListingsContainer = create_listings_container_model(DynamicListingModel)
-        
-        # Format data
-        formatted_data, token_counts = format_data(markdown, DynamicListingsContainer, DynamicListingModel, selected_model)
-        
-        # Save formatted data
-        save_formatted_data(formatted_data, output_folder, f'sorted_data_{file_number}.json', f'sorted_data_{file_number}.xlsx')
-
-        # Calculate and return token usage and cost
-        input_tokens, output_tokens, total_cost = calculate_price(token_counts, selected_model)
-        return input_tokens, output_tokens, total_cost, formatted_data
-
-    except Exception as e:
-        print(f"An error occurred while processing {url}: {e}")
-        return 0, 0, 0, None
+    save_raw_data(markdown, output_folder, f'rawData_{file_number}.md')
