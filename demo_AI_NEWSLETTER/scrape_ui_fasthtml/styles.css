@@ -4,27 +4,38 @@ ul li {
 
 .wrapper-content {
     display: flex;
-    padding-right: 20px;
-    padding-left: 20px;
+    /* padding-right: 20px; */
+    /* padding-left: 20px; */
     padding-top: 50px;
     justify-content: center; /* This centers the container horizontally */
 
     flex-wrap: wrap;
 }
 
+.wrapper-scrape-controll {
+    background-color: #c9ccce;
+    min-width: 400px;
+
+    margin-right: 20px;
+    height: calc(100vh - 50px);
+    padding: 20px;
+}
+
 .wrapper-uploaded-files-internal {
     position: sticky;
     top: 0; /* Adjust this value as needed to control the sticky position */
     padding-top: 20px;
+    max-width: 300px;
 }
 
 .wrapper-chat {
     width: 900px;
-    padding-right: 70px;
+    margin-right: 20px;
+    /* border:#222720 solid 1px; */
 }
 
-.list-of-messages {
-    max-height: 500px;
+.list-of-data {
+    max-height: calc(100vh - 150px);
     overflow-y: auto;
     margin-bottom: 10px;
 }
@@ -56,9 +67,10 @@ ul li {
 }
 
 .upload-files {
-    width: 400px;
+    /* width: 400px; */
     min-height: 150px;
     max-height: 325px;
+    /* height: calc(100vh - 50px); */
     border: solid #a5a5a5;
     border-radius: 5px;
     background-color: #eaeaea;

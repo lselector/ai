@@ -36,7 +36,7 @@ app, rt, = fast_app(live=True, pico=False, ws_hdr=True, hdrs=[
     
 ])
 
-scraped_sites_data = []
+messages_history = []
 client_openai = OpenAI()
 
 #---------------------------------------------------------------
@@ -48,12 +48,7 @@ def get():
     main_page = (Title("Document Q&A"),
         Div(
         Div(
-        Div( 
-            H1("Interactive Document Q&A"),
-            Div(
-            get_history(),
-            cls="history-container"),
-            Div(
+        Div(Div(
                 Form(
                     Div(
                         Select(id="shapeInput", name="model")(
@@ -79,14 +74,20 @@ def get():
                      enctype="multipart/form-data",
                      hx_trigger="submit"
                     )
-                    ),
+                    ), cls="wrapper-scrape-controll column"),
+        Div( 
+            H1("Interactive Document Q&A"),
+            Div(
+            get_history(),
+            cls="history-container"),
+            
                     cls="wrapper-chat column",
                     id="wrapper-chat-id"
                     ),
                     Div(
                     Div(
                     Div(
-                    Div("Uploaded Files:", cls="text-upload"),
+                    Div("Scraped sites:", cls="text-upload"),
                     id="loading-container", cls="loading-container"),
                     Div(
                     Div(
@@ -317,10 +318,10 @@ def get():
 def print_all_messages():
     """ Create ul from messages and return them to main page """
 
-    global scraped_sites_data
+    global messages_history
     
     i = 0
-    for site_data in scraped_sites_data:
+    for site_data in messages_history:
         tid = f'site-{i}'
 
         list_item = Div(
@@ -406,7 +407,11 @@ def generate_unique_folder_name(url):
 
 
 async def scrape_multiple_urls(url, fields, selected_model, tags=None):
-    output_folder = os.path.join('output', generate_unique_folder_name(url))
+    url_ = url
+    print(f"T: {url_[:-1]}")
+    if url_[:-1] == "/":
+        url_[:-1] == ""
+    output_folder = os.path.join('output', generate_unique_folder_name(url_))
     os.makedirs(output_folder, exist_ok=True)
     
     total_input_tokens = 0
@@ -474,9 +479,9 @@ def ChatInput():
 def add_message(data, role):
     """ Add message """
 
-    global scraped_sites_data
+    global messages_history
 
-    i = len(scraped_sites_data)
+    i = len(messages_history)
     tid = f'message-{i}'
 
     cls_ = "primary"
@@ -498,8 +503,8 @@ def add_message(data, role):
 def get_loading():
     """ Send loading animation """
     
-    global scraped_sites_data
-    i = len(scraped_sites_data)
+    global messages_history
+    i = len(messages_history)
     tid = f'message-{i}'
 
     loading = Div(
@@ -512,7 +517,7 @@ def get_loading():
 @app.ws('/scrape')
 async def ws(data:str, send, model:str):
 
-    global scraped_sites_data
+    global messages_history
     
     url = data
     field_list = tags
@@ -520,6 +525,8 @@ async def ws(data:str, send, model:str):
     await send(
         Div(add_message(data, "end"), hx_swap_oob="beforeend", id="data-list")
     )
+
+    messages_history.append(data)
 
     await send(
     Div(get_loading(), hx_swap_oob="beforeend", id="data-list")
@@ -550,11 +557,11 @@ async def ws(data:str, send, model:str):
 
     #messages.append({"role": "assistant", "content": ""})
 
-    i = len(scraped_sites_data)
+    i = len(messages_history)
     tid = f'message-{i}'
 
     await send(
-                Div(Div(
+                Div(Pre(
                     cls="chat-bubble chat-bubble-secondary",
                     id=tid
                     ),
@@ -586,7 +593,7 @@ async def ws(data:str, send, model:str):
             ss = chunk.choices[0].delta.content
             collected_chunks.append(ss)
             await send(
-                Div(
+                Pre(
                     ss,
                     hx_swap_oob="beforeend",
                     cls="chat-bubble chat-bubble-secondary",
@@ -594,6 +601,16 @@ async def ws(data:str, send, model:str):
                     )
         )
             await asyncio.sleep(0.01)  # simulate a brief delay
+    
+    #print(collected_chunks)
+    print("===")
+    #pretty_json_string = json.dumps(collected_chunks, indent=4) 
+
+    json_string = "".join(collected_chunks)
+    messages_history.append(json_string)
+
+    save_formatted_data(json_string, output_folder, f'sorted_data_{0}.json', f'sorted_data_{0}.xlsx')
+
 
 # Display results if they exist in session state
 # if st.session_state['results']:

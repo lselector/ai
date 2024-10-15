@@ -88,7 +88,7 @@ def click_accept_cookies(driver):
 def fetch_html_selenium(url):
     driver = setup_selenium()
     try:
-        print(f"URL: {url}")
+        #print(f"URL: {url}")
         driver.get(url)
         
         

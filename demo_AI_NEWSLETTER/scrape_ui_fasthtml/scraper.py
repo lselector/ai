@@ -137,8 +137,11 @@ def html_to_markdown_with_readability(html_content):
     
 def save_raw_data(raw_data: str, output_folder: str, file_name: str):
     """Save raw markdown data to the specified output folder."""
+    output_folder = re.sub(r'\W+', '_', output_folder.split('//')[1].split('/')[0])
+    output_folder += "_md"
+    print(f"dir: {output_folder}")
     os.makedirs(output_folder, exist_ok=True)
-    raw_output_path = os.path.join(output_folder, file_name)
+    raw_output_path = f"{output_folder}/{file_name}"
     with open(raw_output_path, 'w', encoding='utf-8') as f:
         f.write(raw_data)
     print(f"Raw data saved to {raw_output_path}")
@@ -359,19 +362,19 @@ def save_formatted_data(formatted_data, output_folder: str, json_file_name: str,
         raise ValueError("Formatted data is neither a dictionary nor a list, cannot convert to DataFrame")
 
     # Create DataFrame
-    try:
-        df = pd.DataFrame(data_for_df)
-        print("DataFrame created successfully.")
+    #try:
+    # df = pd.DataFrame(data_for_df)
+    # print("DataFrame created successfully.")
 
-        # Save the DataFrame to an Excel file
-        excel_output_path = os.path.join(output_folder, excel_file_name)
-        df.to_excel(excel_output_path, index=False)
-        print(f"Formatted data saved to Excel at {excel_output_path}")
-        
-        return df
-    except Exception as e:
-        print(f"Error creating DataFrame or saving Excel: {str(e)}")
-        return None
+    # # Save the DataFrame to an Excel file
+    # excel_output_path = os.path.join(output_folder, excel_file_name)
+    # df.to_excel(excel_output_path, index=False)
+    # print(f"Formatted data saved to Excel at {excel_output_path}")
+    
+    # return df
+    # except Exception as e:
+    #     print(f"Error creating DataFrame or saving Excel: {str(e)}")
+    #     return None
 
 def calculate_price(token_counts, model):
     input_token_count = token_counts.get("input_tokens", 0)
@@ -392,7 +395,11 @@ def generate_unique_folder_name(url):
 
 
 def scrape_multiple_urls(url, fields, selected_model):
-    output_folder = os.path.join('output', generate_unique_folder_name(url))
+    url_ = url
+    print(f"T: {url_[:-1]}")
+    if url_[:-1] == "/":
+        url_[:-1] == ""
+    output_folder = os.path.join('output', generate_unique_folder_name(url_))
     os.makedirs(output_folder, exist_ok=True)
     
     total_input_tokens = 0
@@ -401,16 +408,10 @@ def scrape_multiple_urls(url, fields, selected_model):
     all_data = []
     markdown = None  # We'll store the markdown for the first (or only) URL
     
-    # for i, url in enumerate(urls, start=1):
-    #     raw_html = fetch_html_selenium(url)
-    #     current_markdown = html_to_markdown_with_readability(raw_html)
-    #     if i == 1:
-    #         markdown = current_markdown  # Store markdown for the first URL
-    
     raw_html = fetch_html_selenium(url)
-    current_markdown = html_to_markdown_with_readability(raw_html)
-    scrape_url(url, fields, selected_model, output_folder, 0, current_markdown)
+    markdown = html_to_markdown_with_readability(raw_html)
+    scrape_url(output_folder, 0, markdown)
 
 def scrape_url(output_folder: str, file_number: int, markdown: str):
     """Scrape a single URL and save the results."""
-    save_raw_data(markdown, output_folder, f'rawData_{file_number}.md')
+    save_raw_data(markdown, f"{output_folder}_md", f'rawData_{file_number}.md')
