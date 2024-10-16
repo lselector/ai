@@ -7,12 +7,12 @@ from levutils.myutils import *
 import pandas as pd
 import json
 from datetime import datetime
-from scraper import fetch_html_selenium, save_raw_data, format_data, save_formatted_data, calculate_price, html_to_markdown_with_readability, create_dynamic_listing_model, create_listings_container_model, scrape_url
+from scraper import fetch_html_selenium, save_raw_data, format_data, save_formatted_data, calculate_price, html_to_markdown_with_readability
 from pagination_detector import detect_pagination_elements, PaginationData
 import re
 from urllib.parse import urlparse
 from assets import *
-import os, asyncio
+import os, asyncio, ollama
 from pydantic import BaseModel
 from openai import OpenAI
 
@@ -48,27 +48,46 @@ def get():
     main_page = (Title("Document Q&A"),
         Div(
         Div(
-        Div(Div(
+        Div(Div(Div("Scraped site:", id="scraped-site"),
+            Form(
+                    Group( 
+                     Input(id="new-prompt", type="text", name="data"),
+                     Button("Scrape", id="submitButton2")
+                     ),
+                    id="upload-form",
+                    hx_post="/scrape",
+                    target_id="scraped-site",
+                    hx_swap="outerHTML",
+                    cls="upload-cls",
+                    ),
                 Form(
                     Div(
                         Select(id="shapeInput", name="model")(
-                            Option("Ollama", value="ollama", selected=True),
-                            Option("OpenAI", value="openai", selected=False),
-                           id="select-model"), 
-                    Label("Strict:", cls='px-2'),
+                            Option("Llama3.1 8B", value="llama3.1:8b-instruct-q4_1", selected=True),
+                            Option("gpt-4o-mini", value="gpt-4o-mini", selected=False),
+                           id="select-model"),
+                    Label("Tags only:", cls='px-2'),
                         Input(type="checkbox", 
                               cls="checkboxer", 
                               value="strict", 
                               name="strict", 
                               data_foo="bar"
                               ),
+
                     cls="model-strict-container"),
                     Group( 
-                     Input(id="new-prompt", type="text", name="data"),
-                     Button("Submit", id="submitButton", onclick="setScrollTrue();")
+                     Button("Get data", id="submitButton", onclick="setScrollTrue();")
                      ),
+                    Div(
+                    Label("Pagination:", cls="px-2"),
+                        Input(type="checkbox", 
+                              cls="checkboxer", 
+                              value="strict", 
+                              name="strict", 
+                              data_foo="bar"
+                              ),cls="pagination-wrapper"),              
                      id="form-id",
-                     ws_send=True, hx_ext="ws", ws_connect="/scrape", 
+                     ws_send=True, hx_ext="ws", ws_connect="/get-data", 
                      target_id='data-list',
                      hx_swap="beforeend",
                      enctype="multipart/form-data",
@@ -86,105 +105,7 @@ def get():
                     ),
                     Div(
                     Div(
-                    Div(
-                    Div("Scraped sites:", cls="text-upload"),
-                    id="loading-container", cls="loading-container"),
-                    Div(
-                    Div(
-                    #get_uploaded_files_list(),
-                    id="container", cls="upload-files"),
-                    id="upload-container-wrapper"
-                    ),
-                    Div("Wrong filetype. Allowed only: .txt, .xlsx, .docx, .json, .pdf, .html", id="error-message", style="color: red; display: none;"),
-                    Div(
-                    Form(
-                    Input(type='file', id='file-upload_', name='files', multiple=True, style="display: none", 
-                          onchange="document.getElementById('submit-upload-btn').click()", accept=".txt, .xlsx, .docx, .json, .pdf, .html"),
-                    Button('Select Files', cls="select-files-btn", type='button', onclick="document.getElementById('file-upload_').click()"),
-                    Button(type="submit", 
-                           id="submit-upload-btn", 
-                           onclick="createDiv();", 
-                           style="display: none",
-                           ),
-                    **{'hx-on:htmx:after-request':"deleteUploadAnimation();"},
-                    id="upload-form",
-                    hx_post="/upload",
-                    target_id="uploaded-files-list",
-                    hx_swap="beforeend",
-                    enctype="multipart/form-data",
-                    cls="upload-cls",
-                    ),
-                    Form(Group(
-                    Button("Clear", type="submit", id="clear-files")
-                    ),
-                    hx_post="/delete-all-docs",
-                    target_id='uploaded-files-list',
-                    hx_swap="outerHTML"
-                    # cls="upload-button-container"
-                    ),
-                    cls="forms-container"
-                    ),
                     
-                
-            Script(
-            """
-            const container = document.getElementById('container');
-            const fileInput = document.getElementById('file-upload_');
-            const form = document.getElementById('upload-form');;
-            
-            container.addEventListener('dragover', (event) => {
-                event.preventDefault();
-            });
-
-            function validateAndSubmit(input) {
-                const allowedExtensions = ['.txt', '.xlsx', '.docx', '.json', '.pdf', '.html'];
-                const files = input.files;
-                const errorMessage = document.getElementById('error-message');
-
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const fileExtension = file.name.split('.').pop().toLowerCase();
-
-                    console.log(fileExtension)
-
-                    if (!allowedExtensions.includes('.' + fileExtension)) {
-                        errorMessage.style.display = 'block';
-                        input.value = ''; 
-                        deleteUploadAnimation();
-                        return false; // Indicate invalid file type
-                    }
-                }
-                
-                return true; // Indicate all files are valid
-            }
-
-            container.addEventListener('drop', (event) => {
-                event.preventDefault();
-
-                createDiv();
-
-                const files = event.dataTransfer.files;
-
-                fileInput.files = files; 
-
-                form.dispatchEvent(new Event('submit')); 
-                
-            });
-
-            container.addEventListener('change', () => {
-                event.preventDefault(); 
-
-                createDiv();
-
-                const files = event.dataTransfer.files; 
-
-                fileInput.files = files; 
-
-                form.dispatchEvent(new Event('submit')); 
-
-                });
-            """
-        ),
         Script(
             """
 
@@ -305,7 +226,7 @@ def get():
         cls="wrapper-uploaded-files-internal",
         id="uploaded-files-internal"
                     ),
-                    cls="wrapper-uploaded-files column",
+                    cls="wrapper-uploaded-files",
 
                     ),                             
         cls="wrapper-content"),
@@ -313,6 +234,16 @@ def get():
     )
 
     return main_page
+
+#---------------------------------------------------------------
+@rt('/scrape')
+async def post(data: str):
+    """ Main page """
+
+    print("scraping")
+    await scrape_and_save_url_data(data)
+
+    return Div(f"Scraped site: {data}", id="scraped-site"), ChatInput()
 
 #---------------------------------------------------------------
 def print_all_messages():
@@ -406,12 +337,13 @@ def generate_unique_folder_name(url):
     return f"{clean_domain}_{timestamp}"
 
 
-async def scrape_multiple_urls(url, fields, selected_model, tags=None):
+async def scrape_and_save_url_data(url):
     url_ = url
     print(f"T: {url_[:-1]}")
     if url_[:-1] == "/":
         url_[:-1] == ""
-    output_folder = os.path.join('output', generate_unique_folder_name(url_))
+    #output_folder = os.path.join('output', generate_unique_folder_name(url_))
+    output_folder = os.path.join('output', "site")
     os.makedirs(output_folder, exist_ok=True)
     
     total_input_tokens = 0
@@ -424,8 +356,7 @@ async def scrape_multiple_urls(url, fields, selected_model, tags=None):
     raw_html = fetch_html_selenium(url)
     current_markdown = html_to_markdown_with_readability(raw_html)
     markdown = current_markdown  # Store markdown for the first URL
-    
-    scrape_url(url, fields, selected_model)
+    save_raw_data(markdown, output_folder, f'rawData.md')
     
     return markdown, output_folder
 
@@ -513,49 +444,85 @@ def get_loading():
 
     return loading
 
+
 # ---------------------------------------------------------------
-@app.ws('/scrape')
-async def ws(data:str, send, model:str):
+@app.ws('/get-data')
+async def ws(send, model:str):
 
     global messages_history
-    
-    url = data
-    field_list = tags
-
-    await send(
-        Div(add_message(data, "end"), hx_swap_oob="beforeend", id="data-list")
-    )
-
-    messages_history.append(data)
 
     await send(
     Div(get_loading(), hx_swap_oob="beforeend", id="data-list")
     )
 
     # Send the clear input field command to the user
-    await send(ChatInput())
+    #await send(ChatInput())
 
     await asyncio.sleep(0)
-    
-    pagination_info = {
-                "page_urls": [],
-                "token_counts": {"input_tokens": 0, "output_tokens": 0},
-                "price": 0.0
-    }
-    
-    print(f"DATA: {url}")
-    markdown, output_folder = await scrape_multiple_urls(url, field_list, model, tags)
 
-    #formatted_data, token_counts = await format_data(markdown, model, tags)
-    
-    # Save formatted data
     await send(
         add_message("", "start")
     )
-    
-    #save_formatted_data(formatted_data, output_folder, f'sorted_data_{0}.json', f'sorted_data_{0}.xlsx')
 
-    #messages.append({"role": "assistant", "content": ""})
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    markdown = ""
+    path = os.path.join(script_dir, "output/site/rawData.md")
+    with open(path, "r") as f:
+        markdown = f.read()
+
+    if model in ["gpt-4o-mini", "gpt-4o-2024-08-06"]:
+        await openai_llm(send, model, markdown)
+    elif model == "llama3.1:8b-instruct-q4_1":
+        await ollama_llm(send, model, markdown)
+
+async def ollama_llm(send, model, markdown):
+    
+    i = len(messages_history)
+    tid = f'message-{i}'
+
+    await send(
+                Div(Pre(
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    ),
+                cls = "chat chat-start",
+                hx_swap_oob="outerHTML",
+                id=tid+"_"
+            )
+        )
+
+    ms = []
+    ms.append({"role": "assistant", "content": f"Question: \n {SYSTEM_MESSAGE}"})
+    ms.append({"role": "user", "content": f"Question: \n {USER_MESSAGE + markdown}"})
+         
+    #ms = [SYSTEM_MESSAGE, USER_MESSAGE]
+    stream = ollama.chat(
+        model=model,
+        messages=ms,
+        stream=True
+    )
+
+    collected_chunks = []
+    for chunk in stream:
+        chunk = chunk["message"]["content"]
+        collected_chunks.append(chunk)
+        await send(
+                Pre(
+                    chunk,
+                    hx_swap_oob="beforeend",
+                    cls="chat-bubble chat-bubble-secondary",
+                    id=tid
+                    )
+        )
+        await asyncio.sleep(0.01)  # simulate a brief delay
+
+    json_string = "".join(collected_chunks)
+    messages_history.append(json_string)
+
+    save_formatted_data(json_string)
+
+
+async def openai_llm(send, model, markdown):
 
     i = len(messages_history)
     tid = f'message-{i}'
@@ -570,15 +537,9 @@ async def ws(data:str, send, model:str):
                 id=tid+"_"
             )
         )
-    
-    # delimiter = " "
-    # result_string = ""
-    # if tags:
-    #     result_string = delimiter.join("TAGS: \n")
-    #     result_string += delimiter.join(tags)
-    
+
     stream = client_openai.chat.completions.create(
-        model="gpt-4o-mini",
+        model=model,
         stream=True,
         messages=[
             {"role": "system", "content": SYSTEM_MESSAGE},
@@ -601,16 +562,11 @@ async def ws(data:str, send, model:str):
                     )
         )
             await asyncio.sleep(0.01)  # simulate a brief delay
-    
-    #print(collected_chunks)
-    print("===")
-    #pretty_json_string = json.dumps(collected_chunks, indent=4) 
-
+ 
     json_string = "".join(collected_chunks)
     messages_history.append(json_string)
 
-    save_formatted_data(json_string, output_folder, f'sorted_data_{0}.json', f'sorted_data_{0}.xlsx')
-
+    save_formatted_data(json_string)
 
 # Display results if they exist in session state
 # if st.session_state['results']:

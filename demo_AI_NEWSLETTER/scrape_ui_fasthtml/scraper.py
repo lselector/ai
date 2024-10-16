@@ -137,8 +137,8 @@ def html_to_markdown_with_readability(html_content):
     
 def save_raw_data(raw_data: str, output_folder: str, file_name: str):
     """Save raw markdown data to the specified output folder."""
-    output_folder = re.sub(r'\W+', '_', output_folder.split('//')[1].split('/')[0])
-    output_folder += "_md"
+    #output_folder = re.sub(r'\W+', '_', output_folder.split('//').split('/')[0])
+    #output_folder += "_md"
     print(f"dir: {output_folder}")
     os.makedirs(output_folder, exist_ok=True)
     raw_output_path = f"{output_folder}/{file_name}"
@@ -332,8 +332,11 @@ async def format_data(data, selected_model, tags=None):
 
 
 
-def save_formatted_data(formatted_data, output_folder: str, json_file_name: str, excel_file_name: str):
+def save_formatted_data(formatted_data):
     """Save formatted data as JSON and Excel in the specified output folder."""
+
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    output_folder = os.path.join(script_dir, "output/site/")
     os.makedirs(output_folder, exist_ok=True)
     
     # Parse the formatted data if it's a JSON string (from Gemini API)
@@ -347,6 +350,7 @@ def save_formatted_data(formatted_data, output_folder: str, json_file_name: str,
         formatted_data_dict = formatted_data.dict() if hasattr(formatted_data, 'dict') else formatted_data
 
     # Save the formatted data as JSON
+    json_file_name =  f'sorted_data.json'
     json_output_path = os.path.join(output_folder, json_file_name)
     with open(json_output_path, 'w', encoding='utf-8') as f:
         json.dump(formatted_data_dict, f, indent=4)
@@ -394,24 +398,20 @@ def generate_unique_folder_name(url):
     return f"{url_name}_{timestamp}"
 
 
-def scrape_multiple_urls(url, fields, selected_model):
-    url_ = url
-    print(f"T: {url_[:-1]}")
-    if url_[:-1] == "/":
-        url_[:-1] == ""
-    output_folder = os.path.join('output', generate_unique_folder_name(url_))
-    os.makedirs(output_folder, exist_ok=True)
+# def scrape_multiple_urls(url, fields, selected_model):
+#     url_ = url
+#     print(f"T: {url_[:-1]}")
+#     if url_[:-1] == "/":
+#         url_[:-1] == ""
+#     output_folder = os.path.join('output', generate_unique_folder_name(url_))
+#     os.makedirs(output_folder, exist_ok=True)
     
-    total_input_tokens = 0
-    total_output_tokens = 0
-    total_cost = 0
-    all_data = []
-    markdown = None  # We'll store the markdown for the first (or only) URL
+#     total_input_tokens = 0
+#     total_output_tokens = 0
+#     total_cost = 0
+#     all_data = []
+#     markdown = None  # We'll store the markdown for the first (or only) URL
     
-    raw_html = fetch_html_selenium(url)
-    markdown = html_to_markdown_with_readability(raw_html)
-    scrape_url(output_folder, 0, markdown)
-
-def scrape_url(output_folder: str, file_number: int, markdown: str):
-    """Scrape a single URL and save the results."""
-    save_raw_data(markdown, f"{output_folder}_md", f'rawData_{file_number}.md')
+#     raw_html = fetch_html_selenium(url)
+#     markdown = html_to_markdown_with_readability(raw_html)
+#     save_raw_data(markdown, f"{output_folder}_md", f'rawData_{0}.md')

@@ -14,7 +14,7 @@ ul li {
 
 .wrapper-scrape-controll {
     background-color: #c9ccce;
-    min-width: 400px;
+    min-width: 500px;
 
     margin-right: 20px;
     height: calc(100vh - 50px);
@@ -51,6 +51,11 @@ ul li {
     padding-bottom: 10px;
 }
 
+.pagination-wrapper {
+    display: inline-flex;  /* or inline-block */
+    align-items: center;   /* Optional: vertically align items */
+  }
+
 .checkboxer {
     margin-bottom: 15px;
 }
@@ -64,6 +69,10 @@ ul li {
 
 .column {
     min-height: 300px;
+}
+
+.wrapper-url-input {
+    width: 100%;
 }
 
 .upload-files {

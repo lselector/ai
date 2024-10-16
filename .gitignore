@@ -20,3 +20,4 @@ llm_leaderboard_*.xlsx
 **/.venv/
 **/.env
 demo_AI_NEWSLETTER/scrape_master_3/output
+**/output/
