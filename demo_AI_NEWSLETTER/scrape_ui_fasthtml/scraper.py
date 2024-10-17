@@ -1,40 +1,28 @@
 
-import os
-import random
-import time
-import re
-import json
-from datetime import datetime
-from typing import List, Dict, Type
+"""
+scraper.py
+Scrape tools
+"""
 
-import pandas as pd
+import os, random, time, re, json
+
 from bs4 import BeautifulSoup
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel
 import html2text
-import tiktoken
 
 from dotenv import load_dotenv
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-
-from openai import OpenAI
-import google.generativeai as genai
-from groq import Groq
-
-import ollama
-
-from assets import USER_AGENTS,PRICING,HEADLESS_OPTIONS,SYSTEM_MESSAGE,USER_MESSAGE,LLAMA_MODEL_FULLNAME,GROQ_LLAMA_MODEL_FULLNAME
+from assets import USER_AGENTS,HEADLESS_OPTIONS
 load_dotenv()
 
-# Set up the Chrome WebDriver options
-
+# ---------------------------------------------------------------
 def setup_selenium():
+    """ Set up the Chrome WebDriver options """
     options = Options()
 
     # Randomly select a user agent from the imported list
@@ -45,13 +33,11 @@ def setup_selenium():
     for option in HEADLESS_OPTIONS:
         options.add_argument(option)
 
-    # Specify the path to the ChromeDriver
-    #service = Service(r"./chromedriver-win64/chromedriver.exe")  
-
     # Initialize the WebDriver
     driver = webdriver.Chrome(options=options)
     return driver
 
+# ---------------------------------------------------------------
 def click_accept_cookies(driver):
     """
     Tries to find and click on a cookie consent button. It looks for several common patterns.
@@ -85,7 +71,9 @@ def click_accept_cookies(driver):
     except Exception as e:
         print(f"Error finding 'Accept Cookies' button: {e}")
 
+# ---------------------------------------------------------------
 def fetch_html_selenium(url):
+    """ Scrape page """
     driver = setup_selenium()
     try:
         driver.get(url)
@@ -110,7 +98,9 @@ def fetch_html_selenium(url):
     finally:
         driver.quit()
 
+# ---------------------------------------------------------------
 def clean_html(html_content):
+    """ Get all the data from html """
     soup = BeautifulSoup(html_content, 'html.parser')
     
     # Remove headers and footers based on common HTML tags or classes
@@ -119,8 +109,9 @@ def clean_html(html_content):
 
     return str(soup)
 
-
+# ---------------------------------------------------------------
 def html_to_markdown_with_readability(html_content):
+    """ Html to markdown """
 
     cleaned_html = clean_html(html_content)  
     
@@ -131,6 +122,7 @@ def html_to_markdown_with_readability(html_content):
     
     return markdown_content
 
+# ---------------------------------------------------------------
 def save_raw_data(raw_data: str, output_folder: str, file_name: str):
     """Save raw markdown data to the specified output folder."""
     print(f"dir: {output_folder}")
@@ -141,7 +133,9 @@ def save_raw_data(raw_data: str, output_folder: str, file_name: str):
     print(f"Raw data saved to {raw_output_path}")
     return raw_output_path
 
+# ---------------------------------------------------------------
 def remove_urls_from_file(file_path):
+    """ domain to string """
     # Regex pattern to find URLs
     url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
 
@@ -162,6 +156,7 @@ def remove_urls_from_file(file_path):
     print(f"Cleaned file saved as: {new_file_path}")
     return cleaned_content
 
+# ---------------------------------------------------------------
 def generate_system_message(listing_model: BaseModel) -> str:
     """
     Dynamically generate a system message based on the fields in the provided listing model.
@@ -198,7 +193,7 @@ def generate_system_message(listing_model: BaseModel) -> str:
 
     return system_message
 
-
+# ---------------------------------------------------------------
 def save_formatted_data(formatted_data):
     """Save formatted data as JSON and Excel in the specified output folder."""
 
