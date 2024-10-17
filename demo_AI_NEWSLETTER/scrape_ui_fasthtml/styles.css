@@ -172,11 +172,6 @@ ul li {
      margin-left: 12px;
 }
 
-#clear-files:active {
-    /* Styles when the button is clicked */
-    /* transform: scale(0.95); */
-  }
-
 .select-files-btn {
     margin: 0px;
 }
