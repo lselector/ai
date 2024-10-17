@@ -123,7 +123,6 @@ def clean_html(html_content):
 
 def html_to_markdown_with_readability(html_content):
 
-    
     cleaned_html = clean_html(html_content)  
     
     # Convert to markdown
@@ -133,12 +132,8 @@ def html_to_markdown_with_readability(html_content):
     
     return markdown_content
 
-
-    
 def save_raw_data(raw_data: str, output_folder: str, file_name: str):
     """Save raw markdown data to the specified output folder."""
-    #output_folder = re.sub(r'\W+', '_', output_folder.split('//').split('/')[0])
-    #output_folder += "_md"
     print(f"dir: {output_folder}")
     os.makedirs(output_folder, exist_ok=True)
     raw_output_path = f"{output_folder}/{file_name}"
@@ -146,7 +141,6 @@ def save_raw_data(raw_data: str, output_folder: str, file_name: str):
         f.write(raw_data)
     print(f"Raw data saved to {raw_output_path}")
     return raw_output_path
-
 
 def remove_urls_from_file(file_path):
     # Regex pattern to find URLs
@@ -168,35 +162,6 @@ def remove_urls_from_file(file_path):
         file.write(cleaned_content)
     print(f"Cleaned file saved as: {new_file_path}")
     return cleaned_content
-
-
-def create_dynamic_listing_model(field_names: List[str]) -> Type[BaseModel]:
-    """
-    Dynamically creates a Pydantic model based on provided fields.
-    field_name is a list of names of the fields to extract from the markdown.
-    """
-    # Create field definitions using aliases for Field parameters
-    field_definitions = {field: (str, ...) for field in field_names}
-    # Dynamically create the model with all field
-    return create_model('DynamicListingModel', **field_definitions)
-
-
-def create_listings_container_model(listing_model: Type[BaseModel]) -> Type[BaseModel]:
-    """
-    Create a container model that holds a list of the given listing model.
-    """
-    return create_model('DynamicListingsContainer', listings=(List[listing_model], ...))
-
-
-
-
-def trim_to_token_limit(text, model, max_tokens=120000):
-    encoder = tiktoken.encoding_for_model(model)
-    tokens = encoder.encode(text)
-    if len(tokens) > max_tokens:
-        trimmed_text = encoder.decode(tokens[:max_tokens])
-        return trimmed_text
-    return text
 
 def generate_system_message(listing_model: BaseModel) -> str:
     """
@@ -235,103 +200,6 @@ def generate_system_message(listing_model: BaseModel) -> str:
     return system_message
 
 
-
-async def format_data(data, selected_model, tags=None):
-    token_counts = {}
-
-    print(f"Model choosing: {selected_model}")
-
-    delimiter = " "
-    result_string = ""
-    if tags:
-        result_string = delimiter.join("TAGS: \n")
-        result_string += delimiter.join(tags)
-    
-    print(f"TAGS: {result_string}")
-    if selected_model in ["gpt-4o-mini", "gpt-4o-2024-08-06"]:
-        pass
-
-    # elif selected_model == "gemini-1.5-flash":
-    #     # Use Google Gemini API
-    #     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-    #     model = genai.GenerativeModel('gemini-1.5-flash',
-    #             generation_config={
-    #                 "response_mime_type": "application/json",
-    #                 "response_schema": DynamicListingsContainer
-    #             })
-    #     prompt = SYSTEM_MESSAGE + "\n" + USER_MESSAGE + data
-    #     # Count input tokens using Gemini's method
-    #     input_tokens = model.count_tokens(prompt)
-    #     completion = model.generate_content(prompt)
-    #     # Extract token counts from usage_metadata
-    #     usage_metadata = completion.usage_metadata
-    #     token_counts = {
-    #         "input_tokens": usage_metadata.prompt_token_count,
-    #         "output_tokens": usage_metadata.candidates_token_count
-    #     }
-    #     return completion.text, token_counts
-    
-    elif selected_model == "Llama3.1 8B":
-
-        client = ollama.Client()
-
-        #llama3.1:8b-instruct-q4_1
-
-        # Dynamically generate the system message based on the schema
-        #sys_message = generate_system_message(DynamicListingModel)
-        # print(SYSTEM_MESSAGE)
-        # Point to the local server
-        #client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
-
-        response_content = client.generate(model="llama3.1:8b-instruct-q4_1", prompt=SYSTEM_MESSAGE + USER_MESSAGE + data)['response']
-
-        # Extract the content from the response
-        #response_content = completion.choices[0].message.content
-        print(response_content)
-        # Convert the content from JSON string to a Python dictionary
-        parsed_response = json.loads(response_content)
-        
-        # Extract token usage
-        token_counts = {
-            "input_tokens": 0,
-            "output_tokens": 0
-        }
-
-        return parsed_response, token_counts
-    # elif selected_model== "Groq Llama3.1 70b":
-        
-    #     # Dynamically generate the system message based on the schema
-    #     sys_message = generate_system_message(DynamicListingModel)
-    #     # print(SYSTEM_MESSAGE)
-    #     # Point to the local server
-    #     client = Groq(api_key=os.environ.get("GROQ_API_KEY"),)
-
-    #     completion = client.chat.completions.create(
-    #     messages=[
-    #         {"role": "system","content": sys_message},
-    #         {"role": "user","content": USER_MESSAGE + data}
-    #     ],
-    #     model=GROQ_LLAMA_MODEL_FULLNAME,
-    # )
-
-    #     # Extract the content from the response
-    #     response_content = completion.choices[0].message.content
-        
-    #     # Convert the content from JSON string to a Python dictionary
-    #     parsed_response = json.loads(response_content)
-        
-    #     # completion.usage
-    #     token_counts = {
-    #         "input_tokens": completion.usage.prompt_tokens,
-    #         "output_tokens": completion.usage.completion_tokens
-    #     }
-
-    #     return parsed_response, token_counts
-    else:
-        raise ValueError(f"Unsupported model: {selected_model}")
-
-
-
 def save_formatted_data(formatted_data):
     """Save formatted data as JSON and Excel in the specified output folder."""
 
@@ -355,63 +223,3 @@ def save_formatted_data(formatted_data):
     with open(json_output_path, 'w', encoding='utf-8') as f:
         json.dump(formatted_data_dict, f, indent=4)
     print(f"Formatted data saved to JSON at {json_output_path}")
-
-    # Prepare data for DataFrame
-    if isinstance(formatted_data_dict, dict):
-        # If the data is a dictionary containing lists, assume these lists are records
-        data_for_df = next(iter(formatted_data_dict.values())) if len(formatted_data_dict) == 1 else formatted_data_dict
-    elif isinstance(formatted_data_dict, list):
-        data_for_df = formatted_data_dict
-    else:
-        raise ValueError("Formatted data is neither a dictionary nor a list, cannot convert to DataFrame")
-
-    # Create DataFrame
-    #try:
-    # df = pd.DataFrame(data_for_df)
-    # print("DataFrame created successfully.")
-
-    # # Save the DataFrame to an Excel file
-    # excel_output_path = os.path.join(output_folder, excel_file_name)
-    # df.to_excel(excel_output_path, index=False)
-    # print(f"Formatted data saved to Excel at {excel_output_path}")
-    
-    # return df
-    # except Exception as e:
-    #     print(f"Error creating DataFrame or saving Excel: {str(e)}")
-    #     return None
-
-def calculate_price(token_counts, model):
-    input_token_count = token_counts.get("input_tokens", 0)
-    output_token_count = token_counts.get("output_tokens", 0)
-    
-    # Calculate the costs
-    input_cost = input_token_count * PRICING[model]["input"]
-    output_cost = output_token_count * PRICING[model]["output"]
-    total_cost = input_cost + output_cost
-    
-    return input_token_count, output_token_count, total_cost
-
-
-def generate_unique_folder_name(url):
-    timestamp = datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-    url_name = re.sub(r'\W+', '_', url.split('//')[1].split('/')[0])  # Extract domain name and replace non-alphanumeric characters
-    return f"{url_name}_{timestamp}"
-
-
-# def scrape_multiple_urls(url, fields, selected_model):
-#     url_ = url
-#     print(f"T: {url_[:-1]}")
-#     if url_[:-1] == "/":
-#         url_[:-1] == ""
-#     output_folder = os.path.join('output', generate_unique_folder_name(url_))
-#     os.makedirs(output_folder, exist_ok=True)
-    
-#     total_input_tokens = 0
-#     total_output_tokens = 0
-#     total_cost = 0
-#     all_data = []
-#     markdown = None  # We'll store the markdown for the first (or only) URL
-    
-#     raw_html = fetch_html_selenium(url)
-#     markdown = html_to_markdown_with_readability(raw_html)
-#     save_raw_data(markdown, f"{output_folder}_md", f'rawData_{0}.md')

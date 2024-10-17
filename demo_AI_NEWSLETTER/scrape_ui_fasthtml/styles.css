@@ -56,6 +56,14 @@ ul li {
     align-items: center;   /* Optional: vertically align items */
   }
 
+.pagination-links-wrapper-cls {
+    min-width: 100px;
+    background-color: #dedede;
+    max-width: 460px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
 .checkboxer {
     margin-bottom: 15px;
 }

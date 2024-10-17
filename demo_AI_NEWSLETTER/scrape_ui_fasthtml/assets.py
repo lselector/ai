@@ -112,10 +112,12 @@ SYSTEM_MESSAGE = """You are an intelligent text extraction and conversion assist
                         with no additional commentary, explanations, or extraneous information. 
                         You could encounter cases where you can't find the data of the fields you have to extract or the data will be in a foreign language.
                         If you see any links (like http.. or https) add them to special list "all-links".
-                        If you see TAGS in user message extract structured information if it only based on these tags.
-                        Please process the following text and provide the output in pure JSON format with no words before or after the JSON:"""
+                        Please process the following text and provide the output in pure JSON format with no words before or after the JSON:
+                        """
 
-USER_MESSAGE = f"Extract the following information from the provided text:\nPage content:\n\n"
+USER_MESSAGE = f"""Extract the following information from the provided text:\nPage content:\n\n
+                Please, If I provide tags extract information using only these tags and do not include anything but information that matches tags
+                """
         
 
 
@@ -134,11 +136,14 @@ detect only the urls that are clearly defining a pattern to show data on multipl
 
 - The user can give you indications on how the pagination works for the specific website at the end of this prompt, if those indications are not empty pay special attention to them as they will directly help you understand the structure and the number of pages to generate.
 
-Provide the output as a JSON object with the following structure:
+Provide the output as a non numerate list:
 
-{
-    "page_urls": ["url1", "url2", "url3",...,"urlN"]
-}
+url1
+url2
+url3
+...
+urlN
+
 
 Do not include any additional text or explanations.
 """
