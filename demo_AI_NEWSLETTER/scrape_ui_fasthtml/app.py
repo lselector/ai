@@ -497,18 +497,6 @@ async def ws(send, model:str, isTags:str, tags:str, pagination:str):
     if isTags == "tags":
         user_message = f"{USER_MESSAGE} \n TAGS: {tags} \n {markdown}"
 
-    if model in ["gpt-4o-mini", "gpt-4o-2024-08-06"]:
-        await openai_llm_get_data(send, model, user_message, SYSTEM_MESSAGE)
-    elif model == "llama3.1:8b-instruct-q4_1":
-        await ollama_llm_get_data(send, model, user_message, SYSTEM_MESSAGE)
-
-    if pagination == "pagination":
-        await get_pagination_links(send, model, markdown, PROMPT_PAGINATION)
-
-#---------------------------------------------------------------
-async def ollama_llm_get_data(send, model, user_message, system_message):
-    """ Get JSON data from .md file using Ollama """
-    
     i = len(messages_history)
     tid = f'message-{i}'
 
@@ -522,6 +510,31 @@ async def ollama_llm_get_data(send, model, user_message, system_message):
                 id=tid+"_"
             )
         )
+
+    if model in ["gpt-4o-mini", "gpt-4o-2024-08-06"]:
+        await openai_llm_get_data(send, model, user_message, SYSTEM_MESSAGE, tid)
+    elif model == "llama3.1:8b-instruct-q4_1":
+        await ollama_llm_get_data(send, model, user_message, SYSTEM_MESSAGE, tid)
+
+    if pagination == "pagination":
+        await get_pagination_links(send, model, markdown, PROMPT_PAGINATION)
+
+#---------------------------------------------------------------
+def clean_json(json_string):
+    """ Clean JSON from any chars """
+
+    match = re.search(r'\{.*\}', json_string, re.DOTALL)
+    json_string_ = ""
+    if match:
+        json_string_ = match.group()
+
+    return json_string_
+
+#---------------------------------------------------------------
+async def ollama_llm_get_data(send, model, user_message, system_message, tid):
+    """ Get JSON data from .md file using Ollama """
+
+    global messages_history
 
     ms = []
     ms.append({"role": "assistant", "content": f"Question: \n {system_message}"})
@@ -548,28 +561,19 @@ async def ollama_llm_get_data(send, model, user_message, system_message):
         await asyncio.sleep(0.01)  # simulate a brief delay
 
     json_string = "".join(collected_chunks)
-    messages_history.append(json_string)
 
-    save_formatted_data(json_string)
+    json_string_ = clean_json(json_string)
+
+    messages_history.append(json_string_)
+
+    save_formatted_data(json_string_)
 
 #---------------------------------------------------------------
-async def openai_llm_get_data(send, model, user_message, system_message):
+async def openai_llm_get_data(send, model, user_message, system_message, tid):
     """ Get JSON data from .md file using OpenAI """
 
-    i = len(messages_history)
-    tid = f'message-{i}'
+    global messages_history
 
-    await send(
-                Div(Pre(
-                    cls="chat-bubble chat-bubble-secondary",
-                    id=tid
-                    ),
-                cls = "chat chat-start",
-                hx_swap_oob="outerHTML",
-                id=tid+"_"
-            )
-        )
-    
     stream = client_openai.chat.completions.create(
         model=model,
         stream=True,
@@ -596,9 +600,12 @@ async def openai_llm_get_data(send, model, user_message, system_message):
             await asyncio.sleep(0.01)  # simulate a brief delay
  
     json_string = "".join(collected_chunks)
-    messages_history.append(json_string)
 
-    save_formatted_data(json_string)
+    json_string_ = clean_json(json_string)
+
+    messages_history.append(json_string_)
+
+    save_formatted_data(json_string_)
 
             
 # ---------------------------------------------------------------
