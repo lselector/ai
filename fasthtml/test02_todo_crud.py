@@ -29,10 +29,9 @@ def get():
     bag.list_items = []
     nums = NumList(5)
     main_page = (
-        Title("Chatbot"),
-        Titled('Greeting',
+        Title("CRUD List"),
+        Titled('CRUD List',
         Div(
-            H1("Chatbot using fasthtml and ollama"),
             Div(
             P(Img(src="https://fastht.ml/assets/logo.svg", width=100, height=100)),
             ),
@@ -44,7 +43,7 @@ def get():
                      hx_post='/', 
                      target_id='message-list',
                      hx_swap="beforeend"),
-                     Div(nums, id='stuff',  hx_get='/change')
+                     Div(id='stuff',  hx_get='/change')
                      )
         ))
     )
@@ -64,12 +63,12 @@ def post(data:str):
     i = len(messages)
     tid = f'message-{i}'
     messages.append(data)
-    check = A('Check',
+    check = A('Check ',
                 hx_post= f'/change_message/{i}',
                 hx_target=f"#{tid}",
                 hx_swap="innerHTML"
     )
-    toggle = A('Delete',
+    toggle = A('Delete ',
                 hx_delete= f'/delete/{i}',
                 hx_target=f"#{tid}",
                 hx_swap="outerHTML"
@@ -95,12 +94,12 @@ def print_all_messages():
     for message in messages:
         tid = f'message-{i}'
                  
-        check = A('Check',
+        check = A('Check ',
                     hx_post= f'/change_message/{i}',
                     hx_target=f"#{tid}",
                     hx_swap="innerHTML"
         )
-        toggle = A('Delete',
+        toggle = A('Delete ',
                     hx_delete= f'/delete/{i}',
                     hx_target=f"#{tid}",
                     hx_swap="outerHTML"
