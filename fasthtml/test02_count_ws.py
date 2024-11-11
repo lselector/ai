@@ -7,7 +7,7 @@ import asyncio
 from fasthtml import FastHTML
 from fasthtml.common import *
 
-app, rt, = fast_app(live=True, ws_hdr=True)
+app, rt, = fast_app(live=True, ws_hdr=True, exts='ws')
 count = 0
 # -----------------------------------------
 @rt("/")
