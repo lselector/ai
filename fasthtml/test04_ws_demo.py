@@ -8,7 +8,7 @@
 from asyncio import sleep
 from fasthtml.common import *
 
-app = FastHTML(ws_hdr=True)
+app = FastHTML(ws_hdr=True, exts='ws')
 rt = app.route
 nid = 'notifications'
 counter = 0
