@@ -21,7 +21,7 @@ import faiss
 import common_tools as ct
 
 
-app, rt, = fast_app(live=True, pico=False, ws_hdr=True, hdrs=[
+app, rt, = fast_app(live=True, exts='ws', pico=False, ws_hdr=True, hdrs=[
     Link(
         rel="stylesheet",
         href="https://cdn.jsdelivr.net/npm/daisyui@4.11.1/dist/full.min.css"
