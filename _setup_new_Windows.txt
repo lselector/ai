@@ -1,0 +1,210 @@
+
+Here is some software to install on MS Windows computer
+================================================
+Visual Studio Code:
+ - https://code.visualstudio.com/download
+Microsoft Terminal - 
+  Win11 - available by default
+  Win10 - install 
+ - https://github.com/microsoft/terminal
+ - https://learn.microsoft.com/en-us/windows/terminal/install
+ - https://apps.microsoft.com/detail/9n0dx20hk701 
+================================================
+NotePad++
+ - https://notepad-plus-plus.org/downloads/ 
+Sublime editor:
+ - https://www.sublimetext.com/download
+================================================
+Git (comes with Git bash):
+ - https://git-scm.com/download/win 
+Important: 
+You need to install optional Unix tools.
+During installation, you will be clicking "Next" 
+through several screens. On 4th screen you need to choose: 
+"Use Git and optional Unix tools from the Command Prompt"
+================================================
+Terminal - create profile for GitBash
+
+* In Terminal go to settings (ctrl + ',' or press on arrow-down next to tabs on top)
+* Click "Add new profile" (or the "+" button).
+* Choose "New empty profile".
+* "Name:" - "Git Bash"
+* "Command line:" - C:\Program Files\Git\bin\bash.exe  (check it)
+* "Icon:" - Enter the path to the Git icon, for example
+      C:\Program Files\Git\mingw64\share\git\git-for-windows.ico
+* "Starting directory:" leave this as `%USERPROFILE%` 
+* Set profile as Default:
+      In the settings UI, find your new Git Bash profile in the list on the left,
+      Right-click it and select "Set as default profile."
+  Alternative - Click "Open JSON file" in the settings 
+      and add    "defaultProfile": "{YOUR-GIT-BASH-PROFILE-GUID}",
+      for example: "defaultProfile": "{5f90b339-6390-4abe-b335-d4adccace61c}",
+  Note: you can find the GUID in the same file in the list of profiles 
+
+* Click "Save", then restart the terminal
+================================================
+Python - 3 types on installs:
+
+Anaconda 64-bit Graphical installer:
+ - https://www.anaconda.com/products/individual#windows 
+Miniconda:
+ - https://docs.anaconda.com/miniconda/
+Regular python: 
+ - https://www.python.org/downloads/
+
+Below are docs for anaconda python:
+
+Accurately follow instructions for installation: 
+ - https://docs.anaconda.com/anaconda/install/windows/ 
+
+Note: install it under your user directory (without admin permissions).
+    You can go with default, or you can specify
+    C:\Users\Youname\anaconda3
+Note: check the checkbox to add Anaconda to the PATH environment variable 
+      (by default it is not checked)
+Note: anaconda installation should add anaconda to your PATH
+      Check it in control panel
+      Open the Start Search, 
+          type in "env" 
+          choose Edit environment variables for your account
+
+Here are paths which are added to User Path automatically:
+.;
+C:\Users\Youname\anaconda3;
+C:\Users\Youname\anaconda3\Library\mingw-w64\bin;
+C:\Users\Youname\anaconda3\Library\usr\bin;
+C:\Users\Youname\anaconda3\Library\bin;
+C:\Users\Youname\anaconda3\Scripts;
+C:\Users\Youname\AppData\Local\Microsoft\WindowsApps
+
+Note: you can also add custom PYTHONPATH variable
+      and popualte it as needed, for example:  
+          .;C:\\Users\\Youname\\py_lib
+
+try the following commands from cmd window
+
+echo %PATH%
+python --version
+where python
+python -c "import pandas as pd;print(pd.__file__)"
+where pip
+where ipython
+ipython --version
+
+ipython
+import pandas as pd
+pd.__file__
+
+================================================
+ipython - set up default profile in home directory
+
+cd C:\Users\Youname
+ipython profile create
+
+and add common startup files under
+    C:\Users\Youname\.ipython\profile_default\startup
+
+Download them from:
+ - https://github.com/lselector/setup_computer
+ - https://github.com/lselector/setup_computer/tree/master/ipython_startup
+
+Note: you will probably get Jupyter as part of anaconda python. 
+      Try starting using this command:
+          jupyter notebook
+
+      Here are separate instructions on how to install 
+      and start using the Jupyter notebook on Windows: 
+ - https://www.geeksforgeeks.org/how-to-install-jupyter-notebook-in-windows/ 
+
+VSCode is a very good editor to work with python and jupyter.
+ - https://code.visualstudio.com/download 
+ - https://code.visualstudio.com/docs/languages/python 
+ - https://code.visualstudio.com/docs/datascience/jupyter-notebooks
+
+================================================
+Installing zip and unzip.
+If during Git installation from https://git-scm.com/download/win
+you have chosen to "Use Git and optional Unix tools from the Command Prompt",
+then you will get unzip.
+If you forgot to do it, just re-install Git with this option
+================================================
+You can get zip from https://gnuwin32.sourceforge.net/ 
+go to packages,
+click on bzip2, and there click on Binaries zip to download bzip2-1.0.5-bin
+click on zip,   and there click on Binaries zip to download zip-3.0-bin
+Extract both downloaded ZIP files. 
+
+in gitbash:
+cd
+mkdir -p bin
+cp Downloads/zip-3.0-bin/bin/zip.exe   ~/bin/
+cp Downloads/bzip2-1.0.5-bin/bin/bzip2.dll ~/bin/
+
+Check that ~/bin is in the PATH
+Then you can use zip normally:
+
+zip  -r myfile.zip  file1 dir1 file2 dir2   
+================================================
+Install "fd" (fdfind) :
+https://github.com/sharkdp/fd/releases
+    Under "Assets", download latest windows zip, for example
+        fd-v10.1.0-i686-pc-windows-msvc.zip
+    Extract, find file fd.exe - and copy it into ~/bin/
+================================================
+ipython:  
+    ipython profile create
+    copy startup files
+    add 2 lines to config file
+    (see in https://github.com/lselector/setup_computer)
+================================================
+unix dot files
+copy from docs/dot_files/
+and rename (substitute leading underscore by '.', remove 'txt' extensions)
+================================================
+env vars setup - add in Control Panel "env":
+PATH - add:
+    C:\Users\<User_ID>\GitHub\genai\py_utils
+    C:\Users\<User_ID>\GitHub\genai\bin
+    .
+
+PYTHONPATH
+    C:\Users\<User_ID>\GitHub\genai\py_utils
+    C:\Users\<User_ID>\GitHub\genai\vsdx2
+    .
+================================================
+Install ssh files (ssh keys and config) as described here
+on GitHub:
+    https://github.com/lselector/setup_computer/blob/master/ssh_config.txt
+================================================
+  git clone git@github.com:lselector/ai.git
+================================================
+"gist" script:
+
+#! /bin/bash
+
+# gist - git status - a command to check
+# if anything should be updated from server or committed
+
+echo "------------------------------------- files which diff from remote repo"
+git fetch;
+git diff --name-only
+echo "------------------------------------- files changed locally"
+git status .
+echo "-------------------------------------"
+
+================================================
+aliases:
+
+alias gh='cd ~/GitHub'
+alias ai='cd ~/GitHub/ai'
+alias gg='git add .; git ci -m'\''update'\''; git push; gist'
+alias qq='gist'
+alias uu='git stash clear; git stash; git pull; git stash apply'
+================================================
+cd ~/GitHub 
+git clone git@github.com:lselector/ai.git
+git clone git@github.com:lselector/setup_computer.git
+================================================
+cd ~/GitHub/ai
+pip install -U -r myrequirements.txt
+================================================
