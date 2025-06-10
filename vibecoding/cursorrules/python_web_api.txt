@@ -1,0 +1,157 @@
+# Advanced Python Cursor Rules for Web API Development
+# Place this in your project root as .cursorrules
+
+project:
+  name: "Python Web API"
+  framework: "FastAPI"
+  database: "PostgreSQL"
+  orm: "SQLAlchemy"
+  
+# Architecture Patterns
+architecture:
+  pattern: "Clean Architecture"
+  layers:
+    - "Presentation (FastAPI routes)"
+    - "Application (Use cases/Services)"
+    - "Domain (Business logic/Models)"
+    - "Infrastructure (Database/External APIs)"
+  
+# Code Quality Rules
+quality:
+  type_checking: "strict"
+  formatter: "black"
+  linter: "ruff"
+  complexity_max: 10
+  test_coverage_min: 85
+
+# Coding Standards
+standards:
+  naming:
+    - Classes: PascalCase
+    - Functions/Variables: snake_case
+    - Constants: UPPER_SNAKE_CASE
+    - Private methods: _leading_underscore
+  
+  docstrings:
+    - Use Google style docstrings
+    - Include Args, Returns, Raises sections
+    - Add examples for complex functions
+  
+  type_hints:
+    - Required for all public functions
+    - Use Union types sparingly, prefer specific types
+    - Use Generic types for collections
+    - Use Optional for nullable parameters
+
+# Database Guidelines
+database:
+  migrations:
+    - Use Alembic for schema migrations
+    - Name migrations descriptively
+    - Never edit existing migrations
+  
+  models:
+    - Use SQLAlchemy declarative base
+    - Define relationships explicitly
+    - Add appropriate indexes
+    - Use proper field validation
+  
+  queries:
+    - Use SQLAlchemy ORM, avoid raw SQL unless necessary
+    - Implement proper pagination
+    - Use select_in_loading for N+1 prevention
+    - Add query logging in development
+
+# API Design
+api:
+  versioning: "URL versioning (/api/v1/)"
+  serialization: "Pydantic models"
+  error_handling:
+    - Use HTTP status codes correctly
+    - Return consistent error response format
+    - Log all 500 errors
+    - Validate input data thoroughly
+  
+  authentication:
+    - Use JWT tokens for stateless auth
+    - Implement proper token expiration
+    - Add rate limiting
+    - Validate permissions on protected endpoints
+
+# Testing Strategy
+testing:
+  unit_tests:
+    - Test business logic in isolation
+    - Mock external dependencies
+    - Use pytest fixtures
+    - Test edge cases and error conditions
+  
+  integration_tests:
+    - Test API endpoints end-to-end
+    - Use test database
+    - Test authentication flows
+    - Verify database transactions
+  
+  test_data:
+    - Use factories (factory_boy) for test data
+    - Keep test data minimal but realistic
+    - Clean up test data after each test
+
+# Performance Guidelines
+performance:
+  database:
+    - Use connection pooling
+    - Implement query optimization
+    - Add database indexes strategically
+    - Monitor slow queries
+  
+  api:
+    - Implement caching where appropriate
+    - Use async/await for I/O operations
+    - Add request/response compression
+    - Monitor endpoint performance
+
+# Security Requirements
+security:
+  authentication:
+    - Hash passwords with bcrypt
+    - Implement proper session management
+    - Use HTTPS in production
+    - Add CORS configuration
+  
+  data_validation:
+    - Validate all input data
+    - Sanitize user inputs
+    - Use parameterized queries
+    - Implement rate limiting
+  
+  secrets:
+    - Use environment variables
+    - Rotate secrets regularly
+    - Never log sensitive data
+    - Use proper key management
+
+# Deployment Guidelines
+deployment:
+  containerization:
+    - Use multi-stage Docker builds
+    - Minimize image size
+    - Use non-root users
+    - Set proper health checks
+  
+  configuration:
+    - Use environment-specific configs
+    - Validate configuration on startup
+    - Use structured logging
+    - Implement graceful shutdown
+
+# Code Review Checklist
+review:
+  - Code follows established patterns
+  - Proper error handling implemented
+  - Tests cover new functionality
+  - Documentation updated
+  - No security vulnerabilities
+  - Performance impact considered
+  - Database migrations reviewed
+

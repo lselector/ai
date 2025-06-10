@@ -1,0 +1,268 @@
+# Full-Stack Application Cursor Rules
+# React.js Frontend + FastAPI Backend
+# Place this in your project root as .cursorrules
+
+project:
+  name: "Full-Stack Web Application"
+  architecture: "Monorepo"
+  frontend:
+    framework: "React.js"
+    language: "TypeScript"
+    build_tool: "Vite"
+    state_management: "Zustand" # or Redux Toolkit
+  backend:
+    framework: "FastAPI"
+    language: "Python 3.11+"
+    database: "PostgreSQL"
+    orm: "SQLAlchemy"
+  communication:
+    - "REST API (HTTP)"
+    - "WebSocket connections"
+    - "JSON data format"
+
+# Project Structure
+structure:
+  monorepo_layout: true
+  directories:
+    - "frontend/ (React application)"
+    - "backend/ (FastAPI application)"
+    - "shared/ (Shared types, schemas)"
+    - "docs/ (API documentation)"
+    - "scripts/ (Development scripts)"
+
+# Frontend Guidelines (React.js)
+frontend:
+  typescript:
+    - Use strict TypeScript configuration
+    - Define interfaces for all props and state
+    - Use proper typing for API responses
+    - Avoid 'any' type, use unknown instead
+    - Use generic types for reusable components
+  
+  react:
+    - Use functional components with hooks
+    - Implement proper error boundaries
+    - Use React.memo for performance optimization
+    - Keep components small and focused
+    - Use custom hooks for shared logic
+    - Implement proper loading and error states
+  
+  state_management:
+    - Use local state (useState) for component-specific data
+    - Use global state (Zustand/Redux) for shared data
+    - Implement proper state normalization
+    - Handle async operations with proper loading states
+    - Use optimistic updates where appropriate
+  
+  styling:
+    - Use CSS Modules or Styled Components
+    - Follow BEM naming convention for CSS classes
+    - Implement responsive design (mobile-first)
+    - Use CSS custom properties for theming
+    - Keep styles close to components
+  
+  performance:
+    - Implement code splitting with React.lazy
+    - Use React.memo and useMemo appropriately
+    - Optimize re-renders with useCallback
+    - Implement virtual scrolling for large lists
+    - Use proper image optimization
+
+# Backend Guidelines (FastAPI)
+backend:
+  fastapi:
+    - Use Pydantic models for request/response validation
+    - Implement proper dependency injection
+    - Use async/await for all I/O operations
+    - Group related endpoints with APIRouter
+    - Implement proper error handling with HTTPException
+    - Use background tasks for long-running operations
+  
+  api_design:
+    - Follow RESTful principles
+    - Use consistent URL naming (/api/v1/resources)
+    - Implement proper HTTP status codes
+    - Use query parameters for filtering/pagination
+    - Implement HATEOAS where beneficial
+    - Version your API properly
+  
+  database:
+    - Use SQLAlchemy with async support
+    - Implement proper database migrations (Alembic)
+    - Use connection pooling
+    - Implement soft deletes where appropriate
+    - Add proper indexes for queries
+    - Use database constraints for data integrity
+  
+  websockets:
+    - Implement connection management
+    - Handle connection failures gracefully
+    - Use proper message serialization
+    - Implement authentication for WebSocket connections
+    - Add heartbeat/ping-pong for connection health
+    - Handle concurrent connections efficiently
+
+# Communication Patterns
+communication:
+  http_api:
+    - Use consistent request/response formats
+    - Implement proper error response structure
+    - Use appropriate HTTP methods (GET, POST, PUT, DELETE)
+    - Implement pagination for list endpoints
+    - Use proper caching headers
+    - Add request/response logging
+  
+  websockets:
+    - Define message types and schemas
+    - Implement proper connection lifecycle management
+    - Use JSON for message serialization
+    - Handle reconnection logic on frontend
+    - Implement proper error handling
+    - Add message queuing for reliability
+  
+  data_validation:
+    - Validate data on both frontend and backend
+    - Use shared type definitions where possible
+    - Implement proper sanitization
+    - Handle validation errors gracefully
+    - Use consistent error message formats
+
+# Security Guidelines
+security:
+  authentication:
+    - Use JWT tokens for stateless authentication
+    - Implement proper token refresh mechanism
+    - Store tokens securely (httpOnly cookies recommended)
+    - Add proper session management
+    - Implement logout functionality
+  
+  authorization:
+    - Implement role-based access control (RBAC)
+    - Validate permissions on both frontend and backend
+    - Use proper middleware for route protection
+    - Implement resource-level permissions
+  
+  data_protection:
+    - Validate all user inputs
+    - Implement proper CORS configuration
+    - Use HTTPS in production
+    - Sanitize data before database operations
+    - Implement rate limiting
+    - Add proper logging for security events
+  
+  websocket_security:
+    - Authenticate WebSocket connections
+    - Validate WebSocket messages
+    - Implement proper origin checking
+    - Add connection rate limiting
+    - Log WebSocket security events
+
+# Testing Strategy
+testing:
+  frontend:
+    - Use Jest and React Testing Library
+    - Test components in isolation
+    - Mock API calls and WebSocket connections
+    - Test user interactions and flows
+    - Implement visual regression testing
+    - Test accessibility compliance
+  
+  backend:
+    - Use pytest for unit and integration tests
+    - Test API endpoints with TestClient
+    - Mock external dependencies
+    - Test WebSocket connections
+    - Implement database transaction rollback in tests
+    - Test error conditions and edge cases
+  
+  e2e_testing:
+    - Use Playwright or Cypress
+    - Test critical user journeys
+    - Test WebSocket functionality
+    - Test across different browsers
+    - Implement proper test data management
+
+# Development Workflow
+development:
+  git:
+    - Use conventional commit messages
+    - Implement proper branching strategy (GitFlow)
+    - Use pull request reviews
+    - Run tests before merging
+    - Use semantic versioning
+  
+  development_server:
+    - Use hot reload for both frontend and backend
+    - Implement proper environment variables
+    - Use Docker for consistent development environment
+    - Set up proper logging levels
+    - Implement health check endpoints
+  
+  debugging:
+    - Use proper debugging tools (React DevTools, Python debugger)
+    - Implement structured logging
+    - Add performance monitoring
+    - Use proper error tracking
+    - Implement request tracing
+
+# Performance Guidelines
+performance:
+  frontend:
+    - Implement proper bundling and minification
+    - Use lazy loading for routes and components
+    - Optimize images and assets
+    - Implement proper caching strategies
+    - Monitor Core Web Vitals
+  
+  backend:
+    - Use async programming for I/O operations
+    - Implement proper database query optimization
+    - Use caching (Redis) for frequently accessed data
+    - Implement proper connection pooling
+    - Monitor API response times
+  
+  websockets:
+    - Implement efficient message handling
+    - Use message batching where appropriate
+    - Implement proper connection cleanup
+    - Monitor WebSocket connection metrics
+
+# Deployment Guidelines
+deployment:
+  containerization:
+    - Use Docker multi-stage builds
+    - Separate containers for frontend and backend
+    - Use proper health checks
+    - Implement proper logging
+    - Use non-root users
+  
+  environment_management:
+    - Use environment-specific configurations
+    - Implement proper secret management
+    - Use feature flags for gradual rollouts
+    - Implement proper monitoring and alerting
+  
+  ci_cd:
+    - Run tests in CI pipeline
+    - Implement automated deployments
+    - Use proper staging environments
+    - Implement rollback procedures
+    - Monitor deployment health
+
+# Code Quality
+quality:
+  linting:
+    frontend: "ESLint + Prettier"
+    backend: "Ruff + Black"
+  
+  type_checking:
+    frontend: "TypeScript strict mode"
+    backend: "mypy strict mode"
+  
+  code_review:
+    - Review for security vulnerabilities
+    - Check performance implications
+    - Verify test coverage
+    - Ensure proper error handling
+    - Validate API contract compliance
+

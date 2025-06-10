@@ -1,0 +1,60 @@
+# Basic Python Cursor Rules
+# Place this in your project root as .cursorrules
+
+# Project Configuration
+project_type: python
+python_version: "3.11+"
+framework: fastapi  # or django, flask, etc.
+
+# Code Style and Standards
+code_style:
+  - Use PEP 8 style guidelines
+  - Maximum line length: 88 characters (Black formatter)
+  - Use type hints for all function parameters and return values
+  - Use docstrings for all classes and functions (Google style)
+  - Prefer f-strings for string formatting
+  - Use pathlib instead of os.path for file operations
+
+# Import Organization
+imports:
+  - Group imports: standard library, third-party, local imports
+  - Sort imports alphabetically within groups
+  - Use absolute imports
+  - Avoid wildcard imports (from module import *)
+
+# Error Handling
+error_handling:
+  - Use specific exception types, not bare except clauses
+  - Include meaningful error messages
+  - Log errors appropriately
+  - Use custom exceptions for domain-specific errors
+
+# Testing
+testing:
+  - Write unit tests using pytest
+  - Aim for 80%+ test coverage
+  - Use fixtures for test data
+  - Mock external dependencies
+  - Follow AAA pattern (Arrange, Act, Assert)
+
+# Security
+security:
+  - Never commit secrets or API keys
+  - Validate all user inputs
+  - Use environment variables for configuration
+  - Sanitize data before database operations
+
+# Performance
+performance:
+  - Use list comprehensions when appropriate
+  - Consider using generators for large datasets
+  - Profile code before optimizing
+  - Use appropriate data structures (dict for lookups, set for membership)
+
+# File Structure Preferences
+structure:
+  - Group related functionality in modules
+  - Use __init__.py files to control package imports
+  - Keep main logic separate from CLI/API entry points
+  - Use src/ layout for packages
+

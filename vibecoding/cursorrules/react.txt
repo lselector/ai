@@ -1,0 +1,249 @@
+# Frontend-Specific Cursor Rules (React.js)
+# Place this in frontend/ directory as .cursorrules
+
+project:
+  framework: "React.js 18+"
+  language: "TypeScript"
+  build_tool: "Vite"
+  package_manager: "npm" # or yarn/pnpm
+
+# React Component Guidelines
+components:
+  structure:
+    - Use functional components exclusively
+    - Keep components under 200 lines
+    - One component per file
+    - Use PascalCase for component names
+    - Co-locate related files (component, styles, tests)
+  
+  props:
+    - Define TypeScript interfaces for all props
+    - Use destructuring for props
+    - Provide default props where appropriate
+    - Keep prop drilling to maximum 2-3 levels
+    - Use children prop for composition
+  
+  hooks:
+    - Use built-in hooks appropriately
+    - Create custom hooks for shared logic
+    - Follow hooks rules (only call at top level)
+    - Use useCallback for expensive functions
+    - Use useMemo for expensive calculations
+    - Implement cleanup in useEffect
+
+# State Management
+state:
+  local_state:
+    - Use useState for component-specific state
+    - Use useReducer for complex state logic
+    - Initialize state properly
+    - Avoid deep object mutations
+    - Use functional updates when needed
+  
+  global_state:
+    - Use Zustand for simple global state
+    - Keep store slices focused and small
+    - Implement proper state normalization
+    - Use selectors to prevent unnecessary re-renders
+    - Handle async operations properly
+  
+  forms:
+    - Use React Hook Form for form management
+    - Implement proper validation schemas (Zod)
+    - Handle form errors gracefully
+    - Implement debounced validation
+    - Use controlled components
+
+# API Communication
+api:
+  http_requests:
+    - Use Axios or Fetch API consistently
+    - Create API client with base configuration
+    - Implement request/response interceptors
+    - Handle loading states properly
+    - Implement proper error handling
+    - Use React Query for server state management
+  
+  websockets:
+    - Create WebSocket hook for connection management
+    - Handle connection states (connecting, open, closed, error)
+    - Implement automatic reconnection logic
+    - Parse incoming messages properly
+    - Handle message queuing during disconnection
+    - Clean up connections on component unmount
+  
+  error_handling:
+    - Implement error boundaries
+    - Show user-friendly error messages
+    - Log errors for debugging
+    - Provide retry mechanisms
+    - Handle network failures gracefully
+
+# TypeScript Guidelines
+typescript:
+  types:
+    - Define interfaces for API responses
+    - Use proper typing for event handlers
+    - Create union types for component variants
+    - Use generic types for reusable components
+    - Avoid 'any', use 'unknown' instead
+  
+  naming:
+    - Use PascalCase for interfaces and types
+    - Prefix interfaces with 'I' if needed
+    - Use descriptive names for generic parameters
+    - Group related types in separate files
+  
+  imports:
+    - Use absolute imports with path mapping
+    - Group imports: React, libraries, local
+    - Use type-only imports when appropriate
+    - Avoid default exports for utilities
+
+# Styling Guidelines
+styling:
+  approach: "CSS Modules" # or Styled Components/Emotion
+  
+  css_modules:
+    - Use camelCase for class names
+    - Keep styles close to components
+    - Use CSS custom properties for theming
+    - Implement proper responsive design
+    - Use semantic class names
+  
+  responsive_design:
+    - Mobile-first approach
+    - Use CSS Grid and Flexbox
+    - Implement proper breakpoints
+    - Test on multiple screen sizes
+    - Use relative units (rem, em, %)
+  
+  performance:
+    - Use CSS-in-JS bundle splitting
+    - Minimize CSS bundle size
+    - Use CSS containment where appropriate
+    - Optimize animations (transform, opacity)
+
+# Performance Optimization
+performance:
+  rendering:
+    - Use React.memo for expensive components
+    - Implement proper key props for lists
+    - Avoid creating objects/functions in render
+    - Use useCallback and useMemo judiciously
+    - Implement virtualization for large lists
+  
+  code_splitting:
+    - Use React.lazy for route-based splitting
+    - Implement suspense boundaries
+    - Split large dependencies
+    - Use dynamic imports appropriately
+  
+  assets:
+    - Optimize images (WebP, lazy loading)
+    - Use proper image sizing
+    - Implement asset caching
+    - Minimize bundle size
+    - Use tree shaking
+
+# Testing Standards
+testing:
+  unit_tests:
+    - Use React Testing Library
+    - Test user interactions, not implementation
+    - Mock external dependencies
+    - Test error states and edge cases
+    - Use proper assertions
+  
+  component_tests:
+    - Test component rendering
+    - Test prop changes and state updates
+    - Test event handlers
+    - Test conditional rendering
+    - Test accessibility features
+  
+  integration_tests:
+    - Test API integration
+    - Test WebSocket functionality
+    - Test routing and navigation
+    - Test form submissions
+    - Test error boundaries
+  
+  test_utilities:
+    - Create reusable test utilities
+    - Mock API responses consistently
+    - Use custom render functions
+    - Implement proper cleanup
+    - Use data-testid for element selection
+
+# Accessibility Guidelines
+accessibility:
+  standards:
+    - Follow WCAG 2.1 AA guidelines
+    - Use semantic HTML elements
+    - Implement proper ARIA attributes
+    - Ensure keyboard navigation
+    - Provide screen reader support
+  
+  implementation:
+    - Use proper heading hierarchy
+    - Add alt text for images
+    - Implement focus management
+    - Use high contrast colors
+    - Test with screen readers
+
+# Development Workflow
+development:
+  file_organization:
+    - Group by feature, not by type
+    - Use index.ts for clean imports
+    - Keep utility functions separate
+    - Organize types in dedicated files
+  
+  naming_conventions:
+    - Components: PascalCase
+    - Files: kebab-case or PascalCase
+    - Variables/Functions: camelCase
+    - Constants: UPPER_SNAKE_CASE
+    - CSS classes: kebab-case
+  
+  imports:
+    - Use absolute imports with @ prefix
+    - Group imports logically
+    - Sort imports alphabetically
+    - Use barrel exports for modules
+
+# Error Handling
+error_handling:
+  boundaries:
+    - Implement error boundaries at route level
+    - Create fallback UI components
+    - Log errors for debugging
+    - Provide user recovery options
+  
+  async_errors:
+    - Handle promise rejections
+    - Implement retry mechanisms
+    - Show meaningful error messages
+    - Maintain application stability
+  
+  validation:
+    - Validate props with TypeScript
+    - Validate form inputs
+    - Handle API response validation
+    - Provide immediate user feedback
+
+# Security Considerations
+security:
+  data_handling:
+    - Sanitize user inputs
+    - Validate data from APIs
+    - Handle sensitive data properly
+    - Use proper authentication tokens
+  
+  xss_prevention:
+    - Avoid dangerouslySetInnerHTML
+    - Sanitize dynamic content
+    - Use proper content security policy
+    - Validate URLs and links
+

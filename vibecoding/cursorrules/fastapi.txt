@@ -1,0 +1,312 @@
+# Backend-Specific Cursor Rules (FastAPI)
+# Place this in backend/ directory as .cursorrules
+
+project:
+  framework: "FastAPI 0.100+"
+  python_version: "3.11+"
+  database: "PostgreSQL"
+  orm: "SQLAlchemy 2.0"
+  async_support: true
+
+# FastAPI Application Structure
+application:
+  architecture:
+    - Use APIRouter for route organization
+    - Implement dependency injection pattern
+    - Separate business logic from API routes
+    - Use Pydantic models for data validation
+    - Implement proper error handling
+  
+  project_structure:
+    - "app/ (main application)"
+    - "app/api/ (API routes)"
+    - "app/core/ (configuration, dependencies)"
+    - "app/models/ (database models)"
+    - "app/schemas/ (Pydantic schemas)"
+    - "app/services/ (business logic)"
+    - "app/utils/ (utility functions)"
+    - "app/websockets/ (WebSocket handlers)"
+
+# API Design Guidelines
+api:
+  endpoints:
+    - Use consistent URL patterns (/api/v1/resource)
+    - Implement proper HTTP status codes
+    - Use plural nouns for resource names
+    - Group related endpoints with APIRouter
+    - Implement proper request/response models
+  
+  request_handling:
+    - Use Pydantic models for request validation
+    - Implement proper query parameter validation
+    - Handle file uploads securely
+    - Use proper dependency injection
+    - Implement request context tracking
+  
+  response_formatting:
+    - Use consistent response schemas
+    - Implement proper error response format
+    - Include metadata in list responses
+    - Use proper HTTP headers
+    - Implement HATEOAS where beneficial
+  
+  pagination:
+    - Implement cursor-based pagination for large datasets
+    - Use offset-based pagination for small datasets
+    - Include pagination metadata in responses
+    - Set reasonable default and maximum page sizes
+    - Implement proper sorting options
+
+# Database Integration
+database:
+  sqlalchemy:
+    - Use SQLAlchemy 2.0 async syntax
+    - Implement proper database session management
+    - Use declarative base for model definitions
+    - Implement proper relationship definitions
+    - Use proper indexing strategies
+  
+  models:
+    - Use proper field types and constraints
+    - Implement soft deletes where appropriate
+    - Add created_at and updated_at timestamps
+    - Use UUIDs for primary keys where appropriate
+    - Implement proper validation at database level
+  
+  migrations:
+    - Use Alembic for database migrations
+    - Name migrations descriptively
+    - Review migrations before applying
+    - Use data migrations for data transformations
+    - Implement proper rollback procedures
+  
+  queries:
+    - Use async session management
+    - Implement proper connection pooling
+    - Use select() for modern SQLAlchemy queries
+    - Implement proper transaction handling
+    - Add query logging for development
+    - Use proper eager loading strategies
+
+# WebSocket Implementation
+websockets:
+  connection_management:
+    - Implement WebSocket connection manager
+    - Handle connection lifecycle properly
+    - Implement proper authentication
+    - Use connection pooling for scalability
+    - Add connection health monitoring
+  
+  message_handling:
+    - Define message types and schemas
+    - Use JSON for message serialization
+    - Implement proper message validation
+    - Handle message routing efficiently
+    - Implement message queuing for reliability
+  
+  error_handling:
+    - Handle WebSocket connection errors
+    - Implement proper reconnection logic
+    - Log WebSocket events appropriately
+    - Handle message parsing errors
+    - Implement proper cleanup procedures
+  
+  scalability:
+    - Use Redis for WebSocket scaling
+    - Implement proper load balancing
+    - Handle concurrent connections efficiently
+    - Monitor WebSocket performance metrics
+
+# Authentication & Authorization
+auth:
+  jwt_implementation:
+    - Use proper JWT token generation
+    - Implement token refresh mechanism
+    - Add proper token expiration
+    - Use secure token storage
+    - Implement proper token validation
+  
+  dependency_injection:
+    - Create authentication dependencies
+    - Implement role-based access control
+    - Use proper permission checking
+    - Handle authentication errors gracefully
+    - Implement proper session management
+  
+  security:
+    - Hash passwords with bcrypt
+    - Implement proper password policies
+    - Use secure random token generation
+    - Implement account lockout mechanisms
+    - Add proper audit logging
+
+# Error Handling
+error_handling:
+  exceptions:
+    - Use HTTPException for API errors
+    - Create custom exception classes
+    - Implement proper error logging
+    - Return consistent error responses
+    - Handle validation errors gracefully
+  
+  logging:
+    - Use structured logging (JSON format)
+    - Implement proper log levels
+    - Add request/response logging
+    - Log security events
+    - Use correlation IDs for tracing
+  
+  monitoring:
+    - Implement health check endpoints
+    - Add application metrics
+    - Monitor database connection health
+    - Track API response times
+    - Set up proper alerting
+
+# Data Validation
+validation:
+  pydantic:
+    - Use Pydantic models for all API schemas
+    - Implement proper field validation
+    - Use custom validators where needed
+    - Handle validation errors gracefully
+    - Implement proper serialization
+  
+  database_validation:
+    - Use database constraints
+    - Implement proper foreign key relationships
+    - Add check constraints where appropriate
+    - Use proper field types
+    - Implement unique constraints
+
+# Performance Optimization
+performance:
+  async_programming:
+    - Use async/await for all I/O operations
+    - Implement proper connection pooling
+    - Use async database operations
+    - Handle concurrent requests efficiently
+    - Implement proper resource cleanup
+  
+  caching:
+    - Use Redis for application caching
+    - Implement proper cache invalidation
+    - Cache expensive database queries
+    - Use proper cache expiration
+    - Monitor cache hit rates
+  
+  database_optimization:
+    - Use proper database indexes
+    - Implement query optimization
+    - Use database connection pooling
+    - Monitor slow queries
+    - Implement proper pagination
+
+# Testing Strategy
+testing:
+  unit_tests:
+    - Test business logic in isolation
+    - Mock external dependencies
+    - Use pytest fixtures appropriately
+    - Test error conditions
+    - Achieve high test coverage
+  
+  integration_tests:
+    - Test API endpoints end-to-end
+    - Use test database
+    - Test authentication flows
+    - Test WebSocket connections
+    - Test database transactions
+  
+  test_utilities:
+    - Create reusable test fixtures
+    - Use factory pattern for test data
+    - Implement proper test cleanup
+    - Mock external services
+    - Use async test utilities
+
+# Security Guidelines
+security:
+  input_validation:
+    - Validate all user inputs
+    - Sanitize data before processing
+    - Use parameterized queries
+    - Implement proper file upload validation
+    - Check for SQL injection vulnerabilities
+  
+  cors_configuration:
+    - Configure CORS properly
+    - Use restrictive CORS policies
+    - Implement proper preflight handling
+    - Allow only necessary origins
+    - Monitor CORS policy effectiveness
+  
+  rate_limiting:
+    - Implement API rate limiting
+    - Use different limits for different endpoints
+    - Implement proper rate limit headers
+    - Handle rate limit exceeded gracefully
+    - Monitor rate limiting metrics
+  
+  data_protection:
+    - Encrypt sensitive data at rest
+    - Use HTTPS for all communications
+    - Implement proper secrets management
+    - Add data retention policies
+    - Implement proper data anonymization
+
+# Code Quality
+quality:
+  formatting:
+    - Use Black for code formatting
+    - Use isort for import sorting
+    - Follow PEP 8 guidelines
+    - Use proper docstring format (Google style)
+    - Maintain consistent code style
+  
+  type_hints:
+    - Use type hints for all functions
+    - Use proper return type annotations
+    - Use Union types sparingly
+    - Implement proper generic types
+    - Use mypy for type checking
+  
+  documentation:
+    - Document all API endpoints
+    - Use proper OpenAPI documentation
+    - Document complex business logic
+    - Maintain API changelog
+    - Document deployment procedures
+
+# Environment Management
+environment:
+  configuration:
+    - Use environment variables for config
+    - Implement proper config validation
+    - Use different configs for different environments
+    - Implement proper secret management
+    - Document configuration options
+  
+  dependency_management:
+    - Use requirements.txt or pyproject.toml
+    - Pin dependency versions
+    - Use virtual environments
+    - Regularly update dependencies
+    - Monitor security vulnerabilities
+
+# Deployment Guidelines
+deployment:
+  containerization:
+    - Use multi-stage Docker builds
+    - Minimize container image size
+    - Use non-root user in containers
+    - Implement proper health checks
+    - Use proper environment variables
+  
+  production_readiness:
+    - Implement graceful shutdown
+    - Use proper logging configuration
+    - Set up monitoring and alerting
+    - Implement proper backup procedures
+    - Use blue-green deployment strategy
+
