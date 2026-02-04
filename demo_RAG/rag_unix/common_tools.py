@@ -1,4 +1,3 @@
-
 """
 # common_tools.py 
 # common methods for chatbots
@@ -13,8 +12,7 @@ from bs4 import BeautifulSoup
 from io import BytesIO
 
 import fitz, json, docx, os, asyncio, nltk
-import ollama, asyncio
-from openai import OpenAI
+from anthropic import AsyncAnthropic
 
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -27,19 +25,8 @@ bag.uploaded_files = []
 bag.uploaded_files_to_show_history = []
 bag.not_uploaded_files = []
 
-client_ollama = ollama.Client()
-client_openai = OpenAI()
-
-env_var = os.environ.get('OLLAMA_MODEL')
-model = ""
-if env_var is None:
-    print("Environment variable OLLAMA_MODEL is not set.")
-    exit()
-else:
-   model = env_var
-
-#model = "mistral:7b-instruct-v0.3-q4_0"
-#model = "llama3:8b-instruct-q4_0"
+# Async Anthropic client for Claude API
+client_claude = AsyncAnthropic()
 
 nltk.download('punkt')
 nltk.download('punkt_tab')
@@ -68,8 +55,7 @@ def get_main_page():
                 Form(
                     Div(
                         Select(id="shapeInput", name="model")(
-                            Option("Ollama", value="ollama", selected=True),
-                            Option("OpenAI", value="openai", selected=False),
+                            Option("Claude", value="claude", selected=True),
                            id="select-model"), 
                     Label("Strict:", cls='px-2'),
                         Input(type="checkbox", 
@@ -621,27 +607,20 @@ async def upload_file(request, isFileUploaded, load_file, delete_file):
     return list_items, error_false
 
 # ---------------------------------------------------------------
-async def chat_ollama(send):
-    """ Send message to Ollama model """
+async def chat_claude(send):
+    """ Send message to Claude model using async streaming """
 
     await send(
         add_message("", "start")
     )
 
-    # Model response (streaming)
-    stream = ollama.chat(
-        model=model,
-        messages=[sp] + messages,
-        stream=True,
-    )
-    
-    # Send an empty message with the assistant response
+    # Prepare messages for Claude API (only user messages)
+    api_messages = [{"role": m["role"], "content": m["content"]} for m in messages if m["role"] == "user"]
+
     messages.append({"role": "assistant", "content": ""})
 
     i = len(messages_for_show)
     tid = f'message-{i}'
-
-    msg = ""
 
     await send(
                 Div(Div(
@@ -654,70 +633,38 @@ async def chat_ollama(send):
             )
         )
 
-    # Fill in the message content
-    for chunk in stream:
-        chunk = chunk["message"]["content"]
-        msg = msg + chunk
-        messages[-1]["content"] += chunk
-        await send(
-                Div(
-                    chunk,
-                    hx_swap_oob="beforeend",
-                    cls="chat-bubble chat-bubble-secondary",
-                    id=tid
-                    )
-        )
-        await asyncio.sleep(0.01)  # simulate a brief delay
-
-    messages.append({"role": "assistant", "content": ''.join(msg)})
-    messages_for_show.append({"role": "assistant", "content": ''.join(msg)})
-    
-# ---------------------------------------------------------------
-async def chat_openai(send):
-    """ Send message to OpenAI model """
-
-    await send(
-        add_message("", "start")
-    )
-
-    stream = client_openai.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=messages,
-    stream=True,
-    )
-
-    messages.append({"role": "assistant", "content": ""})
-    
-    
     collected_chunks = []
 
-    i = len(messages_for_show)
-    tid = f'message-{i}'
-
-    await send(
-                Div(Div(
-                    cls="chat-bubble chat-bubble-secondary",
-                    id=tid
-                    ),
-                cls = "chat chat-start",
-                hx_swap_oob="outerHTML",
-                id=tid+"_"
+    try:
+        async with client_claude.messages.stream(
+            max_tokens=1024,
+            messages=api_messages,
+            model="claude-sonnet-4-5-20250929"
+        ) as stream:
+            async for chunk_text in stream.text_stream:
+                collected_chunks.append(chunk_text)
+                messages[-1]["content"] += chunk_text
+                await send(
+                    Div(
+                        chunk_text,
+                        hx_swap_oob="beforeend",
+                        cls="chat-bubble chat-bubble-secondary",
+                        id=tid
+                    )
+                )
+                await asyncio.sleep(0.01)  # simulate a brief delay
+    except Exception as e:
+        error_msg = f"Error: {str(e)}"
+        collected_chunks.append(error_msg)
+        messages[-1]["content"] = error_msg
+        await send(
+            Div(
+                error_msg,
+                hx_swap_oob="beforeend",
+                cls="chat-bubble chat-bubble-secondary",
+                id=tid
             )
         )
-
-    for chunk in stream:
-        if chunk.choices[0].delta.content is not None:
-            ss = chunk.choices[0].delta.content
-            collected_chunks.append(ss)
-            await send(
-                Div(
-                    ss,
-                    hx_swap_oob="beforeend",
-                    cls="chat-bubble chat-bubble-secondary",
-                    id=tid
-                    )
-        )
-            await asyncio.sleep(0.01)  # simulate a brief delay
 
     messages.append({"role": "assistant", "content": ''.join(collected_chunks)})
     messages_for_show.append({"role": "assistant", "content": ''.join(collected_chunks)})
@@ -784,7 +731,5 @@ async def do_chat(data, isRAG, strict, model, send, do_rag):
             messages.append({"role": "user", "content": f"Question: \n {data}answer the question even if it not in the context"})
             print("strict---")  
 
-    if model == "ollama":
-        await chat_ollama(send)
-    elif model == "openai":
-        await chat_openai(send)
+    # Always use Claude now
+    await chat_claude(send)

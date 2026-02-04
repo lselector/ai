@@ -1,7 +1,6 @@
-
 """
 # rag_milvus.py
-# Example of chatbot using fasthtml and ollama or openai
+# Example of chatbot using fasthtml and Anthropic Claude API
 # Using Milvus as VectorDB
 # Additional modules:
 #  - RAG
@@ -237,7 +236,7 @@ async def post():
 #---------------------------------------------------------------
 @app.ws('/wscon')
 async def ws(data:str, send, model:str, strict:str):
-    """ Call Ollama or OpenAI and get responce using streaming """
+    """ Call Claude API and get response using streaming """
     global isRAG
 
     await ct.do_chat(data, isRAG, strict, model, send, do_rag=do_rag)
