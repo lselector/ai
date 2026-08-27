@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="940" viewBox="0 0 900 940" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed solution architecture</title>
+  <desc id="desc">A vertical flow from enterprise sources through connectors, document storage, workers, PostgreSQL, retrieval, and the agent layer, with backup and recovery across the system.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#2563eb"/></marker>
+    <style>
+      .title{font:700 22px 'DejaVu Sans',Arial,sans-serif;fill:#0f172a}.label{font:700 18px 'DejaVu Sans',Arial,sans-serif;fill:#0f172a}.body{font:14px 'DejaVu Sans',Arial,sans-serif;fill:#334155}.small{font:13px 'DejaVu Sans',Arial,sans-serif;fill:#334155}.flow{stroke:#2563eb;stroke-width:4;fill:none;marker-end:url(#arrow)}.card{stroke-width:2.5}.shadow{filter:drop-shadow(0 3px 4px rgba(15,23,42,.15))}
+    </style>
+  </defs>
+  <rect width="900" height="940" rx="24" fill="#f8fafc"/>
+  <text x="450" y="36" text-anchor="middle" class="title">AI Agent Knowledge Base - System Flow</text>
+
+  <rect x="205" y="58" width="490" height="54" rx="27" fill="#e0f2fe" stroke="#0284c7" class="card"/>
+  <text x="450" y="91" text-anchor="middle" class="label">SharePoint · Shared Drives · DMS · Mail Archives</text>
+  <path d="M450 112V145" class="flow"/>
+
+  <g class="shadow">
+    <rect x="245" y="148" width="410" height="80" rx="16" fill="#dbeafe" stroke="#2563eb" class="card"/>
+    <text x="450" y="181" text-anchor="middle" class="label">Connectors / Scrapers</text>
+    <text x="450" y="207" text-anchor="middle" class="body">Change detection and ACL extraction</text>
+  </g>
+  <path d="M450 228V261" class="flow"/>
+
+  <g class="shadow">
+    <rect x="170" y="264" width="560" height="108" rx="16" fill="#ccfbf1" stroke="#0f766e" class="card"/>
+    <text x="450" y="295" text-anchor="middle" class="label">Document Volume</text>
+    <text x="450" y="321" text-anchor="middle" class="body">Originals + Docling JSON / Markdown derivatives</text>
+    <text x="450" y="347" text-anchor="middle" class="small">Mounted EBS / NAS · content-hashed · sharded · atomic write-once storage</text>
+  </g>
+  <path d="M450 372V405" class="flow"/>
+
+  <g class="shadow">
+    <rect x="190" y="408" width="520" height="100" rx="16" fill="#fef3c7" stroke="#d97706" class="card"/>
+    <text x="450" y="440" text-anchor="middle" class="label">Python Worker Pool</text>
+    <text x="450" y="466" text-anchor="middle" class="body">Fast triage → Docling OCR/layout → structure-aware chunking</text>
+    <text x="450" y="490" text-anchor="middle" class="small">PostgreSQL SKIP LOCKED queue · dynamic embedding batches</text>
+  </g>
+  <path d="M450 508V541" class="flow"/>
+
+  <g class="shadow">
+    <rect x="105" y="544" width="690" height="150" rx="18" fill="#ede9fe" stroke="#7c3aed" class="card"/>
+    <text x="450" y="578" text-anchor="middle" class="label">PostgreSQL - Partitioned by Collection / Tenant</text>
+    <text x="145" y="610" class="body">• documents · document_versions · acl_entries</text>
+    <text x="145" y="636" class="body">• chunks: halfvec HNSW + pg_search BM25</text>
+    <text x="145" y="662" class="body">• doc_summaries · jobs · audit_logs · eval_cases</text>
+    <text x="755" y="662" text-anchor="end" class="small">pgvector ≥ 0.8 · pg_search</text>
+  </g>
+  <path d="M450 694V727" class="flow"/>
+
+  <g class="shadow">
+    <rect x="180" y="730" width="540" height="96" rx="16" fill="#fee2e2" stroke="#e11d48" class="card"/>
+    <text x="450" y="762" text-anchor="middle" class="label">Retrieval Service API - FastAPI</text>
+    <text x="450" y="789" text-anchor="middle" class="body">ACL pre-filter → adaptive routing → hybrid RRF fusion → optional rerank</text>
+    <text x="450" y="811" text-anchor="middle" class="small">Returns exact-version citations and deterministic abstention signals</text>
+  </g>
+  <path d="M450 826V853" class="flow"/>
+
+  <rect x="245" y="856" width="410" height="58" rx="18" fill="#dcfce7" stroke="#16a34a" class="card shadow"/>
+  <text x="450" y="881" text-anchor="middle" class="label">Agent &amp; LLM Layer</text>
+  <text x="450" y="902" text-anchor="middle" class="small">Grounded synthesis · validated citations</text>
+
+  <rect x="18" y="250" width="80" height="570" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="2" stroke-dasharray="7 6"/>
+  <text transform="translate(50 790) rotate(-90)" class="small">Cross-cutting backup &amp; recovery: snapshots · WAL/PITR · WORM audit exports · restore drills</text>
+</svg>

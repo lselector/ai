@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Delivery roadmap</title>
+  <desc id="desc">Five sequential phases from foundations through enterprise rollout.</desc>
+  <defs>
+    <style>.title{font:700 22px 'DejaVu Sans',Arial,sans-serif;fill:#0f172a}.phase{font:700 17px 'DejaVu Sans',Arial,sans-serif;fill:#0f172a}.body{font:13px 'DejaVu Sans',Arial,sans-serif;fill:#334155}.week{font:700 12px 'DejaVu Sans',Arial,sans-serif;fill:#fff}.line{stroke:#94a3b8;stroke-width:5}.card{stroke-width:2}</style>
+  </defs>
+  <rect width="900" height="900" rx="22" fill="#f8fafc"/>
+  <text x="450" y="35" text-anchor="middle" class="title">Delivery Roadmap</text>
+  <line x1="105" y1="93" x2="105" y2="827" class="line"/>
+
+  <circle cx="105" cy="125" r="18" fill="#2563eb"/><rect x="145" y="70" width="705" height="118" rx="16" fill="#dbeafe" stroke="#2563eb" class="card"/>
+  <text x="175" y="101" class="phase">Phase 0 - Foundations</text><rect x="716" y="84" width="112" height="26" rx="13" fill="#2563eb"/><text x="772" y="102" text-anchor="middle" class="week">Weeks 1-3</text>
+  <text x="175" y="130" class="body">• Provision EBS/NAS, XFS, NFS export, snapshots, and content-hash registry</text><text x="175" y="153" class="body">• Configure WAL archiving, standby, snapshot lock, worker pool, and ACL schema</text><text x="175" y="176" class="body">• Partition the audit log by month</text>
+
+  <circle cx="105" cy="286" r="18" fill="#0f766e"/><rect x="145" y="220" width="705" height="132" rx="16" fill="#ccfbf1" stroke="#0f766e" class="card"/>
+  <text x="175" y="251" class="phase">Phase 1 - Pilot Corpus &amp; Evaluation</text><rect x="716" y="234" width="112" height="26" rx="13" fill="#0f766e"/><text x="772" y="252" text-anchor="middle" class="week">Weeks 4-8</text>
+  <text x="175" y="280" class="body">• Ingest 500k documents across two core business units</text><text x="175" y="303" class="body">• Build hybrid BM25 + HNSW indices and run the golden evaluation suite</text><text x="175" y="326" class="body">• Test restore / reconciliation and deliver the browsable Markdown QA corpus</text>
+
+  <circle cx="105" cy="454" r="18" fill="#7c3aed"/><rect x="145" y="385" width="705" height="138" rx="16" fill="#ede9fe" stroke="#7c3aed" class="card"/>
+  <text x="175" y="416" class="phase">Phase 2 - Agent Integration &amp; Governance</text><rect x="704" y="399" width="124" height="26" rx="13" fill="#7c3aed"/><text x="766" y="417" text-anchor="middle" class="week">Weeks 9-12</text>
+  <text x="175" y="446" class="body">• Add citation-enforced synthesis, abstention guardrails, and query audit logging</text><text x="175" y="469" class="body">• Export audit partitions nightly to WORM storage</text><text x="175" y="492" class="body">• Obtain Compliance, Legal, Business Continuity, and RPO/RTO sign-off</text>
+
+  <circle cx="105" cy="625" r="18" fill="#d97706"/><rect x="145" y="555" width="705" height="140" rx="16" fill="#fef3c7" stroke="#d97706" class="card"/>
+  <text x="175" y="586" class="phase">Phase 3 - Scale Backfill &amp; Optimization</text><rect x="704" y="569" width="124" height="26" rx="13" fill="#d97706"/><text x="766" y="587" text-anchor="middle" class="week">Weeks 13-16</text>
+  <text x="175" y="616" class="body">• Run unindexed full-corpus backfill followed by a batch index build</text><text x="175" y="639" class="body">• Take full backups before / after the load; add reranking and latency tuning</text><text x="175" y="662" class="body">• Load-test production concurrency and complete the first full DR drill</text>
+
+  <circle cx="105" cy="793" r="18" fill="#16a34a"/><rect x="145" y="730" width="705" height="126" rx="16" fill="#dcfce7" stroke="#16a34a" class="card"/>
+  <text x="175" y="761" class="phase">Phase 4 - Enterprise Rollout</text><rect x="690" y="744" width="138" height="26" rx="13" fill="#16a34a"/><text x="759" y="762" text-anchor="middle" class="week">Ongoing</text>
+  <text x="175" y="792" class="body">• Roll out the full production service with continuous quality monitoring</text><text x="175" y="815" class="body">• Run monthly restore tests and quarterly timed DR drills as standard operations</text>
+</svg>

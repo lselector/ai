@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="430" viewBox="0 0 900 430" role="img" aria-labelledby="title desc">
+  <title id="title">Content-addressed document volume layout</title>
+  <desc id="desc">The docstore root branches into sharded originals, derivatives, and a human-browsable Markdown view.</desc>
+  <defs>
+    <style>.title{font:700 22px 'DejaVu Sans',Arial,sans-serif;fill:#0f172a}.label{font:700 17px 'DejaVu Sans',Arial,sans-serif;fill:#0f172a}.code{font:14px 'DejaVu Sans Mono',monospace;fill:#334155}.note{font:13px 'DejaVu Sans',Arial,sans-serif;fill:#475569}.branch{stroke:#2563eb;stroke-width:3;fill:none}.card{stroke-width:2}</style>
+  </defs>
+  <rect width="900" height="430" rx="22" fill="#f8fafc"/>
+  <text x="450" y="34" text-anchor="middle" class="title">Document Volume - Content-Addressed and Sharded</text>
+  <rect x="330" y="55" width="240" height="55" rx="14" fill="#dbeafe" stroke="#2563eb" class="card"/>
+  <text x="450" y="89" text-anchor="middle" class="label">/data/docstore/</text>
+  <path d="M450 110V145 M155 145H745 M155 145V174 M450 145V174 M745 145V174" class="branch"/>
+
+  <rect x="35" y="176" width="240" height="190" rx="16" fill="#e0f2fe" stroke="#0284c7" class="card"/>
+  <text x="155" y="208" text-anchor="middle" class="label">Originals</text>
+  <text x="55" y="242" class="code">originals/</text><text x="55" y="266" class="code">  &lt;h0-1&gt;/&lt;h2-3&gt;/</text><text x="55" y="290" class="code">    &lt;sha256&gt;.&lt;ext&gt;</text>
+  <text x="55" y="328" class="note">Exact source bytes</text><text x="55" y="348" class="note">One immutable path per hash</text>
+
+  <rect x="315" y="176" width="270" height="220" rx="16" fill="#ccfbf1" stroke="#0f766e" class="card"/>
+  <text x="450" y="208" text-anchor="middle" class="label">Derivatives</text>
+  <text x="335" y="240" class="code">derivatives/</text><text x="335" y="264" class="code">  &lt;h0-1&gt;/&lt;h2-3&gt;/&lt;sha256&gt;/</text>
+  <text x="355" y="298" class="code">docling.json</text><text x="355" y="322" class="code">content.md</text><text x="355" y="346" class="code">manifest.json</text>
+  <text x="335" y="376" class="note">Structure, text, hashes, parser lineage</text>
+
+  <rect x="625" y="176" width="240" height="190" rx="16" fill="#fef3c7" stroke="#d97706" class="card"/>
+  <text x="745" y="208" text-anchor="middle" class="label">Markdown View</text>
+  <text x="645" y="242" class="code">markdown-view/</text><text x="645" y="266" class="code">  &lt;collection&gt;/</text><text x="645" y="290" class="code">    &lt;source path&gt;.md</text>
+  <text x="645" y="328" class="note">Read-only symlinks</text><text x="645" y="348" class="note">Human QA and audit browsing</text>
+
+  <rect x="185" y="404" width="530" height="20" rx="10" fill="#ede9fe"/>
+  <text x="450" y="419" text-anchor="middle" class="note">First four SHA-256 hex characters keep every directory bounded</text>
+</svg>

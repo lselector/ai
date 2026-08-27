@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1040" viewBox="0 0 900 1040" role="img" aria-labelledby="title desc">
+  <title id="title">Adaptive hybrid retrieval workflow</title>
+  <desc id="desc">Security filtering and query routing lead to hybrid retrieval, reciprocal-rank fusion, reranking, and provenance checks.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#2563eb"/></marker>
+    <style>.title{font:700 22px 'DejaVu Sans',Arial,sans-serif;fill:#0f172a}.label{font:700 16px 'DejaVu Sans',Arial,sans-serif;fill:#0f172a}.body{font:13px 'DejaVu Sans',Arial,sans-serif;fill:#334155}.code{font:12px 'DejaVu Sans Mono',monospace;fill:#334155}.flow{stroke:#2563eb;stroke-width:3;fill:none;marker-end:url(#arrow)}.merge{stroke:#2563eb;stroke-width:3;fill:none}.card{stroke-width:2}</style>
+  </defs>
+  <rect width="900" height="1040" rx="22" fill="#f8fafc"/>
+  <text x="450" y="34" text-anchor="middle" class="title">Adaptive Hybrid Retrieval</text>
+  <rect x="145" y="55" width="610" height="52" rx="26" fill="#e0f2fe" stroke="#0284c7" class="card"/>
+  <text x="450" y="87" text-anchor="middle" class="label">Query + user principals + metadata filters</text>
+  <path d="M450 107V136" class="flow"/>
+
+  <rect x="120" y="139" width="660" height="93" rx="16" fill="#fee2e2" stroke="#e11d48" class="card"/>
+  <text x="450" y="169" text-anchor="middle" class="label">1. SQL Pre-Filter &amp; Security Context</text>
+  <text x="450" y="197" text-anchor="middle" class="code">acl_entries.principal_id IN (user_principals)</text>
+  <text x="450" y="218" text-anchor="middle" class="code">chunks.is_active = TRUE AND collection_id = ?</text>
+  <path d="M450 232V261" class="flow"/>
+
+  <polygon points="450,264 615,320 450,376 285,320" fill="#fef3c7" stroke="#d97706" class="card"/>
+  <text x="450" y="315" text-anchor="middle" class="label">2. Query Intent</text>
+  <text x="450" y="337" text-anchor="middle" class="body">Exact identifier or broad concept?</text>
+
+  <path d="M330 343L225 407" class="flow"/><path d="M570 343L675 407" class="flow"/>
+  <rect x="65" y="410" width="320" height="112" rx="16" fill="#dbeafe" stroke="#2563eb" class="card"/>
+  <text x="225" y="441" text-anchor="middle" class="label">Direct Chunk Pass</text>
+  <text x="225" y="468" text-anchor="middle" class="body">Exact identifier / clause</text>
+  <text x="225" y="493" text-anchor="middle" class="code">BM25 + HNSW on full partition</text>
+  <rect x="515" y="410" width="320" height="112" rx="16" fill="#ccfbf1" stroke="#0f766e" class="card"/>
+  <text x="675" y="441" text-anchor="middle" class="label">Document-Pass Filter</text>
+  <text x="675" y="468" text-anchor="middle" class="body">Broad / conceptual search</text>
+  <text x="675" y="493" text-anchor="middle" class="code">BM25 + HNSW → top 200 doc_ids</text>
+  <path d="M225 522V553H450 M675 522V553H450" class="merge"/><path d="M450 553V581" class="flow"/>
+
+  <rect x="105" y="584" width="690" height="106" rx="16" fill="#ede9fe" stroke="#7c3aed" class="card"/>
+  <text x="450" y="614" text-anchor="middle" class="label">3. Chunk-Level Hybrid Search - Targeted Space</text>
+  <text x="450" y="643" text-anchor="middle" class="body">BM25 lexical search → top 50 candidates</text>
+  <text x="450" y="669" text-anchor="middle" class="body">HNSW semantic vector search → top 50 candidates</text>
+  <path d="M450 690V719" class="flow"/>
+
+  <rect x="105" y="722" width="690" height="91" rx="16" fill="#fef3c7" stroke="#d97706" class="card"/>
+  <text x="450" y="752" text-anchor="middle" class="label">4. Reciprocal Rank Fusion - Select Top 20</text>
+  <text x="450" y="781" text-anchor="middle" class="code">1/(60 + Rank_BM25) + 1/(60 + Rank_Vector)</text>
+  <path d="M450 813V842" class="flow"/>
+
+  <rect x="105" y="845" width="690" height="75" rx="16" fill="#dcfce7" stroke="#16a34a" class="card"/>
+  <text x="450" y="875" text-anchor="middle" class="label">5. Cross-Encoder Reranker - Self-Hosted GPU</text>
+  <text x="450" y="901" text-anchor="middle" class="body">Re-rank 20 candidates to the 8 highest-fidelity chunks</text>
+  <path d="M450 920V949" class="flow"/>
+
+  <rect x="105" y="952" width="690" height="72" rx="16" fill="#e0f2fe" stroke="#0284c7" class="card"/>
+  <text x="450" y="981" text-anchor="middle" class="label">6. Diversity &amp; Provenance Guard</text>
+  <text x="450" y="1006" text-anchor="middle" class="body">Cap chunks per document · emit exact page / section / version lineage</text>
+</svg>
