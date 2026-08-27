@@ -2,11 +2,21 @@
 
 **Requirements and Proposed Solution Architecture**
 
-Status: Draft v4 (pending approval) · Date: 2026-08-27
+Status: Draft (pending approval) · Date: 2026-08-27
 
-Change log:
-- v4 adds a formal backup and recovery process (new §4.8): PostgreSQL PITR backups, immutable audit-log exports, backup immutability, restore ordering between database and document volume, RPO/RTO targets, and scheduled restore testing. Requirement N9, technology row, roadmap items, and risk rows added accordingly.
-- v3 replaces S3/object storage with mounted block/file volumes (e.g. AWS EBS, on-prem NAS/SAN) for originals and derivatives.
+---
+
+## Executive Summary
+
+This document describes a retrieval-augmented AI knowledge base designed for a corpus of **millions of internal financial and legal documents** (~3M sources, 20–25M indexed chunks) in a regulated environment. Answers are grounded in the corpus with verifiable page-level citations, strict source-mirrored access controls, and a tamper-evident audit trail.
+
+The system finds information through **three complementary search methods**, because no single method covers all question types:
+
+1. **Semantic search (vectors)** — pgvector/HNSW embeddings match conceptual questions, themes, and paraphrases even when the wording differs from the source.
+2. **Keyword search (full-text)** — BM25 exact/lexical matching catches identifiers that semantic search can miss: tickers, ISINs, clause numbers, party names, dates.
+3. **Structural search (document graph & wiki)** — a typed link graph (supersession, amendments, citations, exhibits, shared entities) with temporal validity windows captures how documents relate to each other and *when*, enabling retrieval-time context expansion, point-in-time ("as-of") queries, and a human-browsable interconnected wiki for navigation, curation, and clustering.
+
+All three run inside a **single PostgreSQL cluster** — one system of record for content indices, entitlements, the link graph, job queues, and audit logs — with originals and derivatives on mounted file volumes inside the firm's network. Specialized infrastructure (vector databases, search clusters, graph engines) is deferred behind explicit, quantitative scaling gates. Estimated footprint: ~8–10 TB document volume, ~200–300 GB database (§6.1).
 
 ---
 
@@ -35,6 +45,9 @@ This architecture deliberately balances enterprise compliance with pragmatic sim
 | F9 | Expose retrieval as an independent, secured REST/gRPC service consumable by the agent and other internal systems. |
 | F10 | Re-index automatically upon source modification; tombstone deleted content promptly. |
 | F11 | Provide a human-browsable, normalized Markdown corpus for domain expert QA, curation, and compliance audits. |
+| F12 | Maintain a typed inter-document link graph (supersession, amendment, citation, exhibit, shared entities) and an entity index (parties, instruments, deals) in PostgreSQL, populated deterministically at ingestion and usable for retrieval-time context expansion (see §4.9). |
+| F13 | Render the corpus as an interconnected wiki: Markdown files with YAML frontmatter and `[[wikilinks]]` (Obsidian-compatible), generated from the database and derivatives, organized in a human-navigable, grep-friendly directory tree, and scoped to authorized audiences (see §4.9.3). |
+| F14 | Support point-in-time ("as-of") retrieval: an optional `as_of_date` query parameter retrieves the document versions and relationships that were in force on that date, with answers explicitly flagged as historical (see §4.9.4). |
 
 ### 2.2 Security, Compliance, and Governance
 
@@ -68,6 +81,7 @@ This architecture deliberately balances enterprise compliance with pragmatic sim
 - Supervised fine-tuning (SFT) of foundation LLMs.
 - Real-time streaming market data or sub-second event ingestion.
 - Cross-lingual retrieval (focusing on English-language financial and legal corpora for v1).
+- Corpus-wide LLM-based entity/relationship extraction and community clustering. v1 graph population is deterministic (registry lineage, regex/parser extraction); LLM extraction and clustering are a v2 evolution (§4.9.5).
 
 ---
 
@@ -79,6 +93,7 @@ This architecture deliberately balances enterprise compliance with pragmatic sim
 4. **Adaptive two-tier retrieval.** Route broad thematic queries through document-level summaries to shrink search spaces, but allow targeted identifier/clause searches direct access to the chunk index to avoid missing critical needle-in-a-haystack terms.
 5. **Protect relational performance during bulk load.** Separate bulk backfill operations (unindexed ingestion followed by batch index build) from ongoing incremental updates.
 6. **Add components only when evaluation demands it.** Defer standalone vector databases or specialized search clusters until explicit scaling gates are breached.
+7. **Structure is data; views are projections.** Inter-document relationships (supersession, amendment, citation, shared entities) live in PostgreSQL tables like any other data. The wiki and graph views are disposable renderings of those tables plus the stored derivatives — regenerable at any time and never hand-edited.
 
 ---
 
@@ -151,6 +166,8 @@ CREATE TABLE document_versions (
     ocr_confidence      REAL,
     parser_version      TEXT NOT NULL,
     is_current          BOOLEAN DEFAULT TRUE,
+    effective_from      DATE,            -- extracted effective date (§4.9.4)
+    effective_to        DATE,            -- superseded/terminated date; NULL = still in force
     parsed_at           TIMESTAMPTZ DEFAULT clock_timestamp(),
     tombstoned_at       TIMESTAMPTZ
 );
@@ -225,6 +242,7 @@ CREATE TABLE query_audit_logs (
 - **Vector Search:** `HNSW` index on `chunks.emb` using `halfvec_cosine_ops` (e.g., `m=16, ef_construction=128`).
 - **Lexical Search:** `pg_search` (BM25 extension) or `GIN` index on `chunk_text` for BM25 term weighting and document length normalization.
 - **Relational Metadata:** Composite B-tree on `(collection_id, is_active)`.
+- **Section Expansion:** Composite B-tree on `(document_version_id, chunk_index)` to serve small-to-big parent-section lookups (§4.5) as index-only range scans.
 
 ---
 
@@ -246,6 +264,27 @@ To prevent false negatives in specific clause searches while keeping broad queri
 
 ![Adaptive hybrid retrieval workflow](assets/adaptive-retrieval-workflow.svg)
 
+**Small-to-big (parent-section) expansion.** Chunks are sized for *matching* (400–800 tokens, §4.4), but the sentence that matches a query and the sentence that answers it are frequently neighbors — especially in legal text. So after reranking, each selected chunk is expanded to its surrounding context from the same document before context assembly:
+
+- Fetch sibling chunks sharing the same `heading_path` (the full section), or, where sections are large, the adjacent chunks by `chunk_index ± 1`:
+
+```sql
+SELECT chunk_text, page_start, page_end, heading_path
+FROM chunks
+WHERE document_version_id = :dv_id
+  AND is_active
+  AND (heading_path = :matched_heading_path
+       OR chunk_index BETWEEN :i - 1 AND :i + 1)
+ORDER BY chunk_index;
+```
+
+- Expansion is capped by a per-document token budget (e.g. ~2,000 tokens) so one verbose section cannot crowd out other retrieved documents.
+- **No new ACL surface:** expansion never leaves the document the user already retrieved, so the original pre-ranking ACL check covers it.
+- Expanded chunks carry their own `page_start`/`page_end` and `heading_path`, so page-level citations (F7) remain exact; the assembly marks which chunk was the *matched evidence* and which were *pulled-in context*.
+- Retrieval quality evaluation (§4.7) scores recall against the matched chunks; groundedness and citation checks run against the full expanded context.
+
+This is the same-document counterpart of the cross-document graph expansion in §4.9.2: `chunk_index`/`heading_path` group chunks within a document, `document_links` groups documents within the corpus.
+
 ---
 
 ### 4.6 Answer Generation & Citation Enforcement
@@ -261,7 +300,7 @@ To prevent false negatives in specific clause searches while keeping broad queri
 
 ### 4.7 Evaluation and Quality Governance
 
-- **Golden Test Suite:** 300+ enterprise test queries curated across Legal, Risk, Credit, and Operations teams.
+- **Golden Test Suite:** 300+ enterprise test queries curated across Legal, Risk, Credit, and Operations teams, including temporal "as-of" cases with known correct historical answers (§4.9.4) and adversarial permission-leak cases.
 - **Evaluation Criteria:**
   - **Permission-Leak Rate:** 0.00% tolerance (systematic adversarial security test cases).
   - **Recall@20:** ≥ 88% target on golden retrieval dataset.
@@ -279,8 +318,8 @@ Volume snapshots alone are not a backup strategy for this system. PostgreSQL is 
 |---|---|---|---|
 | **1 — Irreplaceable, regulated** | `query_audit_logs`; prompt/model version registry | No. Loss is a compliance finding. | Postgres PITR **plus** daily export of closed partitions to write-once (WORM) storage; retained per supervision/records policy (typically 5–7 years). |
 | **1 — Irreplaceable, structural** | `documents`, `document_versions`, `acl_entries`, `doc_summaries`, `eval_cases`; originals and Docling derivatives on the document volume | Originals could in theory be re-fetched from source systems, but sources purge, versions get superseded, and re-parsing 3M files takes weeks. Treat as irreplaceable. | Postgres PITR; volume snapshots with cross-AZ/site copy and snapshot lock. |
-| **2 — Reconstructible but expensive** | `chunks` (text + `halfvec` embeddings + HNSW/BM25 indices) | Yes, from derivatives (N7) — but a full re-chunk + re-embed of 20–25M chunks is measured in days of GPU time, which blows the RTO. | Included in Postgres PITR by default. Backup size (~50 GB vectors + indices) is acceptable. May be excluded from the WORM export. |
-| **3 — Ephemeral** | `ingestion_jobs`, staging tables, `markdown-view/` symlinks | Yes, trivially. | Not separately backed up. After restore, connectors re-run change detection and idempotent jobs resume (N5); symlink tree is regenerated. |
+| **2 — Reconstructible but expensive** | `chunks` (text + `halfvec` embeddings + HNSW/BM25 indices); `document_links`, `entities`, `entity_mentions` (§4.9) | Yes, from derivatives (N7) — but a full re-chunk + re-embed of 20–25M chunks is measured in days of GPU time, which blows the RTO. Graph tables re-derive from derivatives via the deterministic extractors in hours. | Included in Postgres PITR by default. Backup size (~50 GB vectors + indices) is acceptable. May be excluded from the WORM export. |
+| **3 — Ephemeral** | `ingestion_jobs`, staging tables, `markdown-view/` symlinks, rendered `wiki/` tree (§4.9.3) | Yes, trivially. | Not separately backed up. After restore, connectors re-run change detection and idempotent jobs resume (N5); symlink tree and wiki are regenerated. |
 | **Config & artifacts** | Schema migrations, connector configs, chunking rules, prompt templates, embedding/reranker model weights, Docling/parser versions, golden dataset | Partially — but a citation issued with `embedding_model = X` and `prompt_version = Y` can only be reproduced if X and Y are retained. | Git for code/config/prompts; model weights and parser container images in an internal artifact registry that is itself backed up. Never rely on re-downloading a public model checkpoint that may be revised or withdrawn. |
 
 #### 4.8.2 PostgreSQL Backups
@@ -339,6 +378,130 @@ The database and the volume are backed up independently, so a restore must be se
 
 ---
 
+### 4.9 Document Graph & Wiki View
+
+Vector similarity finds text that *means* something similar; BM25 finds text that *contains* given terms. Neither captures the structure of the corpus: which amendments modify a credit agreement, which side letters reference a clause, which documents belong to the same deal. Financial and legal documents are densely and *explicitly* cross-referenced, so this structure is extractable. This section adds two coupled artifacts:
+
+1. A **document graph** in PostgreSQL — typed inter-document links and an entity index — that is the source of truth for structure (Principle 3) and is used at retrieval time.
+2. A **wiki projection** — the normalized Markdown derivatives, enriched with frontmatter metadata and `[[wikilinks]]` rendered from the graph tables — for human navigation, curation, and clustering insight. It extends the `markdown-view/` tree of §4.1 (F11) from a flat mirror into an interconnected wiki (F13).
+
+#### 4.9.1 Graph Data Model
+
+```sql
+-- Typed inter-document relationships
+CREATE TABLE document_links (
+    from_document_id UUID NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+    to_document_id   UUID NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+    link_type        TEXT NOT NULL,   -- 'supersedes','amends','references_clause','cites','exhibit_of','same_deal'
+    source_chunk_id  UUID,            -- chunk where the reference was detected (NULL for registry-derived links)
+    extractor        TEXT NOT NULL,   -- 'dedup_alias','regex_clause','regex_exhibit','llm_v1',...
+    confidence       REAL,
+    valid_from       DATE,            -- when the relationship takes effect (§4.9.4)
+    valid_to         DATE,            -- when it ends; NULL = still in force
+    created_at       TIMESTAMPTZ DEFAULT clock_timestamp(),
+    PRIMARY KEY (from_document_id, to_document_id, link_type)
+);
+CREATE INDEX idx_links_to ON document_links (to_document_id);
+
+-- Canonical entities (parties, instruments, deals, funds, regulations)
+CREATE TABLE entities (
+    entity_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_type    TEXT NOT NULL,
+    canonical_name TEXT NOT NULL,
+    external_ids   JSONB DEFAULT '{}'::jsonb,   -- e.g. {"isin": "...", "ticker": "...", "lei": "..."}
+    UNIQUE (entity_type, canonical_name)
+);
+
+-- Which documents mention which entities
+CREATE TABLE entity_mentions (
+    entity_id     UUID NOT NULL REFERENCES entities(entity_id) ON DELETE CASCADE,
+    document_id   UUID NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+    mention_count INTEGER DEFAULT 1,
+    PRIMARY KEY (entity_id, document_id)
+);
+CREATE INDEX idx_mentions_document ON entity_mentions (document_id);
+```
+
+**Population (v1 — deterministic only, no LLM cost):**
+
+- **Registry-derived links:** the deduplication and alias-mapping step (§4.2 step 4) and `document_versions` lineage already compute supersession; they are surfaced as `supersedes` edges instead of remaining internal.
+- **Parser/regex extraction at ingestion:** explicit cross-references — clause and section numbers, agreement titles, exhibit/schedule labels, defined-term citations — plus identifier entities (tickers, ISINs, LEIs) and party names from document headers and signature blocks.
+- Every edge records its `extractor` and `confidence`, so low-confidence edges can be excluded from retrieval expansion while remaining visible (flagged) in the wiki.
+
+An LLM-based extraction pass over selected high-value collections is a v2 upgrade (§2.4 non-goals): running it across 3M documents is a material GPU cost and the deterministic pass captures the majority of explicit legal cross-references.
+
+#### 4.9.2 Graph-Augmented Retrieval
+
+After the hybrid retrieval of §4.5 returns its top chunks (and expands them to parent sections within their own documents), the engine performs a **one-hop expansion** through `document_links` — the cross-document counterpart of that same-document expansion:
+
+- Pull document-level summaries (and, on demand, key chunks) of documents linked to a retrieved document by `amends`, `supersedes`, or `exhibit_of` edges — so an answer citing a credit agreement also sees Amendment 3 to that agreement.
+- If a retrieved document has an incoming `supersedes` edge, the chunk is **flagged as superseded** in the context assembly (§4.6) and in citations. This makes the F8 abstain/flag behavior structural rather than dependent on the newer version happening to score well in similarity ranking.
+
+**ACL enforcement is non-negotiable here (S1/S2):** every traversal joins `acl_entries` pre-ranking, exactly like chunk retrieval. An edge must never reveal even the *existence* of a document the user cannot access — expansion silently drops unauthorized targets, and the adversarial permission-leak test cases (§4.7) are extended to cover link expansion.
+
+#### 4.9.3 Wiki Projection
+
+The wiki is a **generated, read-only projection** — rendered from PostgreSQL and the stored Markdown derivatives, never hand-edited, and fully regenerable (Principle 7, N7). A nightly (or event-driven) render job rewrites only files whose source document, links, or entities changed.
+
+**Format:** plain Markdown with YAML frontmatter and `[[wikilinks]]` — the de-facto convention understood by Obsidian, Foam, and similar tools, and grep-friendly for both content and metadata:
+
+```markdown
+---
+document_id: 7f3a9c12-...
+document_version_id: b2e4...
+title: "Credit Agreement — Acme Corp Revolver 2024"
+doc_type: credit_agreement
+collection: syndicated-lending
+classification: [client-confidential]
+effective_date: 2024-03-15
+status: superseded          # current | superseded | tombstoned
+superseded_by: "[[credit-agreement-acme-corp-revolver-2024-a2-9c41b2]]"
+entities: ["[[acme-corp]]", "[[first-national-bank]]"]
+---
+
+# Credit Agreement — Acme Corp Revolver 2024
+
+Amended by [[amendment-1-acme-revolver-2024-3d8f0a]].
+See pricing grid in [[exhibit-b-acme-revolver-2024-c77e19]].
+...normalized document text...
+```
+
+**Directory layout** — human-navigable, unlike the content-addressed `originals/` tree, with year sharding to keep directories at hundreds of entries:
+
+```
+wiki/
+  documents/
+    <collection>/               # matches collection_id partition = ACL boundary
+      <doc-type>/
+        <yyyy>/
+          <slug>.md
+  entities/
+    party/<slug>.md             # stub page per entity: frontmatter + backlink list
+    instrument/<slug>.md
+    deal/<slug>.md
+  clusters/
+    <cluster-slug>.md           # v2: cluster summary + member list (§4.9.5)
+```
+
+- **Slug stability:** wikilinks break if names change, so slugs derive from `document_id` plus a normalized title with a short hash suffix (`acme-revolver-2024-7f3a9c`) — never from the mutable source path.
+- **Search expectations:** at ~3M documents the tree holds ~3M small files. Curators use `ripgrep`/`find` for exploratory work; authoritative search remains PostgreSQL BM25/vector, which is indexed for exactly this. No tooling should be built on `grep -r` latency assumptions over the full tree.
+- **ACL scoping (S1/S2):** files on disk have no row-level security. The full wiki is generated only inside the curator/compliance enclave that already hosts `markdown-view/` (whose audience holds broad entitlements); if wider access is needed, the renderer emits per-audience subtrees per collection. Frontmatter carries `classification` so even in-enclave searches can filter by sensitivity.
+
+#### 4.9.4 Temporal Validity and As-Of Retrieval
+
+A boolean `is_current` flag can say a document was replaced, but not **when** — and in a financial/legal corpus, *"what was the covenant threshold as of Q3 2024?"* must retrieve the agreement text in force **then**, not the current amendment. Following the validity-window pattern of temporal knowledge graphs, every version and relationship carries a time window:
+
+- `document_versions.effective_from` / `effective_to` and `document_links.valid_from` / `valid_to`, populated deterministically: effective-date and termination clauses are extracted at ingestion (dated boilerplate, regex-friendly), and when a `supersedes` edge is created, the predecessor's `effective_to` is set to the successor's `effective_from`. `NULL` `effective_to` means still in force.
+- **As-of retrieval (F14):** the retrieval API accepts an optional `as_of_date`. When present, version filtering switches from `is_current = TRUE` to `effective_from <= :as_of AND (effective_to IS NULL OR effective_to > :as_of)`, and graph expansion (§4.9.2) applies the same window to edges. Answers built from non-current versions are explicitly flagged as historical in the response and citations.
+- **Timelines instead of contradictions:** when retrieved passages disagree *because they come from different validity windows*, the F8 behavior upgrades from "highlight the discrepancy" to presenting an ordered timeline ("threshold was X from 2024-03-15, amended to Y on 2024-11-01").
+- **Temporal ranking boosts:** when the query router detects date intent (it already parses dates for F6 filters), chunks whose document validity window is nearest the queried date receive a ranking boost; absent date intent, a mild boost favors in-force versions so stale text does not outrank live text on similarity alone. Boost weights are tuned against the golden suite (§4.7), which includes as-of test cases.
+
+#### 4.9.5 Clustering and Corpus-Level Themes (v2)
+
+Community detection (e.g., Leiden) over the entity/link graph, or embedding-based clustering over `doc_summaries.emb`, assigns cluster membership and generates an LLM-written summary page per cluster under `wiki/clusters/`. This improves broad thematic questions ("summarize our exposure to X across all deals") that per-chunk retrieval handles poorly. Cluster membership and summaries are stored as plain PostgreSQL tables; a dedicated graph engine is deferred behind the scaling gate in §7.
+
+---
+
 ## 5. Technology Choices
 
 | Layer | Selected Technology | Strategic Rationale |
@@ -349,7 +512,8 @@ The database and the volume are backed up independently, so a restore must be se
 | **Vector Format** | `halfvec` (16-bit FP16) | 50% RAM savings with zero measurable drop in financial retrieval recall; 25M vectors fit in ~25 GB RAM. |
 | **Job Queue** | Postgres `ingestion_jobs` via `SKIP LOCKED` | Native transactionality; zero external brokers (no Redis/RabbitMQ/Kafka required for v1). |
 | **Embeddings** | Self-Hosted Open Model (e.g., BGE-Large / E5-v2 / Nomic) | Complete data boundary compliance; eliminates per-token API fees across 10B+ backfill tokens. |
-| **Reranker** | BGE-Reranker-Large (Cross-Encoder on GPU) | Drastically improves precision for complex multi-hop financial clauses; evaluated conditionally. |
+| **Reranker** | BGE-Reranker-Large (Cross-Encoder on GPU) | Drastically improves precision for complex multi-hop financial clauses; evaluated conditionally. An LLM rerank stage over the top-20 candidates is a further conditional escalation, adopted only if §4.7 recall targets are missed and it fits the latency budget. |
+| **Document Graph & Wiki** | PostgreSQL relational edge/entity tables (`document_links`, `entities`, `entity_mentions`); wiki rendered as Markdown + YAML frontmatter + `[[wikilinks]]` (Obsidian/Foam-compatible); `ripgrep` for curator search | Captures inter-document structure that vector/BM25 search cannot; stays inside the single system of record with ACL joins; the wiki is a disposable projection, never a second source of truth; no graph database until the §7 gate is breached. |
 | **Retrieval API** | Python (FastAPI / asyncpg) | Lightweight, typed, low-overhead microservice interface decoupled from frontend agents. |
 | **LLM Inference** | Enterprise Private Endpoint / Hosted vLLM | Strictly enclosed within internal VPC security perimeter. |
 | **Backup & Recovery** | pgBackRest (or platform-managed PITR on RDS/Aurora) + streaming standby; EBS Data Lifecycle Manager snapshots with cross-AZ copy and snapshot lock (or array-native NAS snapshots/replication); WORM audit-log exports | Continuous WAL archiving delivers the 1-hour RPO; immutable, separately-scoped backup storage survives credential compromise; write-once volume makes snapshots consistent without quiescing; restore drills are automated so the recovery path is proven, not assumed. |
@@ -358,11 +522,37 @@ The database and the volume are backed up independently, so a restore must be se
 
 ## 6. Sizing, Performance, and Operational Notes
 
+### 6.1 Disk Space and Database Size Estimates
+
+**Document volume (mounted file storage):**
+
+| Component | Estimate | Basis |
+|---|---|---|
+| Originals | ~3 TB | 3M documents × ~1 MB average |
+| Derivatives (Docling JSON + normalized Markdown) | ~1–2 TB | structured JSON + Markdown per document (§4.1) |
+| Wiki tree (rendered Markdown + frontmatter) | ~0.3–0.5 TB | one enriched Markdown file per document plus entity/cluster pages (§4.9.3) |
+| Growth headroom | ~2–3 TB | new documents; re-parses under newer parser versions create new content-addressed paths |
+| **Provisioned volume total** | **8–10 TB** | XFS on LVM; gp3 supports up to 16 TiB per volume; add volumes under LVM at the §7 storage gate |
+
+**PostgreSQL cluster:**
+
+| Component | Estimate | Basis |
+|---|---|---|
+| Chunk text (`chunks.chunk_text`) | ~40–60 GB | 20–25M chunks × ~2 KB average text (TOAST-compressed) |
+| Vectors + HNSW index | ~50 GB | 25M chunks × 1024 dims × 2 bytes (`halfvec`), including the HNSW graph |
+| BM25 / GIN text indices | ~20–30 GB | proportional to chunk text volume |
+| Registry, ACLs, summaries (`documents`, `document_versions`, `acl_entries`, `doc_summaries`) | ~15–25 GB | dominated by `doc_summaries` (3M rows with `halfvec` + `tsvector`) and ACL fan-out |
+| Document graph (`document_links`, `entities`, `entity_mentions`) | ~5–10 GB | tens of millions of narrow rows (§4.9.1) |
+| Audit log (`query_audit_logs`) | ~2–5 GB per month of growth | full prompt/context/answer recorded per query; closed monthly partitions are exported to WORM and prunable per records policy (§4.8.3) |
+| **Database total (steady state)** | **~200–300 GB** | fits backup/PITR windows comfortably; 128–256 GB RAM keeps vectors and hot indices memory-resident |
+
+**Backups:** the 35-day PITR repository (weekly full + daily incremental + WAL) runs roughly 2–3× the database size (~0.5–1 TB); volume snapshots are incremental — the first snapshot equals used bytes (~5 TB), daily deltas are small thereafter; WORM audit exports add ~1–2 GB per month compressed.
+
+### 6.2 Performance and Operational Notes
+
 - **Corpus Sizing:**
-  - 3,000,000 source documents $
-ightarrow$ ~45M raw chunks $
-ightarrow$ **20M–25M indexed chunks** post-deduplication.
-  - Vector storage (25M chunks $	imes$ 1024 dims $	imes$ 2 bytes `halfvec`): **~50 GB** including HNSW graph index.
+  - 3,000,000 source documents → ~45M raw chunks → **20M–25M indexed chunks** post-deduplication.
+  - Vector storage (25M chunks × 1024 dims × 2 bytes `halfvec`): **~50 GB** including HNSW graph index.
   - Easily managed in a single PostgreSQL instance with 128 GB–256 GB RAM.
 - **Ingestion Throughput & Job Table Management:**
   - Dedicated worker pool utilizing PyMuPDF for born-digital files processes 50–100 pages/second per node.
@@ -381,6 +571,8 @@ The chunk index can be transitioned to an external engine (e.g., OpenSearch or d
 
 Because derivatives (Docling JSON and Markdown) are permanently stored on the document volume, migrating to an external search index is purely a background re-index task behind the FastAPI interface, requiring zero re-parsing of raw documents.
 
+A separate gate applies to the document graph (§4.9): links, entities, and one-hop expansion are served by ordinary SQL joins and recursive CTEs in PostgreSQL. A dedicated graph engine (Apache AGE, Neo4j) is justified **only if** interactive multi-hop traversal (3+ hops) becomes a required retrieval feature and cannot meet latency targets in SQL, or the edge count grows beyond ~250M. As with chunks, the graph is fully re-derivable from derivatives, so migration is a background re-extraction task.
+
 A separate storage gate applies to the volume itself: if the corpus approaches ~14 TiB on a single gp3 volume, or the single NFS storage node becomes an I/O bottleneck during backfill, add volumes under LVM, split the tree across several exports by hash prefix, or move to a managed NFS service. None of these change the directory layout or the URIs stored in PostgreSQL.
 
 ---
@@ -388,6 +580,13 @@ A separate storage gate applies to the volume itself: if the corpus approaches ~
 ## 8. Delivery Roadmap
 
 ![Delivery roadmap](assets/delivery-roadmap.svg)
+
+**Phasing of the document graph and wiki (§4.9)** — this work is not shown in the figure above; it lands as follows:
+
+- **Phase 1:** deterministic link/entity extraction — including effective-date and validity-window extraction (§4.9.4) — on the pilot corpus; render the wiki tree alongside the browsable Markdown QA corpus, so curators evaluate links during the same QA pass.
+- **Phase 2:** graph-augmented retrieval expansion and supersession flagging; as-of retrieval and temporal ranking boosts; permission-leak test cases extended to link traversal.
+- **Phase 3:** full-corpus link/entity backfill together with the bulk chunk backfill.
+- **Phase 4+ (v2):** LLM-based entity/relationship extraction on selected collections; clustering and cluster summary pages (§4.9.5).
 
 ---
 
@@ -407,9 +606,12 @@ A separate storage gate applies to the volume itself: if the corpus approaches ~
 | **Database–Volume Inconsistency After Restore** | High | Defined restore ordering (DB to point *T*, volume snapshot ≥ *T*); reconciliation job re-hashes referenced files and queues refetch for any gaps; ACL re-sync gate before reopening retrieval (§4.8.5). |
 | **Backup Destruction** (ransomware, compromised admin) | Critical | Snapshot lock / recycle-bin retention; backup repository in a separate account or array; WORM audit archive; restore from oldest clean point verified by scrub and ledger (§4.8.4, §4.8.6). |
 | **Untested Restore Path** | High | Restore tests are CI jobs that page on failure; quarterly DR drills timed against RTO targets and reported to Compliance/BC (§4.8.7). |
+| **Existence Leakage via Graph Links or Wiki** | Critical | Every graph traversal joins `acl_entries` pre-ranking; expansion silently drops unauthorized targets; wiki generated only inside the curator/compliance enclave (or as per-audience subtrees); permission-leak eval cases extended to link expansion (§4.9.2, §4.9.3). |
+| **Wiki/Graph Divergence from Source of Truth** | Medium | Wiki is a read-only rendered projection, never hand-edited (Principle 7); event-driven/nightly regeneration of changed documents; slugs derived from `document_id`, not mutable source paths (§4.9.3). |
+| **Stale or Wrong-Period Answers** | High | Validity windows on versions and links; as-of filtering for dated queries; currency/temporal ranking boosts; supersession flagging in citations; golden-suite as-of test cases (§4.9.4). |
 
 ---
 
 ## 10. Summary
 
-This v3 architecture maximizes operational simplicity and cost-efficiency by leveraging PostgreSQL for relational metadata, ACL enforcement, full-text BM25 search, and vector search in a single unified cluster, with originals and derivatives held on mounted block/file volumes inside the firm's own network. By decoupling raw parsing from search indexing, optimizing bulk-load procedures, and establishing adaptive hybrid retrieval, the system delivers high accuracy and compliance without unnecessary infrastructure complexity. v4 closes the recovery gap: point-in-time database backups, immutable audit-log archives, locked volume snapshots, a defined restore order, and scheduled restore drills give the platform an RPO of one hour and a proven path back to service.
+This architecture maximizes operational simplicity and cost-efficiency by leveraging PostgreSQL for relational metadata, ACL enforcement, full-text BM25 search, and vector search in a single unified cluster, with originals and derivatives held on mounted block/file volumes inside the firm's own network. By decoupling raw parsing from search indexing, optimizing bulk-load procedures, and establishing adaptive hybrid retrieval, the system delivers high accuracy and compliance without unnecessary infrastructure complexity. The backup and recovery design (§4.8) — point-in-time database backups, immutable audit-log archives, locked volume snapshots, a defined restore order, and scheduled restore drills — gives the platform an RPO of one hour and a proven path back to service. The document graph and wiki (§4.9) add structural understanding: a typed link graph and entity index inside the same PostgreSQL system of record, graph-augmented retrieval with structural supersession flagging, and a regenerable, ACL-scoped wiki projection that lets humans navigate and cluster the corpus by its actual relationships rather than by text similarity alone.

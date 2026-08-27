@@ -1,0 +1,118 @@
+@page {
+  size: Letter;
+  margin: 0.7in;
+  @bottom-center {
+    content: counter(page) " / " counter(pages);
+    font: 8pt "Helvetica Neue", Arial, sans-serif;
+    color: #64748b;
+  }
+  @top-right {
+    content: "AI Agent Knowledge Base — Solution Architecture";
+    font: 8pt "Helvetica Neue", Arial, sans-serif;
+    color: #94a3b8;
+  }
+}
+@page :first {
+  @top-right { content: none; }
+}
+
+header#title-block-header { display: none; }
+
+html {
+  font-family: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  font-size: 10pt;
+  line-height: 1.45;
+  color: #1e293b;
+}
+
+h1 {
+  font-size: 20pt;
+  color: #0f172a;
+  border-bottom: 3px solid #2563eb;
+  padding-bottom: 6pt;
+  margin-top: 0;
+}
+h2 {
+  font-size: 14pt;
+  color: #1d4ed8;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 3pt;
+  margin-top: 18pt;
+  page-break-after: avoid;
+}
+h3 {
+  font-size: 11.5pt;
+  color: #0f172a;
+  margin-top: 14pt;
+  page-break-after: avoid;
+}
+h4 {
+  font-size: 10.5pt;
+  color: #334155;
+  margin-top: 12pt;
+  page-break-after: avoid;
+}
+
+p, li { orphans: 2; widows: 2; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+  margin: 8pt 0;
+}
+th {
+  background: #eff6ff;
+  color: #1e3a8a;
+  text-align: left;
+  border: 0.5pt solid #93c5fd;
+  padding: 3.5pt 5pt;
+}
+td {
+  border: 0.5pt solid #cbd5e1;
+  padding: 3.5pt 5pt;
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: #f8fafc; }
+tr { page-break-inside: avoid; }
+
+code {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 8.5pt;
+  background: #f1f5f9;
+  padding: 0.5pt 2pt;
+  border-radius: 2pt;
+}
+pre {
+  background: #f8fafc;
+  border: 0.5pt solid #e2e8f0;
+  border-left: 2.5pt solid #2563eb;
+  border-radius: 3pt;
+  padding: 6pt 8pt;
+  font-size: 8pt;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+pre code { background: none; padding: 0; font-size: 8pt; }
+
+img {
+  max-width: 100%;
+  display: block;
+  margin: 10pt auto;
+}
+
+blockquote {
+  border-left: 3pt solid #cbd5e1;
+  margin-left: 0;
+  padding-left: 10pt;
+  color: #475569;
+}
+
+hr {
+  border: none;
+  border-top: 0.75pt solid #cbd5e1;
+  margin: 14pt 0;
+}
+
+a { color: #1d4ed8; text-decoration: none; }
