@@ -74,6 +74,7 @@ This architecture deliberately balances enterprise compliance with pragmatic sim
 | N7 | **Portability:** Chunk indices are disposable and 100% reconstructible from derivatives stored on the document volume without re-parsing raw files. |
 | N8 | **Storage Platform:** Originals and derivatives live on mounted block/file volumes (AWS EBS, on-prem NAS/SAN) inside the firm's network — no object-store dependency. |
 | N9 | **Backup & Recovery:** Every irreplaceable state store (document volume, PostgreSQL registry/ACL/audit data, model and prompt artifacts) is backed up on a defined schedule with **RPO ≤ 1 hour** and **RTO ≤ 8 hours** for full-service restore (targets to be confirmed with Business Continuity). Backups are immutable for their retention period, stay inside the firm's security boundary (S5), and are exercised by automated restore tests at least monthly. |
+| N10 | **Lifecycle Propagation & Continuous Evaluation:** Content adds/updates/removals become visible (or invisible) to retrieval within minutes; ACL revocations propagate within 5 minutes; every derived artifact refreshes on a defined cadence (§4.10). A nightly evaluation gate (§4.7.2) verifies retrieval quality, completeness, and hallucination level after each day's updates, and freezes ingestion on regression. |
 
 ### 2.4 Explicit Non-Goals for v1
 
@@ -298,14 +299,39 @@ This is the same-document counterpart of the cross-document graph expansion in �
 
 ---
 
-### 4.7 Evaluation and Quality Governance
+### 4.7 Evaluation and Quality Governance (Continuous)
 
-- **Golden Test Suite:** 300+ enterprise test queries curated across Legal, Risk, Credit, and Operations teams, including temporal "as-of" cases with known correct historical answers (§4.9.4) and adversarial permission-leak cases.
-- **Evaluation Criteria:**
-  - **Permission-Leak Rate:** 0.00% tolerance (systematic adversarial security test cases).
+Evaluation is a standing process, not a launch milestone: the corpus changes daily (§4.10), so quality is re-verified daily against explicit gates.
+
+#### 4.7.1 Golden Test Suite
+
+- **300+ enterprise test queries** curated across Legal, Risk, Credit, and Operations teams, including temporal "as-of" cases with known correct historical answers (§4.9.4) and adversarial permission-leak cases.
+- **Unanswerable-question set (hallucination bait):** queries whose answers are deliberately *not* in the corpus, or answerable only from restricted or superseded documents. Correct behavior is explicit abstention (F8); any confident answer counts as a hallucination.
+- **Suite maintenance:** when a new collection or document type is onboarded, curators add covering cases before rollout; the suite itself is versioned in Git and backed up as a Tier-1 config artifact (§4.8.1).
+- **Evaluation criteria and targets:**
+  - **Permission-Leak Rate:** 0.00% tolerance (systematic adversarial security test cases, including graph-expansion traversal, §4.9.2).
   - **Recall@20:** ≥ 88% target on golden retrieval dataset.
   - **Citation Precision & Faithfulness:** ≥ 92% automated evaluation verified by spot-checks.
+  - **Abstention Correctness:** ≥ 95% on the unanswerable set.
   - **Latency SLA:** Retrieval p95 ≤ 1.5s; End-to-end response p95 ≤ 4.5s.
+
+#### 4.7.2 Daily Post-Update Evaluation Gate
+
+Every night, after the incremental sync and derived-artifact refresh (§4.10) complete, an automated evaluation run executes against the **production** indexes:
+
+- The full golden suite runs and results are compared to a rolling 7-day baseline. **Regression gates:** recall@20 drop > 2 points, citation precision drop > 2 points, abstention-correctness drop > 2 points, or **any** permission-leak hit. A tripped gate pages the on-call engineer and freezes further ingestion until triaged — a failed evaluation is treated exactly like a failed deployment.
+- **Freshness and completeness reconciliation:** document counts are compared across three layers — source systems → registry (`documents`/`document_versions`) → active chunks — to detect silent connector or pipeline failures. An **index-lag metric** (p95 time from source modification to searchable) is tracked against the N3/N10 targets.
+- **Self-retrieval probe:** for a random sample of documents added or updated that day, a query is auto-generated from each document's own content and executed; every sampled document must be retrieved. This proves new content is actually *findable*, not merely stored.
+- Results (pass/fail per gate, trends, reconciliation deltas) are written to a dated evaluation report retained with the audit records.
+
+#### 4.7.3 Hallucination Measurement
+
+Golden-suite groundedness alone cannot catch hallucinations on real traffic, so production answers are continuously sampled:
+
+- **Citation-support (entailment) checking:** a daily sample of production query/answer pairs is scored by a **self-hosted judge model** (S5 — nothing leaves the boundary): for each factual claim, does the cited chunk actually support it? Reported as a groundedness rate with trend alerting; sustained decline triggers investigation before users notice.
+- **Abstention-rate monitoring:** a sudden *drop* in abstentions after an update usually means the system began answering questions it should decline; a *spike* usually means retrieval degraded. Both directions alert.
+- **Superseded/temporal correctness:** sampled answers touching versioned documents are checked for correct supersession flags and as-of handling (§4.9.4).
+- **Judge calibration:** a monthly human spot-check re-scores a sample of judge-evaluated answers; judge/human agreement is reported so the automated groundedness number remains trustworthy for the Compliance report. Judge model and prompt versions are pinned and recorded like any other model artifact (§4.8.1).
 
 
 ### 4.8 Backup, Recovery, and Business Continuity
@@ -502,6 +528,40 @@ Community detection (e.g., Leiden) over the entity/link graph, or embedding-base
 
 ---
 
+### 4.10 Document Lifecycle: Add, Update, Remove
+
+Initial ingestion (§4.2) is a one-time event; the steady state is a corpus that changes every day. This section defines what happens to **every derived artifact** when a document is added, updated, or removed, and the rules that keep retrieval consistent while it happens.
+
+#### 4.10.1 Propagation Matrix
+
+| Event | Registry | Chunks + vectors | Doc summary | Links / entities | Wiki | Search indexes |
+|---|---|---|---|---|---|---|
+| **Add** | New `documents` + `document_versions` rows | Inserted into live partitions; searchable within minutes (N3) | Generated | Extracted deterministically (§4.9.1) | Page rendered (event-driven or nightly) | HNSW / BM25 incremental insert |
+| **Update (new version)** | New version row; predecessor `is_current = FALSE`, `effective_to` closed (§4.9.4) | Old chunks `is_active = FALSE` (soft-deactivated); new chunks inserted | Regenerated | `supersedes` edge added; links re-extracted from new text | Page re-rendered; predecessor marked superseded in frontmatter | Incremental insert; dead entries removed by vacuum |
+| **Remove (source deletion)** | `tombstoned_at` set on current version | `is_active = FALSE` immediately | Retained (historical) | Edges retained (history) | Page replaced by a tombstone stub | Cleaned by vacuum |
+| **ACL change** | `acl_entries` rows replaced transactionally | — (ACL filter is applied at query time, S1) | — | — | Affected per-audience subtree re-rendered | — |
+
+#### 4.10.2 Consistency Rules
+
+- **Soft-deactivation — chunks are never physically deleted on update or removal.** Audit-log citations (S7) must remain resolvable to the exact chunk text a past answer used. Update and removal flip `is_active`; physical garbage collection runs only after the records-retention window expires, and never under an active legal hold.
+- **Atomic visibility flip.** The cut-over for an update — deactivating old chunks, activating new ones, flipping `is_current` — executes in a single transaction. Retrieval never observes a document half-updated: it sees either the complete old version or the complete new one.
+- **Immediate invisibility on removal.** Because `is_active` and the ACL join are applied pre-ranking, a tombstoned document disappears from all retrieval the moment the transaction commits — no index rebuild is required. Originals and derivatives on the volume are retained per records policy before garbage collection.
+- **ACL propagation SLA.** Entitlement revocation is the most dangerous lifecycle event: serving even minutes-stale ACLs is a permission leak (S1). Target: revocations from source systems are applied within **5 minutes** of the source event (N10), monitored as a first-class alert. Full periodic ACL re-sync (daily) catches missed webhook events.
+- **Idempotent, resumable job chain.** Each lifecycle stage is an `ingestion_jobs` step (N5): a crash mid-chain resumes from the last completed stage, and re-delivery of the same source event is a no-op (content hash already registered).
+
+#### 4.10.3 Refresh Cadence
+
+- **Event-driven, within minutes (N3/N10):** registry rows, ACL changes, chunk deactivation/insertion, embeddings, doc summaries.
+- **Nightly batch:** wiki re-render of changed documents, link/entity re-extraction, symlink tree regeneration, `ingestion_jobs` pruning; followed by the post-update evaluation gate (§4.7.2).
+- **Weekly / monthly:** volume scrub (§4.8.4), cluster refresh (v2, §4.9.5), physical GC of chunks and files past retention.
+
+#### 4.10.4 Index Health Under Churn
+
+- HNSW tolerates incremental inserts well, but deactivated vectors accumulate as dead index weight. Per-partition autovacuum is tuned for the churn rate, and a **weekly recall check** compares HNSW results against a brute-force scan on a sample; recall degradation beyond 1 point triggers a partition `REINDEX` in a maintenance window.
+- BM25/GIN indexes are monitored for bloat the same way. Scaling gate 3 (§7) governs the point where live churn justifies moving the chunk index out of PostgreSQL.
+
+---
+
 ## 5. Technology Choices
 
 | Layer | Selected Technology | Strategic Rationale |
@@ -584,7 +644,7 @@ A separate storage gate applies to the volume itself: if the corpus approaches ~
 **Phasing of the document graph and wiki (§4.9)** — this work is not shown in the figure above; it lands as follows:
 
 - **Phase 1:** deterministic link/entity extraction — including effective-date and validity-window extraction (§4.9.4) — on the pilot corpus; render the wiki tree alongside the browsable Markdown QA corpus, so curators evaluate links during the same QA pass.
-- **Phase 2:** graph-augmented retrieval expansion and supersession flagging; as-of retrieval and temporal ranking boosts; permission-leak test cases extended to link traversal.
+- **Phase 2:** graph-augmented retrieval expansion and supersession flagging; as-of retrieval and temporal ranking boosts; permission-leak test cases extended to link traversal; nightly post-update evaluation gate and hallucination sampling stood up (§4.7.2–§4.7.3) before enterprise rollout.
 - **Phase 3:** full-corpus link/entity backfill together with the bulk chunk backfill.
 - **Phase 4+ (v2):** LLM-based entity/relationship extraction on selected collections; clustering and cluster summary pages (§4.9.5).
 
@@ -609,6 +669,8 @@ A separate storage gate applies to the volume itself: if the corpus approaches ~
 | **Existence Leakage via Graph Links or Wiki** | Critical | Every graph traversal joins `acl_entries` pre-ranking; expansion silently drops unauthorized targets; wiki generated only inside the curator/compliance enclave (or as per-audience subtrees); permission-leak eval cases extended to link expansion (§4.9.2, §4.9.3). |
 | **Wiki/Graph Divergence from Source of Truth** | Medium | Wiki is a read-only rendered projection, never hand-edited (Principle 7); event-driven/nightly regeneration of changed documents; slugs derived from `document_id`, not mutable source paths (§4.9.3). |
 | **Stale or Wrong-Period Answers** | High | Validity windows on versions and links; as-of filtering for dated queries; currency/temporal ranking boosts; supersession flagging in citations; golden-suite as-of test cases (§4.9.4). |
+| **Silent Ingestion Failure / Stale Index** | High | Nightly three-layer count reconciliation (source → registry → active chunks); index-lag metric against N3/N10 targets; self-retrieval probe on each day's changed documents (§4.7.2). |
+| **Quality Regression After Update Ships Unnoticed** | High | Nightly golden-suite run against production with regression gates on recall, citation precision, abstention, and permission leaks; tripped gate pages on-call and freezes ingestion; production answers continuously sampled for groundedness by a calibrated self-hosted judge (§4.7.2, §4.7.3). |
 
 ---
 

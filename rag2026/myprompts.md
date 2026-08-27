@@ -61,4 +61,10 @@ https://github.com/mempalace/mempalace
 
 Please generate a nice PDF formatted for US Letter paper with 0.7" margins
 
+-------------------------------------------------------
 
+Please suggest changes to the design document to describe 
+
+- the process of updating the system when we adding/removing/updating docs (including versions, vectors, indexes, wiki, ...)
+
+- The process of evaluation of the accuracy and completness of the RAG system and hallucination level after daily updates
