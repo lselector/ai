@@ -68,3 +68,46 @@ Please suggest changes to the design document to describe
 - the process of updating the system when we adding/removing/updating docs (including versions, vectors, indexes, wiki, ...)
 
 - The process of evaluation of the accuracy and completness of the RAG system and hallucination level after daily updates
+
+-------------------------------------------------------
+
+Please rewrite the design document in engaging story style.
+
+Currently the style is formal informative.
+It is difficult for a human to consume.
+
+Please rewrite it as a story. Explaining the challenges - and converting them into solutions.
+
+-------------------------------------------------------
+
+I like the new document rewritten as a story.
+But please remote this line at the top:
+   **The Design, Told as a Story: Every Challenge and How We Solved It**
+
+Also please don't use the words "Prologue", "Chapter", "Epilogue".
+
+-------------------------------------------------------
+
+Very good.
+Please add the table of contents at the beginning
+
+
+-------------------------------------------------------
+
+It is much better now.
+Can you please express simplicity as a guiding principle.
+
+We are choosing architecture which is simple and elegant.
+We are trying to minimize number of 
+moving parts while still retaining 
+functionality.
+
+Simplicity makes the project "do-able",
+flexible, maintainable, affordable. 
+We can prototype fast.
+We don't need a big team.
+We don't need many systems or heavy hardware.
+
+Whereas complexity in architecture and infrastructure can bring the project to its knees. 
+
+-------------------------------------------------------
