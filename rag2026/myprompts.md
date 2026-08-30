@@ -135,9 +135,9 @@ Please add this rule import to CLAUDE.md as well
 
 -------------------------------------------------------
 
-I want the rules I use in this repo to be applied to all projects on this computer.
-Can you add them under $HOME/.claude/ and make sure they are always loaded?
-
+I want the rules I use in this repo to be applied 
+to all projects on this computer.
+Please add them under $HOME/.claude/ 
+and make sure they are always loaded
 
 -------------------------------------------------------
-
