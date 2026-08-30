@@ -141,3 +141,17 @@ Please add them under $HOME/.claude/
 and make sure they are always loaded
 
 -------------------------------------------------------
+
+what is the difference between PRD document and architecture design document ?
+
+PRD = Project Requirements Doc
+written usually by project manager (human)
+
+ADD = Architecture Design Doc - written by engineers for engineer. It takes PRD as input
+
+PRD → architecture design → implementation
+
+-------------------------------------------------------
+
+
+-------------------------------------------------------
