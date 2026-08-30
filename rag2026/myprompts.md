@@ -111,3 +111,33 @@ We don't need many systems or heavy hardware.
 Whereas complexity in architecture and infrastructure can bring the project to its knees. 
 
 -------------------------------------------------------
+
+Please create a generic skill (a markdown file) for creating a design document for a software project similar to how we have done it here (see in myprompts.md).
+
+-------------------------------------------------------
+
+In current repository "ai"
+I have .claude directory
+which has two subdirectories - "rules" and "skills". 
+
+.claude/rules
+.claude/skills
+
+Will Claude Code always use those rules?
+
+Please  create root `CLAUDE.md` with the five imports
+
+-------------------------------------------------------
+
+Please create yet another rule instructing the agent to use "simplicity" when designing architectures or planning the code structure; to find simple, elegant, minimal solutions. To always try to simplify.
+
+Please add this rule import to CLAUDE.md as well
+
+-------------------------------------------------------
+
+I want the rules I use in this repo to be applied to all projects on this computer.
+Can you add them under $HOME/.claude/ and make sure they are always loaded?
+
+
+-------------------------------------------------------
+
