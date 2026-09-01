@@ -1,4 +1,4 @@
--------------------------------------------------------
+--------------------------------------------
 
 Current directory contains a design document for a RAG system for millions of documents.
 
@@ -12,13 +12,13 @@ to help with understanding the structure and clustering ?
 
 Please don't change anything - only propose improvements.
 
--------------------------------------------------------
+--------------------------------------------
 
 To implement wiki, we would need to convert the documents into wiki files,
 which are markdown files in Google Open Knowledge Format with links between files,
 and we need to store those files in some directory structure for easy grep/find operations
 
--------------------------------------------------------
+--------------------------------------------
 
 So we will have:
 
@@ -29,11 +29,11 @@ So we will have:
 
  Correct?
 
--------------------------------------------------------
+--------------------------------------------
 
 OK, please update the design document according to our conversation in this session
 
--------------------------------------------------------
+--------------------------------------------
 
 - please remove the version number from the file names.
 
@@ -46,22 +46,22 @@ OK, please update the design document according to our conversation in this sess
 
 - please add an estimate of the required disk spaces and database size
 
--------------------------------------------------------
+--------------------------------------------
 
 I am confused about wiki. Is it stored in files or in database?
 
--------------------------------------------------------
+--------------------------------------------
 
 Can we make some improvements using techniques
 from this project?
 
 https://github.com/mempalace/mempalace
 
--------------------------------------------------------
+--------------------------------------------
 
 Please generate a nice PDF formatted for US Letter paper with 0.7" margins
 
--------------------------------------------------------
+--------------------------------------------
 
 Please suggest changes to the design document to describe 
 
@@ -69,7 +69,7 @@ Please suggest changes to the design document to describe
 
 - The process of evaluation of the accuracy and completness of the RAG system and hallucination level after daily updates
 
--------------------------------------------------------
+--------------------------------------------
 
 Please rewrite the design document in engaging story style.
 
@@ -78,7 +78,7 @@ It is difficult for a human to consume.
 
 Please rewrite it as a story. Explaining the challenges - and converting them into solutions.
 
--------------------------------------------------------
+--------------------------------------------
 
 I like the new document rewritten as a story.
 But please remote this line at the top:
@@ -86,13 +86,13 @@ But please remote this line at the top:
 
 Also please don't use the words "Prologue", "Chapter", "Epilogue".
 
--------------------------------------------------------
+--------------------------------------------
 
 Very good.
 Please add the table of contents at the beginning
 
 
--------------------------------------------------------
+--------------------------------------------
 
 It is much better now.
 Can you please express simplicity as a guiding principle.
@@ -110,11 +110,11 @@ We don't need many systems or heavy hardware.
 
 Whereas complexity in architecture and infrastructure can bring the project to its knees. 
 
--------------------------------------------------------
+--------------------------------------------
 
 Please create a generic skill (a markdown file) for creating a design document for a software project similar to how we have done it here (see in myprompts.md).
 
--------------------------------------------------------
+--------------------------------------------
 
 In current repository "ai"
 I have .claude directory
@@ -127,20 +127,20 @@ Will Claude Code always use those rules?
 
 Please  create root `CLAUDE.md` with the five imports
 
--------------------------------------------------------
+--------------------------------------------
 
 Please create yet another rule instructing the agent to use "simplicity" when designing architectures or planning the code structure; to find simple, elegant, minimal solutions. To always try to simplify.
 
 Please add this rule import to CLAUDE.md as well
 
--------------------------------------------------------
+--------------------------------------------
 
 I want the rules I use in this repo to be applied 
 to all projects on this computer.
 Please add them under $HOME/.claude/ 
 and make sure they are always loaded
 
--------------------------------------------------------
+--------------------------------------------
 
 what is the difference between PRD document and architecture design document ?
 
@@ -151,14 +151,14 @@ ADD = Architecture Design Doc - written by engineers for engineer. It takes PRD 
 
 PRD → architecture design → implementation
 
--------------------------------------------------------
+--------------------------------------------
 
 Please add modularity as one of key principles into the 
 rag-knowledge-base-design.md document
 Explain it in usual story-telling manner: problem-solution.
 Also update the pdf accordingly.
 
--------------------------------------------------------
+--------------------------------------------
 
 Please update rag-knowledge-base-design.md
 by go deeper into validating the system's accuracy.
@@ -191,7 +191,7 @@ Annotate outputs in context. For writing, flag issues directly in the draft; for
 
 Turn validated patterns into regression tests, dashboards, CI checks, and production monitoring.
 
--------------------------------------------------------
+--------------------------------------------
 
 As we are using Python, please add some details:
 
@@ -225,7 +225,7 @@ uv pip install --reinstall --exclude-newer "30 days" -r requirements.txt
 
 Add similar instructions for installing PostgreSQL and docker images
 
--------------------------------------------------------
+--------------------------------------------
 
 In the section about modularity please add that code should be split into small pieces
 and well documented.
@@ -240,34 +240,34 @@ and well documented.
 
 Code may be split into subdirectories for modularity. Each directory should have its own README.md file
 
--------------------------------------------------------
+--------------------------------------------
 
 Please make sure that the document prescribes creating tests. There should be different types of tests - unit tests, test for individual modules, total tests, also tests using AI agents to confirm that the code changes do not violate the architecture rules.
 
 
--------------------------------------------------------
+--------------------------------------------
 
 We were adding topics incrementally - and the docuemnt was gorwing. Please review the whole document again to see if it may be re-arranged (re-written) to make it shorter and more elegant
 
--------------------------------------------------------
+--------------------------------------------
 
 Is it possible to rewrite the text to make it lighter? More playful and engaging?
 
 
--------------------------------------------------------
+--------------------------------------------
 
 Please add one more principle - self-healing.
 When something goes wrong - the system shoudl be able
 to self-clean and self-repair
 
--------------------------------------------------------
+--------------------------------------------
 
 Does it make sense to rewrite the system into Rust?
 
 Please add some text to the design document explaining why Python is selected (and not Rust)
 
 
--------------------------------------------------------
+--------------------------------------------
 
 Does the design include some sort of interface for humans to work with this RAG system?
 
@@ -280,7 +280,7 @@ When designing the frontend, please use vanialla javascript (no react or other f
 Please make corresponding changes in the design document and PDF
 
 
--------------------------------------------------------
+--------------------------------------------
 
 In real life the data in the system may be maintained and validated by several users. They may need to see their own tasks lists, the status, the failures. 
 
@@ -297,7 +297,7 @@ Please add this to the document
 
 
 
--------------------------------------------------------
+--------------------------------------------
 
 I don't like the title "Avoiding the Pelmeni Architecture"
 
@@ -311,9 +311,31 @@ We want loose coupling, separation of concerns, encapsulation, bounded contexts.
 
 Please change the text accordingly
 
-
--------------------------------------------------------
+--------------------------------------------
 
 Please make a short bulleted list of the main principles for designing the architecture from our document
 
--------------------------------------------------------
+--------------------------------------------
+
+The vector similarity search relies on similarity of question (query) and text chunk. To make this work better, there is a common practice to pre-process the data (documents or text chunks) and the question to put them into similar format, so that you can "compare apples to apples". Please add this pre-processing as part of the system in the design
+
+--------------------------------------------
+
+Please add an option to do "fusion" to reduce hallucination level.  Fusion is when you use 2or 3 independent AI models to answer the same question - and then use a judge model to synthetize the answer and avoid hallucinations.
+
+Another option is to use different "persona" when using the model to consider the answers from different perspectives
+
+Please update the design doc
+
+--------------------------------------------
+
+
+
+--------------------------------------------
+
+
+
+--------------------------------------------
+
+
+--------------------------------------------
