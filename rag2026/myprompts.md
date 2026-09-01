@@ -259,3 +259,61 @@ Is it possible to rewrite the text to make it lighter? More playful and engaging
 Please add one more principle - self-healing.
 When something goes wrong - the system shoudl be able
 to self-clean and self-repair
+
+-------------------------------------------------------
+
+Does it make sense to rewrite the system into Rust?
+
+Please add some text to the design document explaining why Python is selected (and not Rust)
+
+
+-------------------------------------------------------
+
+Does the design include some sort of interface for humans to work with this RAG system?
+
+As  minimum we need a command center and dashboards to control data loads and removal, updates, validation, testing
+We need an agentic chat for administration.
+And we need agentic chat for using the system
+
+When designing the frontend, please use vanialla javascript (no react or other frameworks needed). Please do it modular, put all styles in one file.
+
+Please make corresponding changes in the design document and PDF
+
+
+-------------------------------------------------------
+
+In real life the data in the system may be maintained and validated by several users. They may need to see their own tasks lists, the status, the failures. 
+
+Let's call the tasks as "monkeys". Monkey is the next move. The task. The ticket. 
+
+Each maintainer user may have different monkeys. 
+When a user goes on vacation - his monkeys can be passed to someone else in the group. There should be a dashboard showing all the monkeys, theis status, etc.
+
+This administrative/management should be implemented as a separate Fast-API web app.
+
+Maintainers should be able to do vibe-coding to create their service interfaces as business requires. And to create and schedule workflows related to data extraction, cleaning, transformation, loading, verification, etc.
+
+Please add this to the document
+
+
+
+-------------------------------------------------------
+
+I don't like the title "Avoiding the Pelmeni Architecture"
+
+Most people don't know the word "Pelmeni".
+
+I think it is better to use the word "dumplings".
+
+And Pelmeni are not bad by themselves.
+The bad thing is when they fuse into one messy clamp.
+We want loose coupling, separation of concerns, encapsulation, bounded contexts. We want to be able to develop and test separate "dumplings" separately.
+
+Please change the text accordingly
+
+
+-------------------------------------------------------
+
+Please make a short bulleted list of the main principles for designing the architecture from our document
+
+-------------------------------------------------------

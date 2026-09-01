@@ -8,7 +8,7 @@ Status: Draft (pending approval) · Date: 2026-08-27
 
 1. [The Problem Nobody Wants to Own](#the-problem-nobody-wants-to-own)
 2. [The Temptation of Shiny Infrastructure](#the-temptation-of-shiny-infrastructure)
-3. [Avoiding the Pelmeni Architecture](#avoiding-the-pelmeni-architecture)
+3. [Don't Let the Dumplings Fuse](#dont-let-the-dumplings-fuse)
 4. [Where Do Three Million Files Live?](#where-do-three-million-files-live)
 5. [Teaching the System to Read](#teaching-the-system-to-read)
 6. [The Art of Breaking Documents Apart](#the-art-of-breaking-documents-apart)
@@ -19,11 +19,13 @@ Status: Draft (pending approval) · Date: 2026-08-27
 11. [Trust, but Verify](#trust-but-verify)
 12. [The System That Heals Itself](#the-system-that-heals-itself)
 13. [Answers You Can Take to a Regulator](#answers-you-can-take-to-a-regulator)
-14. [The Day Everything Goes Wrong](#the-day-everything-goes-wrong)
-15. [How Big Is This, Really?](#how-big-is-this-really)
-16. [Don't Chase the Latest Version](#dont-chase-the-latest-version)
-17. [The Road from Here](#the-road-from-here)
-18. [The Shape of the Thing](#the-shape-of-the-thing)
+14. [Three Doors for Humans](#three-doors-for-humans)
+15. [Monkey Business](#monkey-business)
+16. [The Day Everything Goes Wrong](#the-day-everything-goes-wrong)
+17. [How Big Is This, Really?](#how-big-is-this-really)
+18. [Don't Chase the Latest Version](#dont-chase-the-latest-version)
+19. [The Road from Here](#the-road-from-here)
+20. [The Shape of the Thing](#the-shape-of-the-thing)
 
 Appendices: [A — Requirements Reference](#appendix-a-requirements-reference) · [B — Technology Choices](#appendix-b-technology-choices) · [C — Risk Register](#appendix-c-risk-register-condensed)
 
@@ -67,15 +69,23 @@ And here's the delicious part: the numbers say we can get away with it. Our corp
 
 Because bets should be falsifiable, the design writes down **scaling gates** — measurable thresholds (chunk count above 50 million, p95 latency above 2 seconds despite tuning, index churn degrading reads) at which we'd graduate to specialized infrastructure. Until a gate trips, we don't. When one does, the migration is a background re-index, not a crisis — for reasons that will become clear shortly.
 
+**The same restraint picks the language: Python, not Rust.** The question comes up in every design review, so let's answer it here. A Rust rewrite makes the code faster — but look at where this system actually spends its time: search runs inside PostgreSQL (written in C), embeddings and reranking run on GPUs (CUDA kernels), PDF parsing runs in PyMuPDF (C bindings) and Docling's native internals. The Python code is a thin orchestration layer — it moves job rows, calls libraries, and serializes API responses. Rewriting the glue in Rust makes the glue faster, and the glue was never the bottleneck.
+
+Meanwhile the costs would be real. The document-understanding and ML ecosystem is Python-first — Docling *is* Python, and the best parsing, OCR, and model tooling all live there. The team knows Python; prototypes ship in days, and the pool of people who can maintain the system stays large. Choosing Rust here would mean either wrapping the same Python/C libraries in FFI (all the complexity, none of the benefit) or abandoning the best tools for the job — trading the crown jewels for type safety in the plumbing.
+
+And modularity keeps even this decision reversible: if some module ever proves CPU-bound under *measurement* — chunking or deduplication at a much larger scale, say — that one module can be reimplemented in Rust behind the same contract, invisible to everything else. No crisis, no rewrite; a swap. Though the honest first answer to a slow worker is usually even more boring: add another worker node. Hardware is cheaper than a second language in the team's stack.
+
 ![Proposed solution architecture](assets/solution-architecture.svg)
 
 ---
 
-## Avoiding the Pelmeni Architecture
+## Don't Let the Dumplings Fuse
 
 Simplicity has an evil twin, and it shows up wearing simplicity's clothes.
 
-It goes like this. A small team builds a lean system — one database, a handful of components, nothing wasted. Then, under deadline, the agent code starts querying the chunks table directly (why bother with an API for an internal tool?). The parser learns which embedding model is in use (it was convenient). Every shortcut is individually reasonable. Two years later you have a **pelmeni architecture**: like dumplings boiled too long, the pieces have fused into a single lump. Delicious in soup. Catastrophic in software. The diagram still shows few components — but you can no longer change *any* of them without understanding *all* of them. The system is small, and it is stuck.
+Think of a good system as a plate of dumplings. There's nothing wrong with a dumpling — a dumpling is a small masterpiece of engineering. Each one has a wrapper that keeps its filling to itself (*encapsulation*), each one holds its own distinct filling (*separation of concerns*, a *bounded context* in a doughy jacket), each can be cooked and tasted on its own (*developed and tested separately*), and they sit loosely together on the plate, touching but never sticking (*loose coupling*). That is exactly the architecture we want.
+
+The failure mode is what happens when you boil them too long and walk away. It goes like this. A small team builds a lean system — one database, a handful of components, nothing wasted. Then, under deadline, the agent code starts querying the chunks table directly (why bother with an API for an internal tool?). The parser learns which embedding model is in use (it was convenient). Every shortcut is individually reasonable. Two years later the dumplings have **fused into a single messy clump**. The diagram still shows few components — but you can no longer change *any* of them without understanding *all* of them, and nothing can be developed or tested on its own anymore. The system is small, and it is stuck.
 
 That failure mode matters doubly here, because this design makes bets — one database for everything, self-hosted models, a specific parser — and bets must stay reversible. The scaling gates promise "when a threshold trips, we migrate calmly." That promise is only honest if the thing behind the gate can be swapped without a rewrite.
 
@@ -87,7 +97,7 @@ That failure mode matters doubly here, because this design makes bets — one da
 - **Models are versioned data, not wiring.** Every chunk records which embedding model produced it; upgrades run blue/green as a parallel index and cut over only when evaluation approves. The reranker and the LLM sit behind their own interfaces, equally swappable.
 - **Dependencies point one way.** Sources are permanent; derivatives derive from sources; chunks, indexes, graph, and wiki derive from derivatives. Nothing downstream ever writes upstream. Water flows downhill only.
 
-The same discipline reaches into the code itself, because a module with beautiful external contracts can still rot from within — one 3,000-line file, functions that scroll like film credits, and not a word of explanation anywhere. That's the pelmeni lump again, one level down:
+The same discipline reaches into the code itself, because a module with beautiful external contracts can still rot from within — one 3,000-line file, functions that scroll like film credits, and not a word of explanation anywhere. That's the dumplings fusing again, one level down:
 
 - **Small files:** nothing longer than **800 lines**. A file past that is holding more than one responsibility and should be split — it's not a file anymore, it's a hostage situation.
 - **Small functions:** nothing longer than **50 lines**. A function that doesn't fit on one screen is several functions in a trench coat.
@@ -231,7 +241,7 @@ This system changes in two ways, and both can break it without making a sound. E
 
 ### Guarding the code
 
-Rules that nothing enforces are wishes. And untested code develops a second disease: nobody dares touch it. A codebase that can't be safely changed is the pelmeni lump's final form — frozen solid. So every change runs the gauntlet:
+Rules that nothing enforces are wishes. And untested code develops a second disease: nobody dares touch it. A codebase that can't be safely changed is the fused dumpling clump's final form — frozen solid. So every change runs the gauntlet:
 
 - **Unit tests** guard the functions: fast, isolated, no network, no database, dependencies faked at the port interfaces — which is only possible because the ports exist. Modularity pays its first dividend here.
 - **Module tests** guard the contracts: each module — connectors, parsing, chunking, retrieval, graph, wiki renderer — is tested in isolation through its **public API**, dependencies stubbed. If you can't write a module's tests without reaching into another module's internals, congratulations: you've found a boundary in the wrong place, cheaply.
@@ -300,6 +310,52 @@ The model receives only the top-ranked, entitlement-filtered, section-expanded c
 - **Insufficient evidence gets an honest refusal:** *"The available documentation does not contain sufficient evidence to answer this inquiry."* The system is graded on saying this at the right moments — that's exactly what the unanswerable set is for. Saying "I don't know" well is a skill, and here it's a tested one.
 
 And everything is written down. Every query logs the user, their evaluated roles, the applied filters, every chunk ID retrieved with its scores, the model and prompt versions, the generated answer, and the rendered citations. Monthly partitions of this log are exported nightly to **write-once storage** with hash manifests — including the chunk *text* itself, so the record stays self-contained even after some future re-chunking retires the IDs. Deletion happens through the records-management process, on the retention schedule. Not through engineering. Ever.
+
+---
+
+## Three Doors for Humans
+
+So far this design has been very generous to machines — APIs, queues, contracts, agents everywhere — and has offered humans exactly one amenity: a wiki. That won't do. A system without windows gets operated by SSH and psql, which is a fancy way of saying "an incident waiting for a typo." And a Q&A system without a place to ask questions is a philosophical exercise.
+
+**So the design includes one web frontend with three doors, one for each kind of human.**
+
+**Door one: the command center.** Dashboards and controls for the people who run the system:
+
+- **Watch:** connector health and ingestion queues, index lag against the propagation SLAs, the nightly gate's trend lines (recall, citation precision, abstention correctness, groundedness), reconciliation deltas, self-healing activity (what got retried, restored, rebuilt overnight — the morning-coffee report).
+- **Control:** start or pause data loads and backfills, trigger re-indexing or re-parsing for a collection, manage removals and tombstones, kick off validation runs and golden-suite tests on demand.
+- **With manners:** every button drives the same documented, audited APIs used everywhere else — the command center holds no private tunnel to the database. Destructive actions demand confirmation, and everything lands in the audit log with a user identity attached. The dashboard is a *view* with steering, not a backdoor.
+
+**Door two: the admin chat.** An agentic chat for operations — the command center's conversational twin. "Why did last night's gate trip?" "How far behind is the SharePoint connector?" "Re-run reconciliation for the lending collection." The agent answers by calling the same admin APIs the dashboards read, so it can *explain* as well as display — connecting an eval regression to the embedding model that shipped the day before is exactly the kind of dot-connecting agents are good at. Read operations flow freely; anything that changes state requires an explicit confirmation step; anything touching entitlements or records stays human-only, per the self-healing rules. Every agent action is audited like a human one.
+
+**Door three: the user chat.** The main event — where lawyers, credit officers, and analysts actually meet the system. Ask a question, get a cited answer. Citations are clickable and open the exact page of the exact version in a document viewer. An **as-of date picker** turns time-travel queries from a power feature into a dropdown. Abstentions are displayed honestly, as answers, not apologies. And there's a **flag button** on every answer — one click sends the full trace into the evaluation review queue, which means every dissatisfied user quietly contributes to the golden suite. The complaint department feeds the immune system.
+
+**The frontend follows the house rules.** It's built in **vanilla JavaScript** — no React, no frameworks, no build step. The browser already ships a perfectly good runtime; for three pages of dashboards and two chat panels, a framework is another dependency to quarantine, another supply chain to audit, and another migration in five years when it falls out of fashion. The code is **modular**: small ES modules, one per feature (chat panel, dashboard tiles, document viewer, citation renderer), each obeying the same limits as the backend — files under 800 lines, functions under 50, docs at every level, a README per directory. And **all styles live in one `styles.css`** — one file to open, one place to look, no styles hiding in JavaScript. Plain static files served from the same infrastructure, talking only to the documented APIs. The simplest frontend that fully works — which is, by now, the house style.
+
+---
+
+## Monkey Business
+
+The corpus isn't maintained by "the system." It's maintained by a group of humans — data stewards who re-scan bad batches, review low-confidence OCR, resolve deduplication conflicts, approve entity merges, and chase down the connector that's been sulking since Thursday. That work needs owners, statuses, and handoffs — otherwise it lives in email threads and in the heads of people who might be on a beach next week.
+
+**So the design gives maintainers a task system, and the tasks are called monkeys.** A monkey is the next move: the task, the ticket, the thing on your back that needs to hop off. *"Re-parse the Q3 scans."* *"Review 40 chunks below OCR threshold."* *"Two documents claim to be the canonical version — pick one."* Each monkey knows its owner, status, priority, and history, and carries links to the actual artifacts — document IDs, job IDs, the failed eval case, the flagged answer.
+
+The elegant part is where monkeys come from. The system already produces them — it just didn't have a word for them yet:
+
+- Self-healing gives up on a job after its retries → the dead-letter entry **becomes a monkey**, assigned to the right group.
+- The nightly gate trips → a monkey, with the regression report attached.
+- A user flags a bad answer → a monkey in the review queue, trace included.
+- The scrub job finds a file it can't restore, the reconciliation finds a document the connector can't refetch → monkeys.
+- And humans create their own: curation drives, collection onboarding, cleanup campaigns.
+
+Every escalation path in this document now has an inbox, an owner, and a status. The immune system files tickets.
+
+**The human mechanics are deliberately ordinary.** Each maintainer sees *their* monkeys — what's open, what's blocked, what failed overnight. Monkeys pass between people: when someone goes on vacation, their troop transfers to a teammate in one action, and nothing is orphaned. A group dashboard shows all the monkeys — status, age, who's drowning and who's idle — because a task system where managers can't see the pileup is just a diary.
+
+**Architecturally, this is a separate FastAPI web app** — its own module with its own API and its own vanilla-JS frontend (house rules: ES modules, one `styles.css`, no frameworks). Separate on purpose: the retrieval service stays lean and stable while the maintainers' workbench evolves at business speed. The monkeys themselves live in plain PostgreSQL tables — one system of record, as always — and the app talks to the rest of the platform only through the documented APIs.
+
+And because the workbench evolves at business speed, **maintainers get to build their own tools — by vibe-coding.** A steward who needs a review screen for last month's low-confidence scans, or a one-page dashboard for a cleanup campaign, describes it and lets an AI assistant generate it — a small vanilla-JS page over the existing APIs, shipped in an afternoon, no platform-team ticket required. The same goes for **workflows**: maintainers create and schedule data jobs — extraction, cleaning, transformation, loading, verification — composed from idempotent steps and run through the same transactional job queue as everything else.
+
+Vibe-coding gets guardrails, not a leash. Generated tools and workflows live inside the maintainers' app, consume only the documented APIs (so ACLs and audit apply automatically — a vibe-coded page cannot see what its author can't), and pass the same CI as human-written code: the tests, the size limits, and the AI architecture-conformance review. Fast where speed is cheap, gated where mistakes are expensive. The business gets its tools in hours; the platform keeps its seams.
 
 ---
 
@@ -418,7 +474,7 @@ v2 candidates wait patiently behind evaluation evidence, in the spirit of the op
 Strip away the details, and the whole design is eight decisions:
 
 1. **Simplicity above all.** The fewest moving parts that still deliver the functionality. Simplicity is what makes the project do-able, flexible, maintainable, and affordable — buildable by a small team, prototyped in weeks, run without a fleet of clusters or heavy hardware. Complexity is the project's primary risk, admitted only through measured gates.
-2. **Modularity keeps the bets reversible.** Every capability sits behind a contract — retrieval behind an API, sources behind connector plugins, parsers behind the derivative format, models versioned per artifact — so any part can be changed, replaced, or removed without understanding the whole. Few parts, clean seams, no pelmeni.
+2. **Modularity keeps the bets reversible.** Every capability sits behind a contract — retrieval behind an API, sources behind connector plugins, parsers behind the derivative format, models versioned per artifact — so any part can be changed, replaced, or removed without understanding the whole. Loose coupling, clean seams: separate dumplings, never a clump.
 3. **One system of record.** PostgreSQL holds truth — content indexes, entitlements, graph, queue, audit — so consistency is a transaction, not a distributed-systems project.
 4. **Parse once; everything downstream is disposable.** Originals and derivatives are permanent; chunks, vectors, indexes, and wiki are projections, rebuildable at will. This is what makes every future migration boring — and boring migrations are the good kind.
 5. **Search three ways** — meaning, keywords, structure — with time as a dimension, because each method catches what the others miss.
@@ -450,6 +506,8 @@ A corpus of three million documents, one honest database, and a system designed 
 | F12 | Maintain a typed inter-document link graph (supersession, amendment, citation, exhibit, shared entities) and an entity index in PostgreSQL, populated deterministically at ingestion and usable for retrieval-time context expansion. |
 | F13 | Render the corpus as an interconnected wiki: Markdown files with YAML frontmatter and `[[wikilinks]]` (Obsidian-compatible), generated from the database, human-navigable and grep-friendly, scoped to authorized audiences. |
 | F14 | Support point-in-time ("as-of") retrieval via an optional `as_of_date` parameter, with historical answers explicitly flagged. |
+| F15 | Provide human interfaces: an operations command center (dashboards and controls for data loads, removals, updates, validation, and testing), an agentic admin chat, and an agentic end-user chat with clickable citations, as-of date selection, and one-click answer flagging into the evaluation queue. All interfaces consume the same audited APIs; state-changing actions require confirmation and are logged. |
+| F16 | Provide a maintainer task system ("monkeys") as a separate FastAPI web app: per-user task lists with status and failure visibility, reassignment and vacation handoff within groups, a group-wide dashboard, automatic task creation from dead-letter jobs / eval-gate trips / flagged answers / scrub and reconciliation failures, plus AI-assisted (vibe-coded) mini-tools and schedulable ETL workflows — all consuming only documented APIs and passing the standard CI and conformance gates. |
 
 ### A.2 Security, Compliance, and Governance
 
@@ -489,7 +547,9 @@ A corpus of three million documents, one honest database, and a system designed 
 | Job queue | PostgreSQL `SKIP LOCKED` | Transactional, broker-free |
 | Embeddings | Self-hosted open models (BGE / E5 / Nomic class) on local GPUs | Data boundary; no per-token fees across 10B+ tokens |
 | Reranker | BGE-Reranker-Large cross-encoder; LLM rerank only as evaluated escalation | Precision on multi-hop clauses within the latency budget |
-| Retrieval API | Python FastAPI / asyncpg | Lightweight, typed, decoupled from agents |
+| Retrieval API | Python FastAPI / asyncpg | Lightweight, typed, decoupled from agents. Python over Rust: the heavy lifting runs in C/GPU libraries (Postgres, CUDA, PyMuPDF), the parsing/ML ecosystem is Python-first, and any measured CPU-bound module can later be swapped to Rust behind its contract |
+| Frontend (command center, admin chat, user chat) | Vanilla JavaScript ES modules — no frameworks, no build step; all styles in a single `styles.css`; static files served from existing infrastructure; consumes only the documented, audited APIs | Simplicity: no framework dependency to quarantine or migrate; modular per the code rules (one module per feature, README per directory); ACLs and audit apply identically to humans and agents |
+| Maintainer workbench ("monkeys") | Separate FastAPI app + vanilla-JS frontend; monkey tables in PostgreSQL; auto-created from dead-letter/eval/flag/scrub events; vibe-coded mini-tools and scheduled ETL workflows running through the shared job queue, gated by the standard CI + AI conformance review | Retrieval service stays lean while the workbench evolves at business speed; every escalation path gets an owner, a status, and a handoff mechanism |
 | Toolchain & dependencies | Homebrew-installed Python (pinned major.minor); `uv` with `exclude-newer = "30 days"` and `prerelease = "disallow"`; PGDG-pinned PostgreSQL; Docker images by digest via scanned internal registry | Supply-chain safety: aged, pinned, verified dependencies; no `:latest`, no day-old packages |
 | Testing | pytest (unit + module tests via public APIs with faked ports); containerized PostgreSQL for integration tests; fixture corpus for pipeline tests; `import-linter` + size/docstring checks in CI; AI-agent architecture-conformance review gating merges | Every layer guarded: functions, module contracts, real adapters, answer quality (golden suite), and the architecture rules themselves |
 | LLM inference | Private enterprise endpoint / self-hosted vLLM | Inside the VPC perimeter |
@@ -507,6 +567,7 @@ A corpus of three million documents, one honest database, and a system designed 
 | Routine transient failures (crashed workers, corrupt files, missed events, index bloat) | Self-healing: idempotent retries with backoff, automatic quarantine-and-restore from verified snapshots, reconciliation-driven refetch, automatic partition reindex, regeneration of derived artifacts; dead-letter + page only after retries are exhausted; entitlements and records always escalate to humans |
 | Quality regression after updates | Nightly golden-suite gate vs. 7-day baseline; page + ingestion freeze on trip |
 | Architecture erosion in code | `import-linter` + size/docstring checks in CI; AI-agent conformance review on every merge |
+| Vibe-coded tools bypassing controls | Generated tools live in the maintainers' app, reach data only through documented APIs (ACLs + audit apply automatically), and pass the same CI, size, and conformance gates as human-written code |
 | Document volume loss/corruption | Locked cross-AZ snapshots; write-once discipline; hash scrub |
 | PostgreSQL loss / logical corruption | Continuous WAL archiving + PITR; standby for failover; monthly restore tests |
 | Audit record loss | Monthly partitions exported nightly to WORM with hash manifests; records-policy-only deletion |
