@@ -153,5 +153,109 @@ PRD → architecture design → implementation
 
 -------------------------------------------------------
 
+Please add modularity as one of key principles into the 
+rag-knowledge-base-design.md document
+Explain it in usual story-telling manner: problem-solution.
+Also update the pdf accordingly.
 
 -------------------------------------------------------
+
+Please update rag-knowledge-base-design.md
+by go deeper into validating the system's accuracy.
+
+Here are some concepts:
+
+- AI evals (short for evaluations) are systematic tests 
+used to measure the quality, accuracy, safety, 
+and performance of AI models and applications.
+
+- Start evals from real outputs and traces, 
+not an abstract checklist. 
+
+- Review failures before writing criteria
+- Split criteria into Top-down and Bottom-up:
+- Top-down: known task requirements, such as format, length, actionability, or policy compliance
+- Bottom-up: recurring flaws discovered by comparing generated outputs with human-approved results
+
+AI can help cluster examples, build a review interface, 
+identify repeated patterns, and draft rubric items,
+but humans supply the taste and product judgment
+
+Prefer specific pass/fail checks over vague scores. 
+
+Examples: “uses sentence fragments,” “answers a sales objection,” or “contains required structure.”
+
+Use separate LLM-judge passes or subagents for many criteria; one large prompt can overlook requirements.
+
+Annotate outputs in context. For writing, flag issues directly in the draft; for agents, review end-to-end traces.
+
+Turn validated patterns into regression tests, dashboards, CI checks, and production monitoring.
+
+-------------------------------------------------------
+
+As we are using Python, please add some details:
+
+use brew to install python on Mac or Linux
+use uv for setting environment and install modules
+
+Do NOT upgrade to latest versions.
+Because latest versions may have problems (and even explits or viruses)
+
+For example, in pyproject.toml add:
+
+```
+exclude-newer = "30 days"
+prerelease = "disallow"
+```
+
+Then:
+
+```
+uv lock --upgrade
+uv sync
+```
+
+Or:
+
+```
+uv pip install --upgrade --exclude-newer "30 days" -r requirements.txt
+
+uv pip install --reinstall --exclude-newer "30 days" -r requirements.txt
+```
+
+Add similar instructions for installing PostgreSQL and docker images
+
+-------------------------------------------------------
+
+In the section about modularity please add that code should be split into small pieces
+and well documented.
+
+- Make files no longer than 800 lines.
+
+- Make individual functions no longer than 50 lines
+
+- Each file should have doc at the top
+
+- Each function or class should have doc too
+
+Code may be split into subdirectories for modularity. Each directory should have its own README.md file
+
+-------------------------------------------------------
+
+Please make sure that the document prescribes creating tests. There should be different types of tests - unit tests, test for individual modules, total tests, also tests using AI agents to confirm that the code changes do not violate the architecture rules.
+
+
+-------------------------------------------------------
+
+We were adding topics incrementally - and the docuemnt was gorwing. Please review the whole document again to see if it may be re-arranged (re-written) to make it shorter and more elegant
+
+-------------------------------------------------------
+
+Is it possible to rewrite the text to make it lighter? More playful and engaging?
+
+
+-------------------------------------------------------
+
+Please add one more principle - self-healing.
+When something goes wrong - the system shoudl be able
+to self-clean and self-repair

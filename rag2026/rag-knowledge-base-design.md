@@ -8,19 +8,22 @@ Status: Draft (pending approval) · Date: 2026-08-27
 
 1. [The Problem Nobody Wants to Own](#the-problem-nobody-wants-to-own)
 2. [The Temptation of Shiny Infrastructure](#the-temptation-of-shiny-infrastructure)
-3. [Where Do Three Million Files Live?](#where-do-three-million-files-live)
-4. [Teaching the System to Read](#teaching-the-system-to-read)
-5. [The Art of Breaking Documents Apart](#the-art-of-breaking-documents-apart)
-6. [Three Ways to Find a Needle](#three-ways-to-find-a-needle)
-7. [The Web Between the Documents](#the-web-between-the-documents)
-8. [What Was True Last March?](#what-was-true-last-march)
-9. [The Corpus Never Sits Still](#the-corpus-never-sits-still)
-10. [Trust, but Verify — Every Night](#trust-but-verify--every-night)
-11. [Answers You Can Take to a Regulator](#answers-you-can-take-to-a-regulator)
-12. [The Day Everything Goes Wrong](#the-day-everything-goes-wrong)
-13. [How Big Is This, Really?](#how-big-is-this-really)
-14. [The Road from Here](#the-road-from-here)
-15. [The Shape of the Thing](#the-shape-of-the-thing)
+3. [Avoiding the Pelmeni Architecture](#avoiding-the-pelmeni-architecture)
+4. [Where Do Three Million Files Live?](#where-do-three-million-files-live)
+5. [Teaching the System to Read](#teaching-the-system-to-read)
+6. [The Art of Breaking Documents Apart](#the-art-of-breaking-documents-apart)
+7. [Three Ways to Find a Needle](#three-ways-to-find-a-needle)
+8. [The Web Between the Documents](#the-web-between-the-documents)
+9. [What Was True Last March?](#what-was-true-last-march)
+10. [The Corpus Never Sits Still](#the-corpus-never-sits-still)
+11. [Trust, but Verify](#trust-but-verify)
+12. [The System That Heals Itself](#the-system-that-heals-itself)
+13. [Answers You Can Take to a Regulator](#answers-you-can-take-to-a-regulator)
+14. [The Day Everything Goes Wrong](#the-day-everything-goes-wrong)
+15. [How Big Is This, Really?](#how-big-is-this-really)
+16. [Don't Chase the Latest Version](#dont-chase-the-latest-version)
+17. [The Road from Here](#the-road-from-here)
+18. [The Shape of the Thing](#the-shape-of-the-thing)
 
 Appendices: [A — Requirements Reference](#appendix-a-requirements-reference) · [B — Technology Choices](#appendix-b-technology-choices) · [C — Risk Register](#appendix-c-risk-register-condensed)
 
@@ -28,60 +31,87 @@ Appendices: [A — Requirements Reference](#appendix-a-requirements-reference) �
 
 ## The Problem Nobody Wants to Own
 
-Somewhere in the firm's file shares, SharePoint sites, mail archives, and document management systems sit roughly **three million documents**: credit agreements, amendments, side letters, board decks, risk memos, spreadsheets, and thirty years of scanned paper. Somewhere in there is the answer to almost any question a lawyer, credit officer, or risk analyst might ask.
+Somewhere in the firm's file shares, SharePoint sites, mail archives, and document management systems sit roughly **three million documents**: credit agreements, amendments, side letters, board decks, risk memos, spreadsheets, and thirty years of scanned paper. Somewhere in there is the answer to almost any question a lawyer, credit officer, or risk analyst might ever ask.
 
 Nobody can find it.
 
-Keyword search returns four hundred hits. The person who knew which document mattered retired. The version someone finally digs up was superseded two amendments ago — and they won't discover that until the deal goes wrong.
+Keyword search cheerfully returns four hundred hits, which is a polite way of returning zero. The one person who knew which document actually mattered retired in the spring. And the version someone finally digs up? Superseded two amendments ago — a fact that will surface at the worst possible moment, because that is when such facts surface.
 
-So the ask sounds simple: *build an AI assistant that answers questions from our documents.* But this is a regulated financial firm, so the real ask is longer:
+So the ask sounds simple: *build an AI assistant that answers questions from our documents.* Lovely. Except this is a regulated financial firm, so the real ask comes with fine print:
 
-- Answer from the documents, and **prove it** — with citations down to the page, tied to the exact version used.
-- Show a user **only what they're entitled to see**. Not one chunk more. Ethical walls between deal teams are law, not etiquette.
-- Keep everything — documents, search indexes, models, logs — **inside the firm's walls**.
-- Keep a **tamper-evident record** of every question and answer, because a regulator may ask for it years from now.
-- And when the system doesn't know, it must **say so** instead of inventing something plausible.
+- Answer from the documents, and **prove it** — citations down to the page, tied to the exact version used. "Trust me" is not a citation.
+- Show a user **only what they're entitled to see**. Not one chunk more. Ethical walls between deal teams are law, not office etiquette.
+- Keep everything — documents, indexes, models, logs — **inside the firm's walls**. Nothing takes a field trip to someone else's cloud.
+- Keep a **tamper-evident record** of every question and answer, because a regulator may ask about it years from now, and "we're not sure what it said" is a career-limiting answer.
+- And when the system doesn't know, it must **say so** — not improvise something plausible in a confident voice.
 
-That last point deserves emphasis. A chatbot that hallucinates a covenant threshold isn't a productivity tool; it's a liability engine. Everything in this design flows from taking these constraints seriously.
+That last point deserves a moment of silence. A chatbot that hallucinates a covenant threshold isn't a productivity tool; it's a liability engine with a friendly interface. Everything in this design flows from taking that seriously.
 
-Version 1 is deliberately modest in one way: it is **read-only**. It answers questions. It executes no trades, sends no emails, makes no decisions. Walk before you run.
+One deliberate act of modesty: version 1 is **read-only**. It answers questions. It executes no trades, sends no emails, makes no decisions. Walk before you run — especially in a building full of compliance officers.
 
 ---
 
 ## The Temptation of Shiny Infrastructure
 
-The first challenge isn't technical — it's restraint.
+The first challenge isn't technical. It's saying no.
 
-The standard architecture for a system like this, circa any vendor pitch, involves a vector database, a search cluster, a message broker, a workflow engine, and a graph database: five distributed systems to operate, patch, secure, and keep synchronized. Every pair of systems is a place where data can disagree. Every extra cluster is an on-call rotation.
+The standard architecture for a system like this — the one in every vendor deck — involves a vector database, a search cluster, a message broker, a workflow engine, and a graph database. Collect all five! Each one is a distributed system to operate, patch, secure, and keep synchronized with the others. Every pair of systems is a place where data can quietly disagree. Every extra cluster is a pager that will eventually go off at 2 a.m., and it will not be sorry.
 
-Complexity like that doesn't just cost money — it can bring a project to its knees. Every additional system needs specialists to run it, integration code to connect it, and a seat at the table when something breaks at 2 a.m. Projects don't usually die from missing features; they die from drowning in their own plumbing before the first user ever asks a question.
+This is how projects die, by the way. Rarely from missing features — almost always from drowning in their own plumbing, sometimes before the first user asks the first question.
 
-So this design adopts **simplicity as its guiding principle**: the simplest, most elegant architecture that still delivers the full functionality — the minimum number of moving parts, chosen deliberately, not by accident. Simplicity is what makes the project *do-able*. It makes it flexible (fewer parts to rearrange when requirements shift), maintainable (fewer things that can break, fewer experts required), and affordable (no fleet of clusters, no heavy hardware). We can prototype fast and put something real in front of users in weeks. We don't need a big team to build it — or to keep it alive afterward.
+So this design adopts **simplicity as its guiding principle**: the simplest, most elegant architecture that still delivers the full functionality — the minimum number of moving parts, each one chosen on purpose. Simplicity is what makes the project *do-able* — and flexible, maintainable, and affordable. We can prototype fast, put something real in front of users in weeks, and run the whole thing without a big team, a fleet of clusters, or exotic hardware.
 
-Here's what makes that principle realistic rather than wishful: our corpus — big as it feels — produces about **20–25 million searchable chunks**. That is not "big data." That fits in one well-fed PostgreSQL instance with room to spare.
+And here's the delicious part: the numbers say we can get away with it. Our corpus — big as it feels — produces about **20–25 million searchable chunks**. That is not "big data." For a well-fed PostgreSQL instance, that's a Tuesday.
 
-**So the solution is a bet on boring technology:** one PostgreSQL cluster holds everything transactional — the document registry, the entitlements, the search indexes (vector *and* keyword), the job queue, and the audit log. The team already knows how to run PostgreSQL. Access control becomes a SQL join instead of a cross-system synchronization problem. There is exactly one source of truth.
+**So the solution is a bet on gloriously boring technology:** one PostgreSQL cluster holds everything transactional — the document registry, the entitlements, the search indexes (vector *and* keyword), the job queue, and the audit log. The team already knows how to run PostgreSQL. Access control becomes a SQL join instead of a distributed-systems research project. There is exactly one source of truth, and everyone knows its address.
 
-And because bets should be falsifiable, the design writes down **scaling gates** — measurable thresholds (chunk count above 50 million, p95 latency above 2 seconds despite tuning, index churn degrading reads) at which we would graduate to specialized infrastructure. Until a gate trips, we don't. When one does, the migration is a background re-index, not a crisis — for reasons explained below.
+Because bets should be falsifiable, the design writes down **scaling gates** — measurable thresholds (chunk count above 50 million, p95 latency above 2 seconds despite tuning, index churn degrading reads) at which we'd graduate to specialized infrastructure. Until a gate trips, we don't. When one does, the migration is a background re-index, not a crisis — for reasons that will become clear shortly.
 
 ![Proposed solution architecture](assets/solution-architecture.svg)
 
 ---
 
+## Avoiding the Pelmeni Architecture
+
+Simplicity has an evil twin, and it shows up wearing simplicity's clothes.
+
+It goes like this. A small team builds a lean system — one database, a handful of components, nothing wasted. Then, under deadline, the agent code starts querying the chunks table directly (why bother with an API for an internal tool?). The parser learns which embedding model is in use (it was convenient). Every shortcut is individually reasonable. Two years later you have a **pelmeni architecture**: like dumplings boiled too long, the pieces have fused into a single lump. Delicious in soup. Catastrophic in software. The diagram still shows few components — but you can no longer change *any* of them without understanding *all* of them. The system is small, and it is stuck.
+
+That failure mode matters doubly here, because this design makes bets — one database for everything, self-hosted models, a specific parser — and bets must stay reversible. The scaling gates promise "when a threshold trips, we migrate calmly." That promise is only honest if the thing behind the gate can be swapped without a rewrite.
+
+**So the second guiding principle, alongside simplicity, is modularity: every capability owns its domain and is used only through its contract.**
+
+- **Retrieval is a service, not a schema.** Agents and internal systems talk to the FastAPI retrieval API; not one of them knows a table name. The day the chunk index moves to a dedicated search cluster, consumers won't even notice.
+- **Connectors are plugins.** Each source system speaks its own dialect on one side and emits the same normalized events — file, metadata, ACL — into the same job queue on the other. Adding a source means writing an adapter, not performing surgery on the pipeline.
+- **Parsers hide behind the derivative contract.** Docling and PyMuPDF both produce the same structured JSON + Markdown shape. A better parser next year changes nothing downstream.
+- **Models are versioned data, not wiring.** Every chunk records which embedding model produced it; upgrades run blue/green as a parallel index and cut over only when evaluation approves. The reranker and the LLM sit behind their own interfaces, equally swappable.
+- **Dependencies point one way.** Sources are permanent; derivatives derive from sources; chunks, indexes, graph, and wiki derive from derivatives. Nothing downstream ever writes upstream. Water flows downhill only.
+
+The same discipline reaches into the code itself, because a module with beautiful external contracts can still rot from within — one 3,000-line file, functions that scroll like film credits, and not a word of explanation anywhere. That's the pelmeni lump again, one level down:
+
+- **Small files:** nothing longer than **800 lines**. A file past that is holding more than one responsibility and should be split — it's not a file anymore, it's a hostage situation.
+- **Small functions:** nothing longer than **50 lines**. A function that doesn't fit on one screen is several functions in a trench coat.
+- **Docs at every level:** each file opens with a doc block stating its purpose; every function and class carries its own. Code explains *how*; docs explain *what for*.
+- **Directories as modules:** code splits into subdirectories along module boundaries, and **each directory has its own README.md** — what it owns, its public API, what it depends on. A newcomer should be able to parachute into any directory and know where they've landed.
+
+The test for every boundary — architectural or code-level — is blunt: **can this piece be changed, replaced, or removed without understanding the whole system?** If not, the seam is in the wrong place. Simplicity keeps the number of parts small; modularity keeps each part replaceable. This design insists on both.
+
+---
+
 ## Where Do Three Million Files Live?
 
-Databases are terrible places for file blobs, and cloud object storage is off the table — the compliance boundary says everything stays on infrastructure the firm controls. So originals live on **mounted volumes** (AWS EBS behind an NFS export, or the on-prem NAS), and the database stores only a `storage_uri` pointing at each file.
+Databases make terrible file cabinets, and cloud object storage is off the table — the compliance boundary says everything stays on infrastructure the firm controls. So originals live on **mounted volumes** (AWS EBS behind an NFS export, or the on-prem NAS), and the database stores only a `storage_uri` pointing at each file. The database knows *where* everything is; it just refuses to carry it.
 
-That sounds mundane until you ask what three million files do to a filesystem. Dump them in one directory and every listing crawls. Let people overwrite files in place and you can never again prove what a citation pointed to.
+That sounds mundane until you ask what three million files do to a filesystem. Dump them into one directory and every listing crawls — that's how you make a filesystem cry. Let people overwrite files in place, and you can never again prove what a citation pointed to.
 
-Two disciplines solve this:
+Two old-fashioned disciplines solve both:
 
-- **Content addressing.** Every file is stored under its SHA-256 hash, sharded into subdirectories by the first four hex characters (`originals/ab/cd/<sha256>.pdf`) so no directory ever holds more than a few thousand entries. The same bytes always land at the same path; a changed document produces a *new* hash and a *new* path.
-- **Write-once.** Workers write to a temp path, `fsync`, and atomically `rename()` into place. Nothing is ever overwritten. A file, once written, is immutable — optionally enforced with `chattr +i` so even a root process can't quietly edit history.
+- **Content addressing.** Every file is stored under its SHA-256 hash, sharded into subdirectories by the first four hex characters (`originals/ab/cd/<sha256>.pdf`), so no directory ever holds more than a few thousand entries. Same bytes, same path, forever; a changed document gets a *new* hash and a *new* path.
+- **Write-once.** Workers write to a temp path, `fsync`, then atomically `rename()` into place. Nothing is ever overwritten. Once written, a file is immutable — optionally sealed with `chattr +i`, so even a root process can't quietly rewrite history.
 
-This buys something subtle and valuable: **a snapshot of the volume is consistent by construction**, at any instant, with no quiescing — a half-written file exists only under a temp path that nothing references. Remember that when we get to "The Day Everything Goes Wrong."
+This buys something quietly wonderful: **a snapshot of the volume is consistent by construction**, at any instant, no coordination required — a half-written file exists only under a temp path that nothing references. File that fact away; it becomes the hero of "The Day Everything Goes Wrong."
 
-Alongside each original live its **derivatives**: the parsed, normalized representations (structured JSON plus clean Markdown). A weekly scrub job re-hashes samples and compares against the database, hunting silent corruption.
+Alongside each original live its **derivatives** — the parsed, normalized representations (structured JSON plus clean Markdown). And because storage can lie slowly and silently, a weekly scrub job re-hashes samples and compares them against the database, hunting bit rot.
 
 ![Content-addressed document volume layout](assets/document-volume-layout.svg)
 
@@ -91,53 +121,49 @@ Capacity is comfortable: ~3 TB of originals, 1–2 TB of derivatives; provision 
 
 ## Teaching the System to Read
 
-Challenge: the corpus is a museum of formats. Born-digital PDFs, Word contracts, PowerPoint decks where the story hides in speaker notes, spreadsheets, and scans of paper signed before some analysts were born.
+The corpus is a museum of formats: born-digital PDFs, Word contracts, PowerPoint decks where the real story hides in the speaker notes, spreadsheets with opinions, and scans of paper signed before some of our analysts were born. Run everything through a heavyweight OCR pipeline and the backfill takes months. Run everything through a fast text extractor and it butchers the scans and shreds every table.
 
-Running everything through a heavyweight OCR/layout pipeline would take months. Running everything through a fast text extractor would butcher the scans and mangle every table.
-
-**The solution is triage.** A fast path (PyMuPDF) handles born-digital files at 50–100 pages per second per node. A heavy path — GPU workers running Docling with layout analysis and OCR — handles scans, complex multi-column layouts, and decks at 8–15 pages per second. Every scanned page gets an **OCR confidence score** that follows its text all the way into answers: a citation built on shaky OCR says so.
+**The solution is triage.** A fast path (PyMuPDF) inhales born-digital files at 50–100 pages per second per node. A heavy path — GPU workers running Docling with layout analysis and OCR — takes the hard cases at 8–15 pages per second: scans, brutal multi-column layouts, decks. Every scanned page gets an **OCR confidence score** that follows its text all the way into answers: a citation built on shaky OCR admits it, right there in the citation.
 
 Two principles govern the pipeline:
 
-**Parse once, index many times.** Parsing three million files takes weeks of compute; we never want to do it twice. The parsed derivatives are stored permanently. Re-chunking, re-embedding, upgrading models, even migrating to a different search engine — all read from derivatives, never from raw files. This is what makes the scaling gates cheap to cross and the whole search layer *disposable*.
+**Parse once, index many times.** Parsing three million files costs weeks of compute, and we refuse to pay twice. Parsed derivatives are stored permanently. Re-chunking, re-embedding, upgrading models, even defecting to a different search engine — all of it reads from derivatives, never from raw files. This is precisely what makes the scaling gates cheap to cross: the entire search layer is *disposable*.
 
-**Deduplicate before indexing.** The same memo lives in five SharePoint sites and eleven inboxes. Exact duplicates are caught by hash before they're even fetched twice; near-duplicates by MinHash/SimHash on normalized text. Aliases map every copy to one canonical version. Raw estimate: ~45 million potential chunks collapse to 20–25 million indexed ones — half the index we'd otherwise pay for.
+**Deduplicate before indexing.** The same memo lives in five SharePoint sites and eleven inboxes, because that is how offices work. Exact duplicates get caught by hash before they're even fetched twice; near-duplicates by MinHash/SimHash on normalized text. Aliases map every copy to one canonical version. The arithmetic is satisfying: ~45 million potential chunks collapse to 20–25 million indexed ones — half the index we'd otherwise be paying to search.
 
-The whole pipeline runs as idempotent steps in a transactional job queue — plain PostgreSQL rows claimed with `SKIP LOCKED`, no message broker. A crashed worker resumes exactly where it stopped; a re-delivered event is a no-op.
+The whole pipeline runs as idempotent steps in a transactional job queue — plain PostgreSQL rows claimed with `SKIP LOCKED`, no message broker in sight. A crashed worker resumes exactly where it stopped. A re-delivered event is a shrug and a no-op.
 
 ---
 
 ## The Art of Breaking Documents Apart
 
-Search engines don't retrieve documents; they retrieve *chunks*. Chunk badly and everything downstream suffers.
-
-Split a contract mid-sentence at every 500 tokens and you get fragments that match queries but can't support answers. Treat a financial table as prose and its meaning evaporates — a number without its header row is noise.
+Search engines don't retrieve documents; they retrieve *chunks*. Chunk badly and everything downstream suffers. Split a contract mid-sentence every 500 tokens and you get fragments that match queries but can't support answers. Treat a financial table as prose and its meaning evaporates — a number without its header row isn't data, it's confetti.
 
 **The solution: cut along the document's own seams.**
 
 - **Narrative documents** split at heading boundaries, 400–800 tokens, on clean paragraph breaks. Each chunk carries its full heading path — `Credit Agreement > Section 4.2 > Representations` — so it never forgets where it came from.
-- **Slides**: one slide per chunk, with the deck title, slide title, and presenter notes together (in decks, the notes are usually where the truth lives).
-- **Tables**: kept whole, or split as row-groups that each repeat the header row; the raw structured version rides along in metadata for exact numeric lookups.
-- **Scans**: chunked like narrative, with their OCR confidence attached; anything below 85% is flagged in prompts and citations.
+- **Slides:** one slide per chunk, with deck title, slide title, and presenter notes together. (In decks, the notes are where people write what they actually think.)
+- **Tables:** kept whole, or split as row-groups that each repeat the header row; the raw structured version rides along in metadata for exact numeric lookups.
+- **Scans:** chunked like narrative, wearing their OCR confidence; anything below 85% gets flagged in prompts and citations.
 
-One principle rules the data model: **documents are not chunks.** A document has lifecycle, lineage, entitlements, and legal retention. A chunk is a disposable search artifact, rebuildable at any time from derivatives. Confusing the two is how systems end up unable to delete what the law requires them to delete.
+One principle rules the data model: **documents are not chunks.** A document has lifecycle, lineage, entitlements, and legal retention — it's a citizen. A chunk is a disposable search artifact, rebuildable at any time from derivatives. Confusing the two is how systems end up unable to delete what the law requires them to delete — an awkward conversation nobody wants to have.
 
 ---
 
 ## Three Ways to Find a Needle
 
-Now the heart of the matter. Users ask two fundamentally different kinds of questions, and each breaks the search method built for the other:
+Now the heart of the matter. Users ask two fundamentally different kinds of questions, and each one breaks the search method built for the other:
 
 - *"What is our aggregate exposure to commercial real estate in Europe?"* — thematic, conceptual. Keyword search is useless; no document contains that sentence.
-- *"Find clause 7.3(b) of the Meridian facility agreement."* — an exact needle. Semantic search is actively dangerous here; it happily returns something *similar* to clause 7.3(b), which is worse than nothing.
+- *"Find clause 7.3(b) of the Meridian facility agreement."* — an exact needle. Semantic search is actively dangerous here: it will happily return something *similar* to clause 7.3(b), delivered with total confidence. Similar is worse than nothing.
 
-**Solution one: run both searches, always.** Semantic search (vector embeddings, computed by self-hosted models on our GPUs — nothing leaves the boundary) catches meaning and paraphrase. Keyword search (BM25 full-text) catches tickers, ISINs, clause numbers, party names. Their results merge by reciprocal rank fusion, and a cross-encoder reranker on GPU picks the best handful for the answer.
+**Solution one: run both searches, always.** Semantic search (vector embeddings, computed by self-hosted models on our own GPUs) catches meaning and paraphrase. Keyword search (BM25 full-text) catches tickers, ISINs, clause numbers, party names — the stuff lawyers actually type. Results merge by reciprocal rank fusion, and a cross-encoder reranker picks the best handful.
 
-**Solution two: search at two altitudes.** Millions of chunks is a noisy haystack for a broad question. So every document also gets a one-paragraph **summary with its own embedding** — a 3-million-entry "card catalog." Broad queries hit the catalog first, pick the promising documents, then search chunks only within them. Needle queries — anything with an exact identifier — skip the catalog and hit the full chunk index directly, because a summary might not mention clause 7.3(b), and a missed clause is a failed audit.
+**Solution two: search at two altitudes.** Twenty-five million chunks is a noisy haystack for a broad question. So every document also gets a one-paragraph **summary with its own embedding** — a three-million-card catalog. Broad queries consult the catalog first, shortlist the promising documents, then search chunks only within them. Needle queries — anything with an exact identifier — skip the catalog and hit the full chunk index directly, because a summary might not mention clause 7.3(b), and a missed clause is a failed audit.
 
-**Solution three: after matching, widen the lens.** Chunks are sized for *matching*, but the sentence that matches a query and the sentence that answers it are often neighbors. So each selected chunk is expanded to its parent section — its siblings by heading path, within a token budget — before the model sees it. The match finds the spot; the section provides the meaning.
+**Solution three: after matching, widen the lens.** Chunks are sized for *matching*, but the sentence that matches a query and the sentence that answers it are frequently next-door neighbors. So each selected chunk gets expanded to its parent section — its siblings by heading path, within a token budget — before the model reads it. The match finds the spot; the section supplies the meaning.
 
-And beneath every one of these paths, without exception, sits the entitlement check. **ACL filtering happens in SQL, before ranking.** An unauthorized document doesn't rank low — it doesn't exist. The permission-leak tolerance in this design is written as a number: **0.00%**.
+And beneath all of it, without exception, sits the entitlement check. **ACL filtering happens in SQL, before ranking.** An unauthorized document doesn't rank low — it doesn't exist. The permission-leak tolerance is written down as a number, and the number is **0.00%**.
 
 ![Adaptive hybrid retrieval workflow](assets/adaptive-retrieval-workflow.svg)
 
@@ -145,21 +171,21 @@ And beneath every one of these paths, without exception, sits the entitlement ch
 
 ## The Web Between the Documents
 
-A few weeks into any project like this, someone asks the question that vectors and keywords cannot answer: *"Which amendments modify this credit agreement?"*
+A few weeks into any project like this, someone asks the question that vectors and keywords simply cannot answer: *"Which amendments modify this credit agreement?"*
 
-Similarity search finds text that *resembles* other text. But an amendment doesn't resemble the agreement it modifies — it references it, tersely, by title and date. The relationships between documents — supersession, amendment, exhibit, citation, same deal — are the corpus's skeleton, and text search is blind to it.
+Similarity search finds text that *resembles* other text. But an amendment doesn't resemble the agreement it modifies — it *references* it, tersely, by title and date, the way legal documents nod to each other across the room. Those relationships — supersession, amendment, exhibit, citation, same deal — are the corpus's skeleton, and text search is completely blind to it.
 
-Here's the lucky part: legal documents *announce* their relationships. "This Amendment No. 3 to the Credit Agreement dated March 15, 2024…" is practically a database row wearing a costume. No AI required — regexes and parsers extract these cross-references, along with entities (parties, ISINs, deal names), during ingestion.
+Here's the lucky break: legal documents *announce* their relationships. "This Amendment No. 3 to the Credit Agreement dated March 15, 2024…" is a database row wearing a costume. No AI required — regexes and parsers pluck these cross-references out during ingestion, along with the entities (parties, ISINs, deal names).
 
-**So the design adds a document graph, in plain PostgreSQL tables:** typed edges (`amends`, `supersedes`, `exhibit_of`, `references_clause`, `cites`) between documents, plus an entity index recording who is mentioned where. Each edge records how it was extracted and with what confidence.
+**So the design adds a document graph, in plain PostgreSQL tables:** typed edges (`amends`, `supersedes`, `exhibit_of`, `references_clause`, `cites`) between documents, plus an entity index recording who is mentioned where. Every edge remembers how it was extracted and with what confidence — no anonymous edges.
 
 The graph earns its keep twice:
 
-**At retrieval time**, after the hybrid search returns its chunks, the engine walks one hop: retrieve a credit agreement, and its amendments come along — even though they never matched the query. Retrieve something that has a `supersedes` edge pointing at it, and the answer is *flagged as superseded* — structurally, not by hoping the newer version happened to rank. Every hop joins the ACL table first: a link must never reveal so much as the existence of a document the user can't see.
+**At retrieval time**, after hybrid search returns its chunks, the engine walks one hop. Retrieve a credit agreement, and its amendments come along — even though they never matched the query. Retrieve something with a `supersedes` edge pointing at it, and the answer gets *flagged as superseded* — structurally, not by hoping the newer version happened to rank well. And every hop joins the ACL table first: a link must never reveal so much as the *existence* of a document the user can't see.
 
-**For humans**, the graph renders as an **interconnected wiki**: one Markdown file per document, with YAML frontmatter (type, dates, classification, status) and `[[wikilinks]]` for every relationship — browsable in Obsidian, greppable with ripgrep, organized in a readable tree (`wiki/documents/<collection>/<type>/<year>/…`, plus a stub page per entity listing everything it appears in). Compliance officers and domain experts navigate the corpus by its actual structure instead of playing search-term roulette.
+**For humans**, the graph renders as an **interconnected wiki**: one Markdown file per document, YAML frontmatter on top (type, dates, classification, status), `[[wikilinks]]` for every relationship — browsable in Obsidian, greppable with ripgrep, laid out in a readable tree (`wiki/documents/<collection>/<type>/<year>/…`, plus a stub page per entity listing everywhere it appears). Compliance officers get to navigate the corpus by its actual structure instead of playing search-term roulette.
 
-One rule keeps the wiki honest: **it is a projection, not a source.** Nobody edits wiki files. They are rendered nightly from the database and the stored derivatives, and can be deleted and regenerated at any time without losing a byte of truth. And because files on disk have no row-level security, the full wiki renders only inside the curators' enclave — links leak existence, and existence is confidential too.
+One rule keeps the wiki honest: **it is a projection, not a source.** Nobody edits wiki files — they're rendered nightly from the database and can be deleted and regenerated without losing a byte of truth. And since files on disk have no row-level security, the full wiki renders only inside the curators' enclave. Links leak existence, and around here, existence is confidential too.
 
 Later (v2), community detection over this graph will cluster the corpus into themes with summary pages — the corpus explaining its own neighborhoods.
 
@@ -167,89 +193,135 @@ Later (v2), community detection over this graph will cluster the corpus into the
 
 ## What Was True Last March?
 
-A question that will absolutely be asked: *"What was the covenant threshold as of Q3 2024?"*
+Sooner or later — probably sooner — someone will ask: *"What was the covenant threshold as of Q3 2024?"*
 
-A system that only knows "current vs. superseded" answers with today's amendment — fluently, confidently, and wrongly. In finance, *when something was true* is half the fact.
+A system that only knows "current vs. superseded" answers with today's amendment: fluently, confidently, and wrongly. In finance, *when* something was true is half the fact.
 
-**The solution is to give time a first-class seat.** Every document version carries an effective window (`effective_from` / `effective_to`); every graph edge carries a validity window. These come from the documents themselves — effective-date clauses are dated boilerplate, extractable deterministically — and from lineage: when a supersession edge is created, it closes the predecessor's window automatically.
+**The solution is to give time a seat at the table.** Every document version carries an effective window (`effective_from` / `effective_to`); every graph edge carries a validity window. The dates come from the documents themselves — effective-date clauses are dated boilerplate, extractable with a regex and a straight face — and from lineage: creating a supersession edge automatically closes the predecessor's window.
 
 On top of that:
 
-- The retrieval API accepts an **`as_of_date`**. Instead of filtering to current versions, it filters to versions *in force on that date* — and the answer is explicitly flagged as historical.
-- When retrieved passages disagree *because they're from different eras*, the system doesn't report a contradiction; it reports a **timeline**: "the threshold was X from March 2024, amended to Y effective November 2024."
-- Ranking gets a temporal sense: queries with date intent boost chunks near that date; queries without it get a mild boost toward in-force versions, so stale text can't outrank live text on similarity alone.
+- The retrieval API accepts an **`as_of_date`**. Instead of filtering to current versions, it filters to versions *in force on that date* — and the answer is clearly flagged as historical, so nobody mistakes last year's covenant for this year's.
+- When retrieved passages disagree *because they come from different eras*, the system doesn't wring its hands about a "contradiction" — it lays out a **timeline**: "the threshold was X from March 2024, amended to Y effective November 2024." Not a bug; a biography.
+- Ranking gets a sense of time: queries with date intent boost chunks near that date; queries without it get a gentle nudge toward in-force versions, so stale text can't out-charm live text on similarity alone.
 
 ---
 
 ## The Corpus Never Sits Still
 
-Everything so far described a system at rest. Real corpora churn daily: new documents, revised versions, deletions, and — most dangerous of all — entitlement changes.
-
-Each event must propagate through every layer we've built: registry, chunks, vectors, indexes, summaries, graph edges, wiki pages. Miss one and the layers start lying to each other.
+Everything so far described a system at rest. Real corpora don't rest: new documents arrive, versions supersede, deletions happen, and — most dangerous of all — someone's access gets revoked. Each event must ripple through every layer we've built: registry, chunks, vectors, indexes, summaries, graph edges, wiki pages. Miss one layer, and the layers start lying to each other.
 
 **The solution is a defined lifecycle with three hard rules.**
 
-When a document is **added**, it flows through the standard pipeline and is searchable within minutes. When one is **updated**, the new version gets new chunks and a `supersedes` edge; the old version's chunks are *deactivated, never deleted* — that's rule one: **soft-deactivation**, because an audit-log citation from last year must still resolve to the exact text the user saw, for as long as the records policy says. When a document is **removed** at the source, it's tombstoned: invisible to retrieval the instant the transaction commits (the active-flag and ACL filters run before ranking, so no index rebuild is needed), while the underlying files ride out their retention period.
+When a document is **added**, it flows through the standard pipeline and is searchable within minutes. When one is **updated**, the new version gets fresh chunks and a `supersedes` edge; the old version's chunks are *deactivated, never deleted*. That's rule one — **soft-deactivation** — because an audit-log citation from last year must still resolve to the exact text the user saw, for as long as the records policy says. When a document is **removed** at the source, it's tombstoned: invisible to retrieval the instant the transaction commits (the active-flag and ACL filters run before ranking, so there's no index rebuild to wait for), while the underlying files quietly ride out their retention period.
 
-Rule two: **the visibility flip is atomic.** Old chunks off, new chunks on, current-flag moved — one transaction. No query ever sees a document half-updated.
+Rule two: **the visibility flip is atomic.** Old chunks off, new chunks on, current-flag moved — one transaction. No query ever catches a document half-dressed.
 
-Rule three: **ACL changes outrank everything.** A revoked entitlement propagates within **five minutes**, monitored as a first-class alert, with a daily full re-sync sweeping up anything a missed webhook dropped. Stale content is embarrassing; stale permissions are a breach.
+Rule three: **ACL changes outrank everything.** A revoked entitlement propagates within **five minutes**, monitored as a first-class alert, with a daily full re-sync to sweep up anything a missed webhook dropped. Stale content is embarrassing; stale permissions are a breach.
 
-The slower layers refresh on their own cadence — wiki re-renders and link re-extraction nightly, cluster refresh and physical garbage collection weekly to monthly. And because deactivated vectors accumulate as dead weight in the vector index, a weekly recall check compares the index against a brute-force scan on a sample; if recall sags, that partition gets rebuilt in a maintenance window.
+The slower layers refresh on their own schedule — wiki re-renders and link re-extraction nightly, cluster refresh and physical garbage collection weekly to monthly. And because deactivated vectors pile up as dead weight in the vector index, a weekly recall check compares the index against a brute-force scan on a sample; if recall sags, that partition gets rebuilt during a maintenance window. Even indexes need a gym membership.
 
 ---
 
-## Trust, but Verify — Every Night
+## Trust, but Verify
 
-Two uncomfortable truths about RAG systems: they degrade quietly, and they hallucinate confidently. A connector fails silently on a Tuesday; nobody notices until someone asks about a document ingested in the gap. An embedding model update shifts rankings; recall drops three points with no error message anywhere.
+This system changes in two ways, and both can break it without making a sound. Engineers change the **code** — and no compiler complains when someone imports the database driver into the domain logic or bypasses the retrieval API "just this once." The **corpus** changes daily — and RAG systems degrade quietly while hallucinating confidently: a connector dies on a Tuesday and nobody notices until someone asks about a document from the gap; an embedding upgrade shuffles rankings and recall drops three points with no error message anywhere. Silence, it turns out, is not a good sign. Silence is just silence.
 
-**The solution is to treat evaluation like a nightly deployment gate, not a launch-week ritual.**
+**So verification runs at both timescales: every code change passes a pyramid of tests before it merges, and every day's corpus changes pass an evaluation gate before the night is out.**
 
-The yardstick is a **golden test suite**: 300+ real questions curated with Legal, Risk, Credit, and Operations, with known correct answers *and known correct citations*. It includes as-of temporal cases, adversarial permission-leak attempts, and — crucially — an **unanswerable set**: questions whose answers are deliberately absent, or locked behind entitlements, or only in superseded text. The correct response to those is abstention. A confident answer to an unanswerable question is a hallucination, caught in the act.
+### Guarding the code
+
+Rules that nothing enforces are wishes. And untested code develops a second disease: nobody dares touch it. A codebase that can't be safely changed is the pelmeni lump's final form — frozen solid. So every change runs the gauntlet:
+
+- **Unit tests** guard the functions: fast, isolated, no network, no database, dependencies faked at the port interfaces — which is only possible because the ports exist. Modularity pays its first dividend here.
+- **Module tests** guard the contracts: each module — connectors, parsing, chunking, retrieval, graph, wiki renderer — is tested in isolation through its **public API**, dependencies stubbed. If you can't write a module's tests without reaching into another module's internals, congratulations: you've found a boundary in the wrong place, cheaply.
+- **Integration tests** guard the real seams: SQL against an actual PostgreSQL in a disposable container (pinned by digest, naturally), and the pipeline end-to-end against a fixture corpus — a scanned PDF, a deck, a spreadsheet, a near-duplicate pair — confirming that ingestion, chunking, embedding, and retrieval still agree with each other.
+- **Architecture-conformance tests** guard the rules themselves. The mechanical rules go to mechanical tools: `import-linter` fails the build if domain code imports infrastructure; file-length, function-length, and docstring checks run in CI, tirelessly and without opinions. But some rules need *judgment* — is this new dependency direction legitimate? is this "utility module" quietly becoming a junk drawer? For those, **an AI agent reviews every change against the written architecture rules**, flags violations with the specific rule it believes is broken, and gates the merge like any failing test. Humans adjudicate disputes; the agent just makes sure erosion never happens *silently*.
+
+### Guarding the answers
+
+Code tests prove the machine works. A separate discipline proves it's still *right*. The yardstick is a **golden test suite**: 300+ real questions curated with Legal, Risk, Credit, and Operations, with known correct answers *and known correct citations*. It includes as-of temporal cases, adversarial permission-leak attempts, and — the fun part — an **unanswerable set**: questions whose answers are deliberately absent, locked behind entitlements, or found only in superseded text. The correct response is abstention. A confident answer to an unanswerable question is a hallucination caught red-handed.
+
+But where do test questions and grading criteria come from? The tempting shortcut is a conference-room checklist — "answers should be accurate, relevant, and clear, scored 1 to 10." Checklists born this way fail twice: the scores are too mushy to act on, and the criteria only cover failures somebody predicted. The system's actual failures have more imagination than that.
+
+**So the evals are grown from real outputs, not abstract principles.** During the pilot, evaluation starts with actual **traces** — the query, the routing decision, every chunk retrieved with its scores, the final answer — put in front of domain experts in a review interface where they annotate problems *in context*: the sentence that overstates, the citation that doesn't support its claim, the abstention that should have been an answer. **Failures get reviewed before criteria get written.** AI helps with the labor — clustering similar failures, surfacing patterns, drafting rubric items — but humans supply the taste: only Legal knows which paraphrase of a covenant is materially wrong.
+
+From those annotated traces, criteria emerge along two paths:
+
+- **Top-down criteria** encode what the task always required: every claim carries a citation; the abstention phrasing is exact; nothing in the answer comes from outside the retrieved context; format and policy hold.
+- **Bottom-up criteria** capture what the traces actually revealed — patterns no whiteboard session would have produced: *"quotes the superseded threshold when both versions were retrieved,"* *"merges two counterparties with similar names,"* *"answers from general legal knowledge instead of the documents."*
+
+Every criterion becomes a **specific pass/fail check, never a vague score** — not "faithfulness: 7/10" but "every numeric claim appears in a cited chunk: yes or no." Binary checks are debuggable: a failure points at exactly one thing to fix. And when the checks are automated with LLM judges, **each criterion gets its own judge pass** — one mega-prompt asked to verify twelve requirements will quietly forget a few; twelve small judges with one question each forget nothing.
+
+Then the flywheel closes: every validated failure pattern graduates into permanent machinery — a regression case in the golden suite, a CI check that runs before any prompt or model change ships, a dashboard series, a production monitor. The suite is the accumulated memory of every way the system has ever been caught being wrong. It only grows.
+
+### The nightly gate
 
 Every night, after the day's sync settles, the full suite runs against **production** indexes:
 
-- Results compare against a rolling 7-day baseline. Recall drops more than 2 points? Citation precision slips? Abstention correctness falls? **Any** permission leak? The gate trips: on-call is paged and ingestion freezes until a human understands why. A failed eval is a failed deploy.
-- A **reconciliation count** runs across three layers — source systems → registry → active chunks — so a silently failed connector shows up as a number that doesn't match, tonight, not at quarter-end.
-- A **self-retrieval probe** samples documents added or changed that day, generates a query from each one's own content, and verifies the document comes back. Proof that new content is *findable*, not merely stored.
+- Results compare against a rolling 7-day baseline. Recall down more than 2 points? Citation precision slipping? Abstention correctness off? **Any** permission leak at all? The gate trips: on-call gets paged and ingestion freezes until a human understands why. A failed eval is treated exactly like a failed deploy — because that's what it is.
+- A **reconciliation count** runs across three layers — source systems → registry → active chunks — so a silently dead connector shows up as a number that doesn't match *tonight*, not as a mystery at quarter-end.
+- A **self-retrieval probe** samples documents added or changed that day, generates a query from each one's own content, and verifies the document actually comes back. Proof that new content is *findable*, not merely stored somewhere warm.
 
-Hallucination gets its own continuous watch, because golden questions can't cover real traffic. A **self-hosted judge model** (nothing leaves the boundary) samples production answers daily and checks entailment — does each cited chunk actually support the claim it's attached to? The groundedness rate is trended and alerted. Abstention rates are watched in both directions: a sudden drop means the system got brave about things it shouldn't answer; a spike means retrieval degraded. And monthly, humans re-score a sample of the judge's verdicts, so the automated number stays worth reporting to Compliance.
+And because golden questions can't cover real traffic, hallucination gets a continuous watch: a **self-hosted judge model** samples production answers daily and checks entailment — does each cited chunk actually support the claim leaning on it? Abstention rates are watched in both directions: a sudden drop means the system got brave about things it shouldn't answer; a spike means retrieval got worse. And monthly, humans re-score a sample of the judge's verdicts — because a judge nobody audits stops being a judge.
+
+One principle at both timescales: **a failing test blocks the merge; a failing eval freezes ingestion. The system proves it still works after every change — or the change doesn't ship.**
+
+---
+
+## The System That Heals Itself
+
+Detection is only half a nervous system. At this scale, something is *always* slightly broken: a worker dies mid-parse, a file quietly rots on disk, a connector hiccups and drops an event, an index puts on dead weight. If every small failure needs a human, the on-call engineer becomes the system's immune system — and humans make terrible white blood cells. They sleep, they take vacations, they burn out. Meanwhile small failures wait in line, and small failures that wait long enough grow up to become incidents.
+
+**So the third guiding principle, alongside simplicity and modularity, is self-healing: when something goes wrong, the system cleans and repairs itself. Humans get paged for the exceptional, never for the routine.**
+
+The repair reflexes, most of which we've already met wearing other hats:
+
+- **A crashed worker heals by retry.** Every pipeline step is an idempotent job in the transactional queue; a dead worker's lock expires and the next worker simply picks the job up. Re-running a finished step is a no-op. Nobody restarts anything by hand at 3 a.m.
+- **A corrupted file heals from snapshots.** When the weekly scrub finds a file whose hash no longer matches the registry, it quarantines the file, restores the most recent snapshot copy that *does* verify, re-checks the hash, and files a report. The human reads the report over coffee, after the repair.
+- **A missed event heals by reconciliation.** The nightly three-layer count doesn't just detect gaps — it queues refetch jobs for every missing document. The daily full ACL re-sync does the same for dropped permission events. Detection and repair are one motion.
+- **A degraded index heals by rebuild.** When the weekly recall check finds a partition sagging under dead vectors, that partition gets re-indexed in the next maintenance window — scheduled automatically, mentioned in the morning summary.
+- **Everything derived heals by regeneration.** Wiki pages, symlink trees, summaries, chunks, whole indexes — all projections of the source of truth. The universal repair tool is gloriously dumb: throw the broken thing away and rebuild it. This is where the earlier principles pay compound interest — *parse once, everything downstream disposable* means self-healing rarely requires cleverness, just a rebuild job and patience.
+
+Self-healing has manners, though. Retries use backoff and give up after a set number of attempts — a job that keeps failing retires to a dead-letter state and pages a human, because infinite retry is not persistence, it's a tantrum. And two things are **never** repaired by automation guessing: entitlements and regulated records. Anything ambiguous in those neighborhoods escalates to people immediately. The system heals itself; it does not *improvise* itself.
+
+The quiet payoff: the team's time goes into making the system better, not holding it together. A platform that needs constant human attention isn't simple, no matter how few boxes are on its diagram.
 
 ---
 
 ## Answers You Can Take to a Regulator
 
-The generation step — the part everyone calls "the AI" — is deliberately the most constrained component in the system.
+The generation step — the part everyone points at and calls "the AI" — is deliberately the most constrained component in the entire system. It has the least freedom of anything described in this document, and that's a compliment.
 
-The model receives only the top-ranked, entitlement-filtered, section-expanded chunks, each wearing a header: document, page, version. The prompting contract is strict:
+The model receives only the top-ranked, entitlement-filtered, section-expanded chunks, each wearing a name tag: document, page, version. The contract is strict:
 
-- **Every factual claim carries a citation token**, validated by middleware against the chunks actually retrieved. An answer with an unverifiable citation is rejected before the user sees it. The model cannot cite what it wasn't given.
-- **Contradictions are surfaced, not smoothed over** — and when versions differ across time, presented as a timeline ("What Was True Last March?").
-- **Insufficient evidence gets an honest refusal:** *"The available documentation does not contain sufficient evidence to answer this inquiry."* The system is graded on saying this at the right times — that's what the unanswerable set is for.
+- **Every factual claim carries a citation token**, validated by middleware against the chunks actually retrieved. An answer with an unverifiable citation is rejected before any user sees it. The model cannot cite what it was never given — the bibliography is closed-book.
+- **Contradictions get surfaced, not smoothed over** — and when versions differ across time, they're presented as a timeline ("What Was True Last March?").
+- **Insufficient evidence gets an honest refusal:** *"The available documentation does not contain sufficient evidence to answer this inquiry."* The system is graded on saying this at the right moments — that's exactly what the unanswerable set is for. Saying "I don't know" well is a skill, and here it's a tested one.
 
-And everything is written down. Every query logs the user, their evaluated roles, the filters applied, every chunk ID retrieved with its scores, the model and prompt versions, the generated answer, and the rendered citations. Monthly partitions of this log are exported nightly to **write-once storage** with hash manifests — the export includes the chunk *text* itself, so the record remains self-contained even after some future re-chunking retires the IDs. Deletion happens through the records-management process on the retention schedule. Not through engineering. Ever.
+And everything is written down. Every query logs the user, their evaluated roles, the applied filters, every chunk ID retrieved with its scores, the model and prompt versions, the generated answer, and the rendered citations. Monthly partitions of this log are exported nightly to **write-once storage** with hash manifests — including the chunk *text* itself, so the record stays self-contained even after some future re-chunking retires the IDs. Deletion happens through the records-management process, on the retention schedule. Not through engineering. Ever.
 
 ---
 
 ## The Day Everything Goes Wrong
 
-Now the chapter nobody enjoys writing. Suppose the worst: a bad ACL sync poisons entitlements, an operator fat-fingers a `DROP TABLE`, ransomware hits, an availability zone burns. What survives?
+Now the section nobody enjoys writing. Suppose the worst — all of it, preferably on a Friday: a bad ACL sync poisons entitlements, an operator fat-fingers a `DROP TABLE`, ransomware arrives, an availability zone catches fire. What survives?
 
-First, an unpopular truth: **replicas are not backups.** A standby replica faithfully replays your `DROP TABLE` within milliseconds. Replication is for hardware failure; backups are for mistakes and malice.
+First, an unpopular truth: **replicas are not backups.** A standby replica will faithfully replay your `DROP TABLE` within milliseconds — that's its job, and it's very good at it. Replication protects against hardware failure. Backups protect against mistakes and malice, which have no SLA.
 
-The database ships every write to an archive continuously (point-in-time recovery to any second — losing at most an hour is the written objective) plus weekly full and daily incremental base backups. Backup storage lives in a **separate account with independent credentials**, so no single compromised admin can destroy both the data and its safety net. Volume snapshots — consistent by construction, thanks to the write-once discipline — are copied cross-AZ and **locked** against deletion, so even ransomware with admin keys can't erase the past. The audit archive is write-once by design.
+So: the database ships every write to an archive continuously (point-in-time recovery to any second — losing at most one hour is the written objective), plus weekly full and daily incremental base backups. Backup storage lives in a **separate account with independent credentials**, so no single compromised admin can torch both the data and its safety net in one evening. Volume snapshots — consistent by construction, thanks to the write-once discipline — are copied cross-AZ and **locked** against deletion: even ransomware holding admin keys can't erase the past. The audit archive is write-once by design.
 
-Restores follow a scripted order, because the database and the volume must agree: **database first** to the chosen moment, **volume snapshot from at-or-after** that moment (write-once means a newer snapshot only has harmless extras; an older one might be missing referenced files — newer is always safe, older never is), then a reconciliation pass that re-hashes every referenced file and queues re-fetches for gaps. **ACLs re-sync before the API reopens** — restoring stale entitlements would be a permission leak with a restore-runbook as the root cause.
+Restores follow a scripted order, because the database and the volume must agree with each other afterward: **database first**, to the chosen moment; **volume snapshot from at-or-after** that moment (write-once means a newer snapshot only carries harmless extras, while an older one might be missing referenced files — newer is always safe, older never is); then a reconciliation pass that re-hashes every referenced file and queues re-fetches for gaps. **ACLs re-sync before the API reopens** — restoring stale entitlements would be a permission leak with a runbook as the root cause, which is not a sentence anyone wants in a postmortem.
 
-And because a backup that's never been restored is a rumor: **a monthly automated restore test** rebuilds the database from backups in an isolated environment, verifies integrity, and runs the golden suite against it — with a failed restore paging on-call like a production outage. Quarterly, a full disaster-recovery drill runs the entire sequence against the clock, and the results go to Compliance and Business Continuity in writing.
+And because a backup that's never been restored is a rumor: **a monthly automated restore test** rebuilds the database in an isolated environment, verifies integrity, and runs the golden suite against it — a failed restore pages on-call like a production outage. Quarterly, a full disaster-recovery drill runs the whole sequence against a stopwatch, and the results go to Compliance and Business Continuity in writing.
 
-Recovery targets, stated plainly: lose at most one hour of data; be back in service within eight for a full-site event, faster for lesser failures.
+Recovery targets, stated plainly: lose at most one hour of data; be back within eight hours for a full-site event, faster for lesser disasters.
 
 ---
 
 ## How Big Is This, Really?
 
-The numbers that make the single-database bet rational:
+The numbers that make the single-database bet rational rather than reckless:
 
 **On the document volume:**
 
@@ -273,36 +345,88 @@ The numbers that make the single-database bet rational:
 | Audit log growth | ~2–5 GB/month |
 | **Steady state** | **~200–300 GB** |
 
-A single instance with 128–256 GB of RAM keeps the vectors and hot indexes in memory. Backups run 2–3× database size; the first volume snapshot equals used bytes, with small daily deltas after.
+A single instance with 128–256 GB of RAM keeps the vectors and hot indexes in memory, where they belong. Backups run 2–3× database size; the first volume snapshot equals used bytes, with small daily deltas after.
 
-Retrieval targets: **p95 under 1.5 seconds** for search, under 4.5 end-to-end. Ingestion: full backfill in weeks (bulk-loaded into unindexed tables, with indexes built once at the end — building indexes during a 25-million-row load is how backfills become quarter-long projects), then incremental sync in minutes thereafter.
+Speed targets: **p95 under 1.5 seconds** for retrieval, under 4.5 end-to-end. Ingestion: the full backfill lands in weeks — bulk-loaded into unindexed tables with the indexes built once at the end, because building indexes *during* a 25-million-row load is how a backfill becomes a quarter-long hostage negotiation. After that, incremental sync in minutes.
+
+---
+
+## Don't Chase the Latest Version
+
+One attack vector remains, and it's the one most teams leave wide open — enthusiastically, on purpose, every day.
+
+The whole design keeps data inside the firm's walls: self-hosted models, mounted volumes, private endpoints. And then a developer types `pip install`, and the build cheerfully reaches out to a public registry and downloads whatever was uploaded yesterday. By anyone. Modern supply-chain attacks live exactly there: a hijacked maintainer account ships a poisoned point-release; a typosquatted package waits patiently for one mistyped name; a backdoor hides in a build script — the 2024 `xz` incident came within weeks of shipping inside every major Linux distribution. The freshest package is the least reviewed package. "Latest" is not a version. It's a gamble.
+
+**The solution: every dependency goes through quarantine — pinned, aged, and verified.** Like new hires, packages need a probation period.
+
+**Python itself** comes from Homebrew (macOS or Linux), pinned to a major.minor line and upgraded on purpose, never by accident:
+
+```bash
+brew install python@3.12
+```
+
+**Environments and modules** are managed with `uv`, under two standing rules: nothing published in the last 30 days, and no prereleases. Let the rest of the world do the beta testing — they volunteer daily. In `pyproject.toml`:
+
+```toml
+[tool.uv]
+exclude-newer = "30 days"    # ignore anything published in the last month
+prerelease = "disallow"      # never alphas, betas, or release candidates
+```
+
+Upgrades become an explicit, reviewable act:
+
+```bash
+uv lock --upgrade
+uv sync
+```
+
+Or, for a `requirements.txt`-based flow:
+
+```bash
+uv pip install --upgrade   --exclude-newer "30 days" -r requirements.txt
+uv pip install --reinstall --exclude-newer "30 days" -r requirements.txt
+```
+
+The lockfile is committed, so every environment — laptop, CI, production worker — resolves to byte-identical, properly-aged packages. No surprises, which is the highest compliment in operations.
+
+**PostgreSQL follows the same rule.** Development machines run a pinned major line from Homebrew (`brew install postgresql@16`); production uses the official PGDG repositories with the version held explicitly. Minor releases get adopted a few weeks after they ship, once the ecosystem has kicked the tires. A brand-new major — the dreaded `.0` — never goes straight to production: wait for the first minors, and rehearse the upgrade on the monthly restore-test instance, which conveniently exists anyway.
+
+**Docker images get the strictest treatment**, because a tag is a promise nobody has to keep:
+
+- Official images only (`postgres`, `python`) — never the look-alikes.
+- Pinned **by digest**, not by tag — `postgres:16.6@sha256:…` — so the image cannot change underneath you. `:latest` is banned outright.
+- Pulled once into the firm's **internal registry**, scanned (Trivy/Grype) on the way in, and only then available to builds. Production hosts pull from the internal registry, never from the public one.
+
+The system guarding three million confidential documents should not be one `pip install` away from running last night's upload. So it isn't.
 
 ---
 
 ## The Road from Here
 
-The build order is chosen so that trust is earned before scale is attempted:
+The build order is chosen so that trust is earned before scale is attempted — prove it, then grow it:
 
 ![Delivery roadmap](assets/delivery-roadmap.svg)
 
-**Phase 0 (weeks 1–3)** lays foundations: storage, database, WAL archiving, ACL schema. **Phase 1 (weeks 4–8)** ingests a 500k-document pilot across two business units, builds the hybrid indexes, extracts links and effective dates, renders the first wiki — and runs the golden suite for the first time, while curators evaluate extraction quality on the same corpus they QA. **Phase 2 (weeks 9–12)** adds the guarded generation layer — citations, abstention, audit logging, WORM export — plus graph expansion, as-of retrieval, and the nightly evaluation gate, ending in Compliance/Legal/BC sign-off. **Phase 3 (weeks 13–16)** is the full backfill and load testing, bracketed by base backups and closed with the first timed DR drill. **Phase 4** is enterprise rollout — at which point the nightly gates, restore tests, and drills stop being milestones and become weather.
+**Phase 0 (weeks 1–3)** lays the foundations: storage, database, WAL archiving, ACL schema. **Phase 1 (weeks 4–8)** ingests a 500k-document pilot across two business units, builds the hybrid indexes, extracts links and effective dates, renders the first wiki — and runs the golden suite for the first time, while curators grade the extraction on the same corpus they're QA-ing anyway. **Phase 2 (weeks 9–12)** adds the guarded generation layer — citations, abstention, audit logging, WORM export — plus graph expansion, as-of retrieval, and the nightly evaluation gate, ending in Compliance/Legal/BC sign-off. **Phase 3 (weeks 13–16)** is the full backfill and load testing, bracketed by base backups and closed with the first timed DR drill. **Phase 4** is enterprise rollout — at which point the nightly gates, restore tests, and drills stop being milestones and simply become weather.
 
-v2 candidates wait behind evaluation evidence, in the spirit of the opening bet: LLM-based relationship extraction on high-value collections, thematic clustering with summary pages, and any migration past a scaling gate.
+v2 candidates wait patiently behind evaluation evidence, in the spirit of the opening bet: LLM-based relationship extraction on high-value collections, thematic clustering with summary pages, and any migration past a scaling gate.
 
 ---
 
 ## The Shape of the Thing
 
-Strip away the details and the design is six decisions:
+Strip away the details, and the whole design is eight decisions:
 
-1. **Simplicity above all.** The fewest moving parts that still deliver the functionality. Simplicity is what makes the project do-able, flexible, maintainable, and affordable — buildable by a small team, prototyped in weeks, run without a fleet of clusters or heavy hardware. Complexity is treated as the project's primary risk, admitted only through measured gates.
-2. **One system of record.** PostgreSQL holds truth — content indexes, entitlements, graph, queue, audit — so consistency is a transaction, not a distributed-systems project.
-3. **Parse once; everything downstream is disposable.** Originals and derivatives are permanent; chunks, vectors, indexes, and wiki are projections, rebuildable at will. This is what makes every future migration boring.
-4. **Search three ways** — meaning, keywords, structure — with time as a dimension, because each method catches what the others miss.
-5. **Security and provenance are load-bearing.** ACLs filter before ranking; citations verify before display; every answer leaves an immutable trail; abstention is a graded skill.
-6. **Trust is re-earned nightly.** Evaluation gates, reconciliation counts, hallucination sampling, restore drills — the system proves it still works after every day's changes, or it stops and says so.
+1. **Simplicity above all.** The fewest moving parts that still deliver the functionality. Simplicity is what makes the project do-able, flexible, maintainable, and affordable — buildable by a small team, prototyped in weeks, run without a fleet of clusters or heavy hardware. Complexity is the project's primary risk, admitted only through measured gates.
+2. **Modularity keeps the bets reversible.** Every capability sits behind a contract — retrieval behind an API, sources behind connector plugins, parsers behind the derivative format, models versioned per artifact — so any part can be changed, replaced, or removed without understanding the whole. Few parts, clean seams, no pelmeni.
+3. **One system of record.** PostgreSQL holds truth — content indexes, entitlements, graph, queue, audit — so consistency is a transaction, not a distributed-systems project.
+4. **Parse once; everything downstream is disposable.** Originals and derivatives are permanent; chunks, vectors, indexes, and wiki are projections, rebuildable at will. This is what makes every future migration boring — and boring migrations are the good kind.
+5. **Search three ways** — meaning, keywords, structure — with time as a dimension, because each method catches what the others miss.
+6. **Security and provenance are load-bearing.** ACLs filter before ranking; citations verify before display; every answer leaves an immutable trail; saying "I don't know" is a graded skill.
+7. **Trust is re-earned continuously.** A pyramid of tests gates every merge; evaluation gates, reconciliation counts, hallucination sampling, and restore drills gate every day. The system proves it still works after every change — or it stops and says so.
+8. **Self-healing by design.** Crashed jobs retry, corrupted files restore from verified snapshots, missed events refetch, degraded indexes rebuild, and every derived artifact can be regenerated from the source of truth. Humans are paged for the exceptional, never the routine — and nothing touching entitlements or records is ever repaired by guessing.
 
-A corpus of three million documents, one honest database, and a system designed to be *caught* being wrong before a user ever is. That's the design.
+A corpus of three million documents, one honest database, and a system designed to be *caught* being wrong before a user ever is — and to patch itself up before anyone has to ask. That's the design.
 
 ---
 
@@ -366,6 +490,8 @@ A corpus of three million documents, one honest database, and a system designed 
 | Embeddings | Self-hosted open models (BGE / E5 / Nomic class) on local GPUs | Data boundary; no per-token fees across 10B+ tokens |
 | Reranker | BGE-Reranker-Large cross-encoder; LLM rerank only as evaluated escalation | Precision on multi-hop clauses within the latency budget |
 | Retrieval API | Python FastAPI / asyncpg | Lightweight, typed, decoupled from agents |
+| Toolchain & dependencies | Homebrew-installed Python (pinned major.minor); `uv` with `exclude-newer = "30 days"` and `prerelease = "disallow"`; PGDG-pinned PostgreSQL; Docker images by digest via scanned internal registry | Supply-chain safety: aged, pinned, verified dependencies; no `:latest`, no day-old packages |
+| Testing | pytest (unit + module tests via public APIs with faked ports); containerized PostgreSQL for integration tests; fixture corpus for pipeline tests; `import-linter` + size/docstring checks in CI; AI-agent architecture-conformance review gating merges | Every layer guarded: functions, module contracts, real adapters, answer quality (golden suite), and the architecture rules themselves |
 | LLM inference | Private enterprise endpoint / self-hosted vLLM | Inside the VPC perimeter |
 | Backup & recovery | pgBackRest PITR + standby; locked cross-AZ snapshots; WORM audit exports | One-hour RPO; ransomware-resistant; restore path proven by drills |
 
@@ -378,7 +504,9 @@ A corpus of three million documents, one honest database, and a system designed 
 | Stale or wrong-period answers | Validity windows, as-of filtering, temporal/currency ranking boosts, supersession flags, as-of golden cases |
 | Hallucinated citations | Middleware validates every citation token against retrieved chunks; unanswerable-set testing; nightly judge sampling |
 | Silent ingestion failure / stale index | Nightly three-layer reconciliation; index-lag metric; self-retrieval probes |
+| Routine transient failures (crashed workers, corrupt files, missed events, index bloat) | Self-healing: idempotent retries with backoff, automatic quarantine-and-restore from verified snapshots, reconciliation-driven refetch, automatic partition reindex, regeneration of derived artifacts; dead-letter + page only after retries are exhausted; entitlements and records always escalate to humans |
 | Quality regression after updates | Nightly golden-suite gate vs. 7-day baseline; page + ingestion freeze on trip |
+| Architecture erosion in code | `import-linter` + size/docstring checks in CI; AI-agent conformance review on every merge |
 | Document volume loss/corruption | Locked cross-AZ snapshots; write-once discipline; hash scrub |
 | PostgreSQL loss / logical corruption | Continuous WAL archiving + PITR; standby for failover; monthly restore tests |
 | Audit record loss | Monthly partitions exported nightly to WORM with hash manifests; records-policy-only deletion |
