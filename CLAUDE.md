@@ -9,3 +9,4 @@ The following rules apply to all work in this repository:
 - @.claude/rules/skill_naming_hyphens.md
 - @.claude/rules/update_docs.md
 - @.claude/rules/web_development.md
+- @.claude/rules/writing_prose.md
