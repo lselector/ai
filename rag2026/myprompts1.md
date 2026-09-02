@@ -353,5 +353,24 @@ both in this repo and under $HOME/.claude
 
 --------------------------------------------
 
+In the root of this repository there are two files:
+  writing_humanize_skill.md
+  writing_book.md
+
+I am thinking about combining them into 
+one skill called "humanize"
+
+What do you suggest?
+
+OK, build it.
+Create the merged `SKILL.md`, the rules stub, the `CLAUDE.md` reference line, and delete the two root-level files — then mirror it to `$HOME/.claude`.
+
+--------------------------------------------
+
+Please apply the humanize skill 
+
+/Users/levselector/Documents/GitHub/ai/.claude/skills/humanize/SKILL.md
+
+to the md docs in this directory ai/rag2026/
 
 --------------------------------------------
