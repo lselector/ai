@@ -329,11 +329,27 @@ Please update the design doc
 
 --------------------------------------------
 
+Please create a markdown document
+
+how_to_create_a_design_doc.md
+
+with instructions how to create a software architecture design document.
+
+Please use two files to guide you:
+
+myprompts.md - prompts I have used
+rag-knowledge-base-design.md - the final doc
+
+The final doc is for creating RAG system.
+I want you to create instructions which may be used to createe any other system. The guiding principles 
+(like simplicity, modularity, etc.) should stay the same.
+The instructions on using story style (sequence of problem-solution parts) stays the same. etc.
 
 
 --------------------------------------------
 
-
+Please update the  .claude/skills/design-doc/SKILL.md 
+both in this repo and under $HOME/.claude
 
 --------------------------------------------
 

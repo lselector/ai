@@ -39,8 +39,8 @@ they die from drowning in their own plumbing.
 
 ## What This Does NOT Mean
 
-- Do not sacrifice required functionality, correctness, security, or auditability
-  in the name of simplicity. The goal is the *simplest solution that fully works* —
+- Do not sacrifice required functionality, correctness, security, or auditability in the name of simplicity. 
+ The goal is the *simplest solution that fully works* —
   not the simplest solution.
-- Do not conflate "simple" with "quick hack". Simple designs are usually
-  the result of more thought, not less.
+
+- Do not conflate "simple" with "quick hack". Simple designs are usually the result of more thought, not less.

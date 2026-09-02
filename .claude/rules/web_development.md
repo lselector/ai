@@ -1,5 +1,4 @@
 
-
 For web developemnt, please do NOT use any javascript frameworks.
 Please use only plain standard vanilla javascript.
 
