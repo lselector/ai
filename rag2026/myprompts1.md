@@ -374,3 +374,50 @@ Please apply the humanize skill
 to the md docs in this directory ai/rag2026/
 
 --------------------------------------------
+
+Please make the following changes to the design-doc-how-to.md:
+
+Include AI as the main component of any system.
+Any part of the design process and of working system should use AI agent with knowledge base and memory.
+
+The three main principles:
+   simplicity, modularity, AI
+
+Please make the corresponding change to rag-knowledge-base-design document. 
+
+When a user works with working RAG system, it should have memory of previous requests - helping to iteratively refine the answers
+
+--------------------------------------------
+
+Please confirm that self-healing is an also an important part of the design
+
+--------------------------------------------
+
+Make sure that these main principles are reflected in the design docs:
+
+Simplicity - above all, the fewest moving parts that still deliver full functionality
+Modularity - separate, don't allow "clumping of dumplings" - every capability behind a contract (API, plugin, port); loose coupling, encapsulation, bounded contexts; any part can be changed, replaced, or tested separately 
+Modularity of code - subdirectories, files ≤ 800 lines, functions ≤ 50, docs at every level, a README per directory.
+AI agent - available to all users and maintainers.  Talk to it to quickly  build mini-tools and workflows, schedule and run jobs, do analysis, create reports and docs
+Self-healing - timeout and retry, snapshots/restore, degraded indexes rebuild; humans are paged as needed
+One system of record - PostgreSQL holds all transactional truth
+
+Avoid distributed architectures - Use single server instead of cluster. Use unix drive instead of of S3.
+Parse once - everything downstream is disposable and easy to regenerate
+for RAG use Hybrid 3-way search - semantic (vectors) + keyword (BM25) + structure (document graph / wiki links)
+Security and provenance - ACLs filter in SQL before ranking; every claim carries a verified citation; every answer leaves an immutable audit trail
+Test pyramid - unit, module, integration, AI architecture-conformance, each PR verified by AI; a golden-suite evaluation gate, reconciliation counts, and hallucination sampling gate every day
+Monkey Business - every escalation to a human becomes a "monkey" - a task with an owner, status, and history; Users can see and manage their own monkeys and pass or escalate them; managers see everything; no failure is orphaned
+Guardrails assure that generated code and processes reach data only through the documented, audited APIs (ACLs apply automatically) and passes the same CI, size, and conformance gates as human-written code
+Don't chase the latest versions of software packages and dependencies - use only "aged" (30 days)
+
+--------------------------------------------
+
+It would be nice to add a list of main principles somewhere in the beginning of the rag-knowledge-base-design document before diving into the story and problem-solution chain.
+
+Please add this in the document, and also update the design-doc-how-to and skill
+
+--------------------------------------------
+
+
+--------------------------------------------

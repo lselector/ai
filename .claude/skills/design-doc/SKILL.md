@@ -1,6 +1,6 @@
 ---
 name: design-doc
-description: Create and iteratively evolve a software architecture design document — formal spec first, then Q&A-driven refinement, a consolidation pass, an optional story-style rewrite for human readability, and polished PDF output. Carries the durable principles (simplicity, modularity, self-healing, continuous verification, supply-chain discipline) that every such document should state. Use when the user asks to create, review, improve, or rewrite a design document, architecture document, or technical proposal.
+description: Create and iteratively evolve a software architecture design document — formal spec first, then Q&A-driven refinement, a consolidation pass, an optional story-style rewrite for human readability, and polished PDF output. Carries the durable principles (simplicity, modularity, AI, self-healing, continuous verification, supply-chain discipline) that every such document should state. Use when the user asks to create, review, improve, or rewrite a design document, architecture document, or technical proposal.
 ---
 
 # Creating a Software Architecture Design Document
@@ -45,11 +45,31 @@ requirement it satisfies is an opinion with diagrams.
    the real established equivalent.
 6. **Markdown is the source of truth.** PDFs, HTML, and rendered
    diagrams are projections — regenerate, never hand-edit.
+7. **Run the process with an agent that remembers.** Keep the PRD, the
+   current draft, the requirement IDs, and the code in the agent's
+   knowledge base, and the decisions already made and rejected in its
+   memory. Thirty rounds is a lot of rounds, and without memory the
+   later ones re-propose what the early ones ruled out.
 
 ## The Principles Catalog
 
 Make sure the document states these, adapted to the domain. They are
 the durable core that transfers to any system.
+
+**Three of them are the main ones: simplicity, modularity, AI.**
+Simplicity decides how many parts the system has, modularity decides how
+they touch each other, and AI decides what they are made of: an agent
+with a knowledge base and a memory is a component designed in from the
+start, not a chat box stapled on at the end. The ones from 6 onward are
+principles too, not footnotes; the trio just comes first because the
+rest are easier to get right once those three are settled.
+
+**Print whichever set the document lands on as a list near the front**,
+before the narrative starts (Phase 1, section 4). One line per
+principle, main ones first, no reasoning: the reasoning is what the rest
+of the document is for. A reader with ten minutes gets the whole
+argument; a reviewer gets a checklist, which turns "I don't love this
+design" into "section 9 contradicts principle 2."
 
 1. **Simplicity is the guiding principle.** The simplest architecture
    that still delivers the *full* functionality — the fewest moving
@@ -62,6 +82,13 @@ the durable core that transfers to any system.
    SQL join over a new service. *Complexity must justify itself with
    evidence; simplicity is the default.* Not minimalism: never sacrifice
    required functionality, correctness, security, or auditability.
+   Sharpest form: **avoid distributed architectures.** One server
+   instead of a cluster, a mounted filesystem instead of an object
+   store, a table instead of a message broker. Distribution charges for
+   sharding, quorums, eventual consistency, and split brains whether
+   you use them or not, and one modern machine is enormous. Start on
+   one, write the gate, let measurement decide when to leave. A standby
+   for failover is insurance, not distribution.
 2. **Bets are falsifiable — write scaling gates.** Each simplification
    gets a measurable threshold at which you'd change your mind ("chunk
    count above 50M; p95 above 2s despite tuning"). Turns "will it
@@ -88,36 +115,73 @@ the durable core that transfers to any system.
    and class; code split into subdirectories along module boundaries
    with **a `README.md` per directory** stating what it owns, its public
    API, and its dependencies.
-5. **One system of record.** Name the single place truth lives.
+5. **AI is a component, not a feature.** Assume an AI agent inside every
+   part of the system, and inside the process that designs it. A chat
+   box in the corner of the UI is a feature; this is different. Every
+   agent in the document gets three things named: **a knowledge base**
+   (it answers from retrieved, cited material, filtered by the identity
+   it acts for, never from what the model absorbed in training), **a
+   memory** (short-term thread memory so a follow-up like "now just
+   Europe" is understood and requests refine iteratively; longer-term
+   profile memory of what this user asked, preferred, and flagged as
+   wrong), and **tools behind contracts** (the same documented, audited
+   APIs everything else calls, no private tunnel to the database).
+   **The agent serves everyone the system serves**, users and
+   maintainers alike: ask it in plain language to build a mini-tool or
+   saved view, compose and schedule a job or workflow, run an analysis,
+   or draft a report or document. Scope by role, not privilege
+   (operators get data-plane jobs, everyone else read-only artifacts),
+   under one guardrail: **everything generated reaches data only
+   through the documented, audited APIs**, so entitlements and audit
+   apply automatically and a generated page cannot see what its author
+   can't, and it passes the same CI, size, and conformance gates as
+   hand-written code.
+   Memory gets its own rules, because it is somebody's business sitting
+   outside the place where access control lives: scoped to one identity
+   and re-filtered by the ACL on every read, so it can never outlive a
+   permission; **context, never evidence** (it steers retrieval and
+   resolves pronouns, it does not supply facts, and when memory and the
+   corpus disagree the corpus wins); visible and erasable by the user;
+   a disposable projection; and retention-bounded with the numbers
+   written down. Models are **versioned data behind a port**: record
+   which model produced which artifact, so a better one next year is a
+   swap and a re-run. Same limit as self-healing: agents draft,
+   retrieve, explain, classify, and flag, but never decide anything
+   expensive alone. And the same shape applies to writing the document:
+   work with an agent whose knowledge base is the PRD, this skill, the
+   current draft, and the code, and whose memory holds the decisions
+   already made and the options already rejected, or round nineteen
+   re-proposes what round four threw out.
+6. **One system of record.** Name the single place truth lives.
    Everything else is a copy, cache, or projection — and **projections
    are never hand-edited**; they render from the source and can be
    deleted and regenerated.
-6. **Do the expensive work once; everything downstream is disposable.**
+7. **Do the expensive work once; everything downstream is disposable.**
    Identify the step costing weeks of compute (parsing, training,
    enrichment); store its output permanently; everything after reads
    from *that*. This is what makes future migrations boring.
-7. **Boring technology — and justify the language.** Someone will ask
+8. **Boring technology — and justify the language.** Someone will ask
    "why not rewrite it in <faster language>?" Answer it in the document:
    where does time actually go (if hot paths are already C/CUDA/the
    database, rewriting glue speeds up the glue, and the glue was never
    the bottleneck); where does the ecosystem live; who maintains it; and
    note that modularity keeps it reversible — a measured CPU-bound
    module can be swapped behind the same contract later.
-8. **Trust is re-earned continuously** — see [Verification](#verification-two-timescales).
-9. **Self-healing.** At scale something is always slightly broken. If
-   every small failure needs a human, on-call becomes the immune system
-   — and humans make terrible white blood cells. So: crashed worker →
-   idempotent retry from a transactional queue; corrupted file →
-   quarantine, restore from the most recent *verifying* snapshot,
-   re-check, file a report the human reads after the repair; missed
-   event → reconciliation queues the refetch (detection and repair are
-   one motion); degraded index → automatic rebuild in the next
-   maintenance window; anything derived → throw it away and regenerate.
-   **Manners:** backoff, finite retries, dead-letter + page (infinite
-   retry is not persistence, it's a tantrum). Name what is **never**
-   auto-repaired — typically permissions, money, regulated records. *The
-   system heals itself; it does not improvise itself.*
-10. **Don't chase the latest version.** The freshest package is the
+9. **Trust is re-earned continuously** — see [Verification](#verification-two-timescales).
+10. **Self-healing.** At scale something is always slightly broken. If
+    every small failure needs a human, on-call becomes the immune system
+    — and humans make terrible white blood cells. So: crashed worker →
+    idempotent retry from a transactional queue; corrupted file →
+    quarantine, restore from the most recent *verifying* snapshot,
+    re-check, file a report the human reads after the repair; missed
+    event → reconciliation queues the refetch (detection and repair are
+    one motion); degraded index → automatic rebuild in the next
+    maintenance window; anything derived → throw it away and regenerate.
+    **Manners:** backoff, finite retries, dead-letter + page (infinite
+    retry is not persistence, it's a tantrum). Name what is **never**
+    auto-repaired — typically permissions, money, regulated records. *The
+    system heals itself; it does not improvise itself.*
+11. **Don't chase the latest version.** The freshest package is the
     least reviewed package; "latest" is not a version, it's a gamble.
     Every dependency is pinned, aged, verified: runtime from a pinned
     major.minor (`brew install python@3.12`); packages via `uv` with
@@ -127,7 +191,7 @@ the durable core that transfers to any system.
     the official repo, never a fresh `.0` in production; container
     images official-only, **pinned by digest** (`:latest` banned),
     pulled once into an internal registry and scanned on the way in.
-11. **Don't forget the humans.** A system without windows gets operated
+12. **Don't forget the humans.** A system without windows gets operated
     by SSH — an incident waiting for a typo. Include a **command
     center** (health, lag, quality trends, reconciliation deltas, what
     self-healing did overnight; plus start/pause/re-run controls), an
@@ -140,16 +204,21 @@ the durable core that transfers to any system.
     style: **vanilla JavaScript, no frameworks, no build step**; small ES
     modules, same size/doc limits as the backend; **all styles in one
     `styles.css`**.
-12. **Give the work an owner.** Maintenance work needs owners, statuses,
+13. **Give the work an owner.** Maintenance work needs owners, statuses,
     and handoffs, or it lives in email threads and in the heads of
     people who might be on a beach. Add a maintainer task system (the
     reference project calls a task a "monkey" — the next move). The
     tasks already exist: exhausted retries → dead-letter *becomes a
     task*; eval gate trips → task with the regression report; user flags
     a result → task with the trace; scrub/reconciliation failures →
-    tasks. The immune system files tickets. Mechanics: each person sees
-    their own; vacation transfers the whole set in one action; a group
-    dashboard shows who's drowning. Keep it a **separate app** so the
+    tasks. The immune system files tickets. **No failure is orphaned:**
+    every escalation path ends at a task with an owner, a status, and a
+    history, and a task without an owner is itself an alert. Mechanics:
+    each person sees and manages their own; vacation transfers the whole
+    set in one action; tasks **escalate** to a group or manager when the
+    answer is above someone's pay grade; managers see everything; the
+    person who reported a problem can see what happened to it. Keep it a
+    **separate app** so the
     core service stays lean while the workbench evolves at business
     speed. Maintainers may **vibe-code** their own tools — with
     guardrails, not a leash: inside the maintainers' app, only through
@@ -222,28 +291,34 @@ learn things):
 2. **Executive summary** — 3–5 short paragraphs: scale headline, key
    bets, resource footprint. Write it last, place it first.
 3. **Table of contents** with working anchors.
-4. **The problem** — what's broken today, concretely; then the fine
+4. **The principles, at a glance** — the whole argument as a scannable
+   numbered list, one line each, main principles first. Terse; the
+   reasoning belongs to the sections that follow.
+5. **The problem** — what's broken today, concretely; then the fine
    print constraints (compliance, scale, latency, cost, residency).
-5. **Explicit non-goals** — what v1 deliberately does *not* do. The
+6. **Explicit non-goals** — what v1 deliberately does *not* do. The
    cheapest scope protection there is.
-6. **The simplicity bet** — the architecture, why this few parts, the
+7. **The simplicity bet** — the architecture, why this few parts, the
    scaling gates, the language justification.
-7. **Modularity** — seams, contracts, dependency direction, code rules.
-8. **Storage and data model** — with actual DDL/schemas, plus durability
-   disciplines (content addressing, write-once) where relevant.
-9. **Processing pipeline** — with the "expensive work once" boundary
-   marked.
-10. **Core domain sections** — three to six, specific to the system.
-11. **Lifecycle** — add / update / remove propagation.
-12. **Verification** — test pyramid + evaluation gate.
-13. **Self-healing** — reflexes and their limits.
-14. **Correctness contract** — what the output guarantees, and what the
+8. **Modularity** — seams, contracts, dependency direction, code rules.
+9. **The AI layer** — every agent the system contains: what knowledge
+   base grounds it, what it remembers and for how long, which APIs it
+   may call, and where a human has to sign. One table is often enough.
+10. **Storage and data model** — with actual DDL/schemas, plus durability
+    disciplines (content addressing, write-once) where relevant.
+11. **Processing pipeline** — with the "expensive work once" boundary
+    marked.
+12. **Core domain sections** — three to six, specific to the system.
+13. **Lifecycle** — add / update / remove propagation.
+14. **Verification** — test pyramid + evaluation gate.
+15. **Self-healing** — reflexes and their limits.
+16. **Correctness contract** — what the output guarantees, and what the
     system does when it doesn't know.
-15. **Human interfaces.** 16. **Task ownership.** 17. **Disaster
-    recovery.** 18. **Sizing.** 19. **Dependency discipline.**
-20. **Roadmap** — phases with timeframes; trust-building work
+17. **Human interfaces.** 18. **Task ownership.** 19. **Disaster
+    recovery.** 20. **Sizing.** 21. **Dependency discipline.**
+22. **Roadmap** — phases with timeframes; trust-building work
     (evaluation, sign-offs, DR drills) scheduled *before* scale-out.
-21. **The shape of the thing** — the design distilled to 6–8 numbered
+23. **The shape of the thing** — the design distilled to 6–8 numbered
     decisions, simplicity first. Executives read this section; make it
     the best writing in the document.
 
@@ -271,6 +346,13 @@ before a reviewer has to ask:
   minutes-scale SLA, their own alert, and a daily full re-sync.
 - **Continuous evaluation** — its own section, not a paragraph.
 - **Self-healing** — its own section.
+- **What the agent remembers.** Memory gets designed in the demo and
+  forgotten in the document. It has a lifecycle too: who it belongs to,
+  what it may contain, how long it lives, who can read it, how a user
+  inspects and erases it, and what happens to it when that user's
+  permissions change. Write those six answers down. An undocumented
+  memory store is a personal-data question waiting to be asked by
+  someone with a clipboard.
 - **Backup and recovery.** Open with the unpopular truth: **replicas are
   not backups** — a standby faithfully replays your `DROP TABLE` in
   milliseconds. Specify data tiers (irreplaceable vs. reconstructible),
@@ -310,7 +392,10 @@ are reusable prompts.
   added/removed/updated including every derived artifact; describe how
   accuracy and completeness are evaluated after daily updates; does the
   design include an interface for humans; does it prescribe unit,
-  module, integration, and AI-agent architecture-conformance tests.
+  module, integration, and AI-agent architecture-conformance tests; does
+  the running system remember a user's previous requests so answers can
+  be refined iteratively, and is that memory scoped, retained, and
+  erasable.
 - **Principle injections** — the user names a principle, states the
   reasoning in their own words, and asks for it in problem→solution
   form. Deliver it that way; principles inserted like this land as
@@ -364,6 +449,9 @@ Style rules:
 - **Use words the readers know.** "Avoiding the Pelmeni Architecture"
   became "Don't Let the Dumplings Fuse" — and the metaphor got sharper.
   **If a metaphor needs a footnote, replace it.**
+- **Bookend the story:** principles up front (what we believe),
+  decisions at the end (what we did about it). Different in kind, or
+  the reader reads the same page twice.
 - **Close with "the whole design is N decisions."**
 - **Formal material becomes appendices.**
 
@@ -398,6 +486,14 @@ Also fix mechanical damage found along the way: corrupted escape
 sequences (`\r`/`\t` eaten from `$\rightarrow$`), image paths pointing
 at directories that don't exist, anchors broken by renamed headings.
 
+**Known trap, fails silently and only in the PDF: WeasyPrint ignores
+the HTML `start` attribute on ordered lists.** Pandoc emits
+`<ol start="4">`, GitHub renders it right, the PDF restarts at 1, so a
+numbered list split by a paragraph prints 1,2,3,1,2,3. Don't split
+numbered lists; keep one continuous list and carry the grouping in the
+lead sentence, or inject `style="counter-reset: list-item N"` on the
+second `<ol>` at build time. Verify rendered *numbers*, not just text.
+
 ## Anti-Patterns
 
 | Anti-pattern | Fix |
@@ -411,6 +507,8 @@ at directories that don't exist, anchors broken by renamed headings.
 | **The changelog header** | Delete it. Git remembers |
 | **Accretion bloat** | Run the consolidation pass every ~20% growth |
 | **The unread masterpiece** — technically perfect, nobody finishes it | Story rewrite |
+| **AI as garnish** — the agent appears twice: in the summary, and as a chat box in a corner of the UI | Name every agent, its knowledge base, its memory, and its limits |
+| **The amnesiac assistant** — every session starts from zero; the user re-types context given five minutes ago | Give the agent memory, scoped per user, with retention and an erase button |
 | **Machines only** — no dashboard, no chat, no task list | Human interfaces; give the work an owner |
 | **The footnoted metaphor** | If it needs a footnote, replace it |
 | **Stale PDF** | Regenerate every time |
@@ -419,10 +517,18 @@ at directories that don't exist, anchors broken by renamed headings.
 
 - Scale, cost, and "how big is this really?" answered **with numbers**,
   arithmetic shown.
+- **The principles appear as a scannable list near the front**, before
+  the narrative starts, one line each, main ones first.
 - **Simplicity** stated as a principle; every component earns its place
-  against it; every bet has a **written scaling gate**.
+  against it; every bet has a **written scaling gate**; if the
+  architecture is distributed, the document says why one machine wasn't
+  enough.
 - **Modularity** specified at both levels — contracts between modules,
   size and doc limits inside them.
+- **AI** designed in rather than bolted on: every agent has a named
+  knowledge base, a defined memory (scope, retention, erasure), tools
+  reachable only through the audited APIs, and a written list of what it
+  may never decide alone.
 - **Lifecycle** (add/update/remove propagation) described, not just
   steady-state architecture.
 - **Verification** covers both timescales: a test pyramid gating merges,
@@ -430,7 +536,10 @@ at directories that don't exist, anchors broken by renamed headings.
 - **Self-healing** reflexes listed, with what is never auto-repaired.
 - **Backup and recovery** states RPO/RTO, restore ordering, and a
   restore-testing schedule.
-- **Humans** have interfaces; maintenance work has owners.
+- **Humans** have interfaces; maintenance work has owners, handoffs,
+  and escalation; managers see everything; **no failure is orphaned**.
+- **Generated code and workflows** reach data only through the
+  documented, audited APIs and pass the same gates as hand-written code.
 - **Dependencies** pinned, aged, verified. **Non-goals** explicit.
 - Closes with **N decisions** anyone can quote.
 - A newcomer reads it in one sitting; an implementer builds from it plus

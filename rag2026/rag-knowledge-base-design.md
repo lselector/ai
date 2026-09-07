@@ -6,28 +6,52 @@ Status: Draft (pending approval) · Date: 2026-08-27
 
 ## Contents
 
-1. [The Problem Nobody Wants to Own](#the-problem-nobody-wants-to-own)
-2. [The Temptation of Shiny Infrastructure](#the-temptation-of-shiny-infrastructure)
-3. [Don't Let the Dumplings Fuse](#dont-let-the-dumplings-fuse)
-4. [Where Do Three Million Files Live?](#where-do-three-million-files-live)
-5. [Teaching the System to Read](#teaching-the-system-to-read)
-6. [The Art of Breaking Documents Apart](#the-art-of-breaking-documents-apart)
-7. [Three Ways to Find a Needle](#three-ways-to-find-a-needle)
-8. [The Web Between the Documents](#the-web-between-the-documents)
-9. [What Was True Last March?](#what-was-true-last-march)
-10. [The Corpus Never Sits Still](#the-corpus-never-sits-still)
-11. [Trust, but Verify](#trust-but-verify)
-12. [The System That Heals Itself](#the-system-that-heals-itself)
-13. [Answers You Can Take to a Regulator](#answers-you-can-take-to-a-regulator)
-14. [Three Doors for Humans](#three-doors-for-humans)
-15. [Monkey Business](#monkey-business)
-16. [The Day Everything Goes Wrong](#the-day-everything-goes-wrong)
-17. [How Big Is This, Really?](#how-big-is-this-really)
-18. [Don't Chase the Latest Version](#dont-chase-the-latest-version)
-19. [The Road from Here](#the-road-from-here)
-20. [The Shape of the Thing](#the-shape-of-the-thing)
+1. [The Principles](#the-principles)
+2. [The Problem Nobody Wants to Own](#the-problem-nobody-wants-to-own)
+3. [The Temptation of Shiny Infrastructure](#the-temptation-of-shiny-infrastructure)
+4. [Don't Let the Dumplings Fuse](#dont-let-the-dumplings-fuse)
+5. [The Agent That Remembers](#the-agent-that-remembers)
+6. [Where Do Three Million Files Live?](#where-do-three-million-files-live)
+7. [Teaching the System to Read](#teaching-the-system-to-read)
+8. [The Art of Breaking Documents Apart](#the-art-of-breaking-documents-apart)
+9. [Three Ways to Find a Needle](#three-ways-to-find-a-needle)
+10. [The Web Between the Documents](#the-web-between-the-documents)
+11. [What Was True Last March?](#what-was-true-last-march)
+12. [The Corpus Never Sits Still](#the-corpus-never-sits-still)
+13. [Trust, but Verify](#trust-but-verify)
+14. [The System That Heals Itself](#the-system-that-heals-itself)
+15. [Answers You Can Take to a Regulator](#answers-you-can-take-to-a-regulator)
+16. [Three Doors for Humans](#three-doors-for-humans)
+17. [Monkey Business](#monkey-business)
+18. [The Day Everything Goes Wrong](#the-day-everything-goes-wrong)
+19. [How Big Is This, Really?](#how-big-is-this-really)
+20. [Don't Chase the Latest Version](#dont-chase-the-latest-version)
+21. [The Road from Here](#the-road-from-here)
+22. [The Shape of the Thing](#the-shape-of-the-thing)
 
 Appendices: [A. Requirements Reference](#appendix-a-requirements-reference) · [B. Technology Choices](#appendix-b-technology-choices) · [C. Risk Register](#appendix-c-risk-register-condensed)
+
+---
+
+## The Principles
+
+Every decision in this document traces back to one of these. They are listed here so a reader can see the whole argument in a minute, and so a reviewer can check any section against the rule it claims to follow. **The first three are the ones everything else hangs from**; the rest follow from them.
+
+1. **Simplicity above all.** The fewest moving parts that still deliver the full functionality. In particular, **no distributed architecture**: one server rather than a cluster, a mounted Unix filesystem rather than an object store, a database table rather than a message broker.
+2. **Modularity.** Every capability behind a contract (API, plugin, port), with loose coupling, encapsulation, and bounded contexts, so any part can be changed, replaced, or tested on its own. The same discipline reaches into the code: subdirectories per module, files under 800 lines, functions under 50, docs at every level, a `README.md` per directory.
+3. **AI as a component, not a feature.** Agents run through the whole system and through the process that designed it, each with a knowledge base it must cite, a memory scoped to one identity, and tools reachable only through the audited APIs. The agent is available to **every user and every maintainer**: talk to it to build mini-tools and workflows, schedule and run jobs, run analyses, and draft reports and documents.
+
+4. **Self-healing.** Timeouts and retries, snapshots and restore, degraded indexes rebuilt, derived artifacts regenerated. Humans get paged as needed, never for the routine.
+5. **One system of record.** PostgreSQL holds all transactional truth. Everything else is a copy, a cache, or a projection, and is labeled as such.
+6. **Parse once.** The expensive work happens a single time; everything downstream is disposable and cheap to regenerate.
+7. **Search three ways.** Semantic vectors for meaning, BM25 for the exact string, the document graph for structure, with time as a dimension across all three.
+8. **Security and provenance are load-bearing.** ACLs filter in SQL before ranking; every claim carries a verified citation; every answer leaves an immutable audit trail; "I don't know" is a graded skill.
+9. **Verify continuously.** Unit, module, integration, and AI conformance tests gate every merge. A golden-suite evaluation gate, reconciliation counts, and hallucination sampling gate every day.
+10. **No failure is orphaned.** Every escalation becomes a monkey: a task with an owner, a status, and a history. People manage and hand off their own, escalate what's above their pay grade, and managers see the whole troop.
+11. **Guardrails on generated work.** Anything an AI generates reaches data only through the documented, audited APIs, so entitlements and audit apply automatically, and it passes the same CI, size, and conformance gates as human-written code.
+12. **Nothing arrives unvetted.** Dependencies are pinned, aged 30 days, and verified. "Latest" is not a version, it's a gamble.
+
+The rest of this document is the story of how each principle earned its place, told as the problems that forced it. ["The Shape of the Thing"](#the-shape-of-the-thing) at the end distills what the principles produced.
 
 ---
 
@@ -65,7 +89,9 @@ So this design adopts **simplicity as its guiding principle**: the simplest, mos
 
 And here's the delicious part: the numbers say we can get away with it. Our corpus, big as it feels, produces about **20 to 25 million searchable chunks**. That is not "big data." For a well-fed PostgreSQL instance, that's a Tuesday.
 
-**So the solution is a bet on gloriously boring technology:** one PostgreSQL cluster holds everything transactional: the document registry, the entitlements, the search indexes (vector *and* keyword), the job queue, and the audit log. The team already knows how to run PostgreSQL. Access control becomes a SQL join instead of a distributed-systems research project. There is exactly one source of truth, and everyone knows its address.
+**So the solution is a bet on gloriously boring technology:** one PostgreSQL server holds everything transactional: the document registry, the entitlements, the search indexes (vector *and* keyword), the job queue, and the audit log. The team already knows how to run PostgreSQL. Access control becomes a SQL join instead of a distributed-systems research project. There is exactly one source of truth, and everyone knows its address.
+
+Which brings out the sharp edge of the simplicity principle: **avoid distributed architectures.** One server, not a cluster. A standby exists for failover and it does nothing but wait, because that is high availability, not distribution. Documents live on a mounted Unix filesystem, not in an object store, so a parser opens a file instead of negotiating with an API over the network. Nothing here is sharded, gossiped, quorum-voted, or eventually consistent. Every one of those words is a research project wearing a product name, and each buys a class of failure that only shows up in production, at scale, on a holiday weekend. A single server handles this corpus with room to spare, and the machine that isn't in the diagram never pages anybody.
 
 Because bets should be falsifiable, the design writes down **scaling gates**: measurable thresholds (chunk count above 50 million, p95 latency above 2 seconds despite tuning, index churn degrading reads) at which we'd graduate to specialized infrastructure. Until a gate trips, we don't. When one does, the migration is a background re-index, not a crisis, for reasons that will become clear shortly.
 
@@ -89,7 +115,7 @@ The failure mode is what happens when you boil them too long and walk away. It g
 
 That failure mode matters doubly here, because this design makes bets (one database for everything, self-hosted models, a specific parser) and bets must stay reversible. The scaling gates promise "when a threshold trips, we migrate calmly." That promise is only honest if the thing behind the gate can be swapped without a rewrite.
 
-**So the second guiding principle, alongside simplicity, is modularity: every capability owns its domain and is used only through its contract.**
+**So the second guiding principle, alongside simplicity, is modularity: every capability owns its domain and is used only through its contract.** (The third one is coming in the next section, and it has opinions about memory.)
 
 - **Retrieval is a service, not a schema.** Agents and internal systems talk to the FastAPI retrieval API; not one of them knows a table name. The day the chunk index moves to a dedicated search cluster, consumers won't even notice.
 - **Connectors are plugins.** Each source system speaks its own dialect on one side and emits the same normalized events (file, metadata, ACL) into the same job queue on the other. Adding a source means writing an adapter, not performing surgery on the pipeline.
@@ -105,6 +131,57 @@ The same discipline reaches into the code itself, because a module with beautifu
 - **Directories as modules:** code splits into subdirectories along module boundaries, and **each directory has its own README.md** stating what it owns, its public API, what it depends on. A newcomer should be able to parachute into any directory and know where they've landed.
 
 The test for every boundary, architectural or code-level, is blunt: **can this piece be changed, replaced, or removed without understanding the whole system?** If not, the seam is in the wrong place. Simplicity keeps the number of parts small; modularity keeps each part replaceable. This design insists on both.
+
+---
+
+## The Agent That Remembers
+
+Watch a credit officer use any search tool for ten minutes and the same shape appears every time. The first question is never the real one.
+
+*"What's our exposure to European commercial real estate?"* produces a number. Then the actual work starts. *"Only the funds, not the direct loans."* *"As of year end."* *"Now split it by country."* *"Does that include the Meridian facility?"*
+
+That isn't five questions. It's one question, being sharpened.
+
+A system that treats them as five unrelated queries hands the context back to the human every single turn, who then retypes "European commercial real estate, funds only, as of 31 December 2024" into every follow-up until they give up and go ask a colleague instead. The retrieval can be excellent and the product still useless. Search that forgets is a filing cabinet with a search box. It is not an assistant.
+
+**So the third guiding principle, alongside simplicity and modularity, is AI: an agent is a component of this system, not a feature layered on top of it.** Agents are already load-bearing in half the sections of this document, and it's worth naming them in one place: the conformance reviewer that gates every merge, the judge model that samples production answers for groundedness, the helper that clusters failure traces into rubric items, the classifier that tags PII and MNPI at ingestion, the admin chat that explains why last night's gate tripped, the assistant that vibe-codes a steward's review screen, and the user chat itself. Even this document was drafted with an agent whose knowledge base held the requirements and whose memory held the options already rejected, which is the only reason round nineteen didn't re-propose the vector database ruled out in round two.
+
+Every one of those agents is built from the same three parts, and the design treats all three as first-class:
+
+- **A knowledge base.** The agent reads through the retrieval API, entitlement-filtered, and answers with citations or not at all. No agent gets a private tunnel to the database and none of them answers from what the model absorbed about the world in training.
+- **Memory.** What was asked, what was answered, what the user meant by "Meridian," what they already told us they don't care about.
+- **Tools behind contracts.** The same documented, audited APIs humans use, with the same ACLs and the same audit log. An agent is a client of the system, never an exception to it.
+
+**What the user chat remembers** comes in two layers.
+
+**Thread memory** holds the live conversation: the entities in play, the filters applied, the as-of date, the documents already retrieved and shown. Each follow-up is rewritten into a standalone question before anything else happens, and the rewritten question then enters exactly the same normalizer described in "Three Ways to Find a Needle." One code path, still. The rewrite is displayed above the answer and can be edited, so the user always sees the question the system actually asked. Guessing is allowed; guessing invisibly is not.
+
+**Profile memory** persists across sessions: the collections this person lives in, whether they usually want in-force or historical text, their preferred answer length, their disambiguations ("Meridian" means Meridian Holdings SA, not the Meridian Fund), and the answers they previously flagged as wrong. Over a few weeks the system stops asking a credit officer whether they meant the lending collection.
+
+Five rules keep memory from becoming a liability of its own:
+
+1. **Memory belongs to one identity and is never shared.** It is stored per user and joined against the ACL tables on read, exactly like chunks are, before anything is ranked or shown. A remembered document ID can therefore never outlive the permission that produced it: revoke access at 9 a.m. and the 9:05 follow-up cannot see it either. Memory is not a back door with a friendly interface.
+2. **Memory is context, never evidence.** It steers retrieval and resolves pronouns. It does not supply facts. Every claim in every answer still cites a chunk retrieved in the current turn, so a number that exists only in a remembered answer never makes it into a new one. When memory and the corpus disagree, the corpus wins without a debate.
+3. **Memory is visible and erasable.** A panel in the user chat shows exactly what is remembered, item by item, with a button to delete any of it, a button to forget the whole thread, and a button to forget everything. Nobody has to guess what the system thinks it knows about them.
+4. **Memory expires.** Thread memory lives 30 days past the last message; profile memory expires 12 months after its last confirmation, both configurable by policy. Preferences from two years ago aren't preferences, they're archaeology.
+5. **Memory is audited and disposable.** Which memory items entered a prompt is part of the query trace, alongside the chunk IDs and the model versions, because "why did it answer that?" must stay answerable years later. And the tables are plain PostgreSQL, dropped and forgotten at any time: losing them costs convenience, never correctness.
+
+The golden suite grows two new families of cases for all this: **multi-turn refinement** (does the fourth turn still answer the question the first turn was really asking?) and **adversarial inheritance** (a follow-up that tries to inherit access from an earlier turn, or from another user's session, and must come back empty). Permission leaks through a conversation are still permission leaks, and the tolerance is the same number as everywhere else in this document: 0.00%.
+
+The admin chat gets the same machinery pointed at operations: it remembers the incident it's working, so "and what about the day before?" means something. The maintainers' workbench remembers too, which is why a monkey can carry the trace that created it.
+
+**And the agent belongs to everybody, not just to the people who run the system.** A knowledge base that only answers questions is a library. This one is also a workshop, and the door is open to every user and every maintainer, who can ask it in plain language to:
+
+- **build a mini-tool**: a review screen, a saved view, a one-page dashboard over the questions this team keeps asking
+- **compose and schedule a job or a workflow**: extraction, cleaning, transformation, loading, verification, assembled from the same idempotent steps and run through the same transactional queue as everything else
+- **run an analysis**: count, group, compare, chart, across whatever the asker is entitled to see and nothing else
+- **produce a report or a document**: the quarterly summary, the memo, the pack for Thursday's meeting, with its citations attached and checkable
+
+The split between the two audiences is one of scope, not of privilege. Maintainers get the data-plane jobs (backfills, re-parses, ETL workflows) because that is their job. End users get read-only artifacts, per requirement S6, since v1 executes no transactions and makes no decisions. Nobody gets a tool that can see more than its author can.
+
+That last clause is the whole guardrail, and it is worth being blunt about: **everything the agent generates reaches data only through the documented, audited APIs.** So the ACLs apply automatically, the audit log fills up automatically, and a generated page cannot show its author a document they were never entitled to open. Generated code passes the same CI as human-written code: the tests, the size limits, the AI conformance review ("Monkey Business" has the mechanics). Fast where speed is cheap, gated where mistakes are expensive.
+
+Memory is what turns a search box into a conversation. The audit trail is what keeps that conversation admissible.
 
 ---
 
@@ -259,7 +336,7 @@ Rules that nothing enforces are wishes. And untested code develops a second dise
 
 ### Guarding the answers
 
-Code tests prove the machine works. A separate discipline proves it's still *right*. The yardstick is a **golden test suite**: 300+ real questions curated with Legal, Risk, Credit, and Operations, with known correct answers *and known correct citations*. It includes as-of temporal cases, adversarial permission-leak attempts, and, the fun part, an **unanswerable set**: questions whose answers are deliberately absent, locked behind entitlements, or found only in superseded text. The correct response is abstention. A confident answer to an unanswerable question is a hallucination caught red-handed.
+Code tests prove the machine works. A separate discipline proves it's still *right*. The yardstick is a **golden test suite**: 300+ real questions curated with Legal, Risk, Credit, and Operations, with known correct answers *and known correct citations*. It includes as-of temporal cases, adversarial permission-leak attempts (single-turn and across a conversation), multi-turn refinement chains that check the fourth turn still answers what the first turn was really asking, and, the fun part, an **unanswerable set**: questions whose answers are deliberately absent, locked behind entitlements, or found only in superseded text. The correct response is abstention. A confident answer to an unanswerable question is a hallucination caught red-handed.
 
 But where do test questions and grading criteria come from? The tempting shortcut is a conference-room checklist: "answers should be accurate, relevant, and clear, scored 1 to 10." Checklists born this way fail twice: the scores are too mushy to act on, and the criteria only cover failures somebody predicted. The system's actual failures have more imagination than that.
 
@@ -292,7 +369,7 @@ One principle at both timescales: **a failing test blocks the merge; a failing e
 
 Detection is only half a nervous system. At this scale, something is *always* slightly broken: a worker dies mid-parse, a file quietly rots on disk, a connector hiccups and drops an event, an index puts on dead weight. If every small failure needs a human, the on-call engineer becomes the system's immune system, and humans make terrible white blood cells. They sleep, they take vacations, they burn out. Meanwhile small failures wait in line, and small failures that wait long enough grow up to become incidents.
 
-**So the third guiding principle, alongside simplicity and modularity, is self-healing: when something goes wrong, the system cleans and repairs itself. Humans get paged for the exceptional, never for the routine.**
+**So the design adds a fourth principle, and it is not a lesser one: self-healing. When something goes wrong, the system cleans and repairs itself. Humans get paged as needed, for the exceptional, never for the routine.**
 
 The repair reflexes, most of which we've already met wearing other hats:
 
@@ -325,7 +402,7 @@ For questions where being wrong is expensive, the design offers two stronger mod
 
 Both modes ship behind the usual gate: measured on the golden suite and the judged groundedness rate, adopted where they demonstrably reduce hallucinations within the latency budget, and skipped where a single well-cited pass already earns its keep. More jurors are only worth paying when the verdict is in doubt.
 
-And everything is written down. Every query logs the user, their evaluated roles, the applied filters, every chunk ID retrieved with its scores, the model and prompt versions, the generated answer, and the rendered citations. Monthly partitions of this log are exported nightly to **write-once storage** with hash manifests, including the chunk *text* itself, so the record stays self-contained even after some future re-chunking retires the IDs. Deletion happens through the records-management process, on the retention schedule. Not through engineering. Ever.
+And everything is written down. Every query logs the user, their evaluated roles, the question as typed and as rewritten from conversation memory, the memory items that entered the prompt, the applied filters, every chunk ID retrieved with its scores, the model and prompt versions, the generated answer, and the rendered citations. Monthly partitions of this log are exported nightly to **write-once storage** with hash manifests, including the chunk *text* itself, so the record stays self-contained even after some future re-chunking retires the IDs. Deletion happens through the records-management process, on the retention schedule. Not through engineering. Ever.
 
 ---
 
@@ -341,9 +418,9 @@ So far this design has been very generous to machines (APIs, queues, contracts, 
 - **Control:** start or pause data loads and backfills, trigger re-indexing or re-parsing for a collection, manage removals and tombstones, kick off validation runs and golden-suite tests on demand.
 - **With manners:** every button drives the same documented, audited APIs used everywhere else; the command center holds no private tunnel to the database. Destructive actions demand confirmation, and everything lands in the audit log with a user identity attached. The dashboard is a *view* with steering, not a backdoor.
 
-**Door two: the admin chat.** An agentic chat for operations: the command center's conversational twin. "Why did last night's gate trip?" "How far behind is the SharePoint connector?" "Re-run reconciliation for the lending collection." The agent answers by calling the same admin APIs the dashboards read, so it can *explain* as well as display. Connecting an eval regression to the embedding model that shipped the day before is exactly the kind of dot-connecting agents are good at. Read operations flow freely; anything that changes state requires an explicit confirmation step; anything touching entitlements or records stays human-only, per the self-healing rules. Every agent action is audited like a human one.
+**Door two: the admin chat.** An agentic chat for operations: the command center's conversational twin, which remembers the incident it is working on so a follow-up doesn't restart the investigation. "Why did last night's gate trip?" "How far behind is the SharePoint connector?" "Re-run reconciliation for the lending collection." The agent answers by calling the same admin APIs the dashboards read, so it can *explain* as well as display. Connecting an eval regression to the embedding model that shipped the day before is exactly the kind of dot-connecting agents are good at. Read operations flow freely; anything that changes state requires an explicit confirmation step; anything touching entitlements or records stays human-only, per the self-healing rules. Every agent action is audited like a human one.
 
-**Door three: the user chat.** The main event, where lawyers, credit officers, and analysts actually meet the system. Ask a question, get a cited answer. Citations are clickable and open the exact page of the exact version in a document viewer. An **as-of date picker** turns time-travel queries from a power feature into a dropdown. Abstentions are displayed honestly, as answers, not apologies. And there's a **flag button** on every answer: one click sends the full trace into the evaluation review queue, which means every dissatisfied user quietly contributes to the golden suite. The complaint department feeds the immune system.
+**Door three: the user chat.** The main event, where lawyers, credit officers, and analysts actually meet the system. Ask a question, get a cited answer. Citations are clickable and open the exact page of the exact version in a document viewer. An **as-of date picker** turns time-travel queries from a power feature into a dropdown. The chat **remembers the conversation and the person having it**, so follow-ups refine instead of restarting, with the rewritten question shown above each answer and a memory panel listing everything retained, item by item, each with a delete button ("The Agent That Remembers"). Abstentions are displayed honestly, as answers, not apologies. Users can also put the agent to work rather than just questioning it: ask it for an analysis, a report, a document, or a small saved view over what they are entitled to see, all of it read-only in v1 and all of it through the audited APIs. And there's a **flag button** on every answer: one click sends the full trace into the evaluation review queue and gives the user a monkey they can follow to its resolution, which means every dissatisfied user quietly contributes to the golden suite. The complaint department feeds the immune system.
 
 **The frontend follows the house rules.** It's built in **vanilla JavaScript**: no React, no frameworks, no build step. The browser already ships a perfectly good runtime; for three pages of dashboards and two chat panels, a framework is another dependency to quarantine, another supply chain to audit, and another migration in five years when it falls out of fashion. The code is **modular**: small ES modules, one per feature (chat panel, dashboard tiles, document viewer, citation renderer), each obeying the same limits as the backend: files under 800 lines, functions under 50, docs at every level, a README per directory. And **all styles live in one `styles.css`**, one file to open and one place to look, with no styles hiding in JavaScript. Plain static files served from the same infrastructure, talking only to the documented APIs. The simplest frontend that fully works, which is, by now, the house style.
 
@@ -365,11 +442,15 @@ The elegant part is where monkeys come from. The system already produces them; i
 
 Every escalation path in this document now has an inbox, an owner, and a status. The immune system files tickets.
 
-**The human mechanics are deliberately ordinary.** Each maintainer sees *their* monkeys: what's open, what's blocked, what failed overnight. Monkeys pass between people: when someone goes on vacation, their troop transfers to a teammate in one action, and nothing is orphaned. A group dashboard shows all the monkeys, their status and age, who's drowning and who's idle, because a task system where managers can't see the pileup is just a diary.
+**The human mechanics are deliberately ordinary.** Everyone sees *their own* monkeys: what's open, what's blocked, what failed overnight. They can act on them, hand them to someone else (vacation transfers a whole troop in one action), or **escalate** them up to a group or a manager when the answer is above their pay grade, which is a normal Tuesday and not an admission of defeat. Managers see everything: all the monkeys, their status and age, who's drowning and who's idle, because a task system where managers can't see the pileup is just a diary.
+
+The end users get a narrow window on the same system rather than a separate one: the analyst who flagged a bad answer can see that their flag became a monkey, who owns it, and how it was resolved. Complaining into a void teaches people to stop complaining, and the complaint department is how the immune system gets fed.
+
+**No failure is orphaned.** Every escalation path in this design terminates in a monkey with an owner, a status, and a history, and a monkey with no owner is itself an alert.
 
 **Architecturally, this is a separate FastAPI web app**, its own module with its own API and its own vanilla-JS frontend (house rules: ES modules, one `styles.css`, no frameworks). Separate on purpose: the retrieval service stays lean and stable while the maintainers' workbench evolves at business speed. The monkeys themselves live in plain PostgreSQL tables (one system of record, as always) and the app talks to the rest of the platform only through the documented APIs.
 
-And because the workbench evolves at business speed, **maintainers get to build their own tools, by vibe-coding.** A steward who needs a review screen for last month's low-confidence scans, or a one-page dashboard for a cleanup campaign, describes it and lets an AI assistant generate it: a small vanilla-JS page over the existing APIs, shipped in an afternoon, no platform-team ticket required. The same goes for **workflows**: maintainers create and schedule data jobs (extraction, cleaning, transformation, loading, verification) composed from idempotent steps and run through the same transactional job queue as everything else.
+And because the workbench evolves at business speed, **maintainers get the full-strength version of the agent's workshop** ("The Agent That Remembers"), including the data-plane jobs that end users don't get. A steward who needs a review screen for last month's low-confidence scans, or a one-page dashboard for a cleanup campaign, describes it and lets an AI assistant generate it: a small vanilla-JS page over the existing APIs, shipped in an afternoon, no platform-team ticket required. The same goes for **workflows**: maintainers create and schedule data jobs (extraction, cleaning, transformation, loading, verification) composed from idempotent steps and run through the same transactional job queue as everything else.
 
 Vibe-coding gets guardrails rather than a leash. Generated tools and workflows live inside the maintainers' app, consume only the documented APIs (so ACLs and audit apply automatically; a vibe-coded page cannot see what its author can't), and pass the same CI as human-written code: the tests, the size limits, and the AI architecture-conformance review. Fast where speed is cheap, gated where mistakes are expensive. The business gets its tools in hours; the platform keeps its seams.
 
@@ -414,6 +495,7 @@ The numbers that make the single-database bet rational rather than reckless:
 | Full-text (BM25/GIN) indexes | ~20-30 GB |
 | Registry, ACLs, summaries | ~15-25 GB |
 | Document graph | ~5-10 GB |
+| Agent memory (threads + profiles) | ~2-5 GB |
 | Audit log growth | ~2-5 GB/month |
 | **Steady state** | **~200-300 GB** |
 
@@ -479,7 +561,7 @@ The build order is chosen so that trust is earned before scale is attempted. Pro
 
 ![Delivery roadmap](assets/delivery-roadmap.svg)
 
-**Phase 0 (weeks 1-3)** lays the foundations: storage, database, WAL archiving, ACL schema. **Phase 1 (weeks 4-8)** ingests a 500k-document pilot across two business units, builds the hybrid indexes, extracts links and effective dates, renders the first wiki, and runs the golden suite for the first time, while curators grade the extraction on the same corpus they're QA-ing anyway. **Phase 2 (weeks 9-12)** adds the guarded generation layer (citations, abstention, audit logging, WORM export) plus graph expansion, as-of retrieval, and the nightly evaluation gate, ending in Compliance/Legal/BC sign-off. **Phase 3 (weeks 13-16)** is the full backfill and load testing, bracketed by base backups and closed with the first timed DR drill. **Phase 4** is enterprise rollout, at which point the nightly gates, restore tests, and drills stop being milestones and simply become weather.
+**Phase 0 (weeks 1-3)** lays the foundations: storage, database, WAL archiving, ACL schema. **Phase 1 (weeks 4-8)** ingests a 500k-document pilot across two business units, builds the hybrid indexes, extracts links and effective dates, renders the first wiki, and runs the golden suite for the first time, while curators grade the extraction on the same corpus they're QA-ing anyway. **Phase 2 (weeks 9-12)** adds the guarded generation layer (citations, abstention, audit logging, WORM export) plus graph expansion, as-of retrieval, conversational and profile memory with its ACL re-filtering and multi-turn eval cases, and the nightly evaluation gate, ending in Compliance/Legal/BC sign-off. **Phase 3 (weeks 13-16)** is the full backfill and load testing, bracketed by base backups and closed with the first timed DR drill. **Phase 4** is enterprise rollout, at which point the nightly gates, restore tests, and drills stop being milestones and simply become weather.
 
 v2 candidates wait patiently behind evaluation evidence, in the spirit of the opening bet: LLM-based relationship extraction on high-value collections, thematic clustering with summary pages, and any migration past a scaling gate.
 
@@ -487,18 +569,21 @@ v2 candidates wait patiently behind evaluation evidence, in the spirit of the op
 
 ## The Shape of the Thing
 
-Strip away the details, and the whole design is eight decisions:
+Strip away the details, and the whole design is eleven decisions, the first three of which are the principles everything else hangs from:
 
-1. **Simplicity above all.** The fewest moving parts that still deliver the functionality. Simplicity is what makes the project do-able, flexible, maintainable, and affordable: buildable by a small team, prototyped in weeks, run without a fleet of clusters or heavy hardware. Complexity is the project's primary risk, admitted only through measured gates.
-2. **Modularity keeps the bets reversible.** Every capability sits behind a contract (retrieval behind an API, sources behind connector plugins, parsers behind the derivative format, models versioned per artifact) so any part can be changed, replaced, or removed without understanding the whole. Loose coupling, clean seams: separate dumplings, never a clump.
-3. **One system of record.** PostgreSQL holds truth (content indexes, entitlements, graph, queue, audit) so consistency is a transaction, not a distributed-systems project.
-4. **Parse once; everything downstream is disposable.** Originals and derivatives are permanent; chunks, vectors, indexes, and wiki are projections, rebuildable at will. This is what makes every future migration boring, and boring migrations are the good kind.
-5. **Search three ways** (meaning, keywords, structure) with time as a dimension, because each method catches what the others miss.
-6. **Security and provenance are load-bearing.** ACLs filter before ranking; citations verify before display; every answer leaves an immutable trail; saying "I don't know" is a graded skill.
-7. **Trust is re-earned continuously.** A pyramid of tests gates every merge; evaluation gates, reconciliation counts, hallucination sampling, and restore drills gate every day. The system proves it still works after every change, or it stops and says so.
-8. **Self-healing by design.** Crashed jobs retry, corrupted files restore from verified snapshots, missed events refetch, degraded indexes rebuild, and every derived artifact can be regenerated from the source of truth. Humans are paged for the exceptional, never the routine, and nothing touching entitlements or records is ever repaired by guessing.
+1. **Simplicity above all.** The fewest moving parts that still deliver the functionality. Simplicity is what makes the project do-able, flexible, maintainable, and affordable: buildable by a small team, prototyped in weeks, run without a fleet of clusters or heavy hardware. In practice that means **no distributed architecture**: one server rather than a cluster, a mounted Unix filesystem rather than an object store, nothing sharded or eventually consistent. Complexity is the project's primary risk, admitted only through measured gates.
+2. **Modularity keeps the bets reversible.** Every capability sits behind a contract (retrieval behind an API, sources behind connector plugins, parsers behind the derivative format, models versioned per artifact) so any part can be changed, replaced, or removed without understanding the whole. Loose coupling, clean seams: separate dumplings, never a clump. The same discipline reaches into the code: subdirectories along module boundaries, files under 800 lines, functions under 50, docs at every level, a `README.md` per directory.
+3. **AI is a component, not a feature.** Agents run through the whole system (ingestion classification, architecture conformance review, eval clustering, groundedness judging, operations chat, maintainer tooling, the user chat) and through the process that designed it. Each one is built the same way: a knowledge base it must cite, a memory scoped to one identity, and tools reachable only through the documented, audited APIs. The user chat remembers previous requests, so answers get refined instead of retyped, and memory stays context rather than evidence: it never becomes a source of facts, and it never outlives a permission. The agent is available to **every user and every maintainer**, who can talk it into building mini-tools, composing and scheduling workflows, running analyses, and drafting reports and documents inside their own entitlements.
+4. **One system of record.** PostgreSQL holds truth (content indexes, entitlements, graph, queue, audit, agent memory) so consistency is a transaction, not a distributed-systems project.
+5. **Parse once; everything downstream is disposable.** Originals and derivatives are permanent; chunks, vectors, indexes, and wiki are projections, rebuildable at will. This is what makes every future migration boring, and boring migrations are the good kind.
+6. **Search three ways** (meaning, keywords, structure) with time as a dimension, because each method catches what the others miss.
+7. **Security and provenance are load-bearing.** ACLs filter before ranking; citations verify before display; every answer leaves an immutable trail; saying "I don't know" is a graded skill.
+8. **Trust is re-earned continuously.** A pyramid of tests gates every merge; evaluation gates, reconciliation counts, hallucination sampling, and restore drills gate every day. The system proves it still works after every change, or it stops and says so.
+9. **Self-healing by design.** Timeouts and retries recover crashed jobs, corrupted files restore from verified snapshots, missed events refetch, degraded indexes rebuild, and every derived artifact can be regenerated from the source of truth. Humans are paged as needed, for the exceptional and never the routine, and nothing touching entitlements or records is ever repaired by guessing.
+10. **No failure is orphaned.** Every escalation becomes a monkey: a task with an owner, a status, and a history. People see and manage their own, hand them off or escalate them, and managers see the whole troop. Whatever the machine gives up on, a named human picks up.
+11. **Nothing arrives unvetted.** Dependencies are pinned, aged 30 days, and verified, because "latest" is not a version, it's a gamble. Generated code and workflows reach data only through the documented, audited APIs, so ACLs apply automatically, and they pass the same CI, size, and conformance gates as anything a human typed.
 
-A corpus of three million documents, one honest database, and a system designed to be *caught* being wrong before a user ever is, and to patch itself up before anyone has to ask. That's the design.
+A corpus of three million documents, one honest database on one honest server, an agent that remembers what you asked a minute ago without ever letting that memory speak for the record, and a system designed to be *caught* being wrong before a user ever is, and to patch itself up before anyone has to ask. That's the design.
 
 ---
 
@@ -523,8 +608,11 @@ A corpus of three million documents, one honest database, and a system designed 
 | F13 | Render the corpus as an interconnected wiki: Markdown files with YAML frontmatter and `[[wikilinks]]` (Obsidian-compatible), generated from the database, human-navigable and grep-friendly, scoped to authorized audiences. |
 | F14 | Support point-in-time ("as-of") retrieval via an optional `as_of_date` parameter, with historical answers explicitly flagged. |
 | F15 | Provide human interfaces: an operations command center (dashboards and controls for data loads, removals, updates, validation, and testing), an agentic admin chat, and an agentic end-user chat with clickable citations, as-of date selection, and one-click answer flagging into the evaluation queue. All interfaces consume the same audited APIs; state-changing actions require confirmation and are logged. |
-| F16 | Provide a maintainer task system ("monkeys") as a separate FastAPI web app: per-user task lists with status and failure visibility, reassignment and vacation handoff within groups, a group-wide dashboard, automatic task creation from dead-letter jobs / eval-gate trips / flagged answers / scrub and reconciliation failures, plus AI-assisted (vibe-coded) mini-tools and schedulable ETL workflows, all consuming only documented APIs and passing the standard CI and conformance gates. |
+| F16 | Provide a maintainer task system ("monkeys") as a separate FastAPI web app: per-user task lists with status, history, and failure visibility; reassignment, vacation handoff, and **escalation** to a group or manager; a manager-wide dashboard over all tasks; read-only visibility for end users into the tasks their own flags created; automatic task creation from dead-letter jobs / eval-gate trips / flagged answers / scrub and reconciliation failures, so no escalation path terminates without an owner. |
 | F17 | Offer hallucination-reduction answer modes for high-stakes queries: **fusion** (2 or 3 independent self-hosted models answer from the same retrieved context; a judge model synthesizes, keeping multi-model claims with verified citations and dropping/flagging single-model claims) and **persona cross-examination** (one model answering and reviewing from distinct perspectives, surfacing divergence). Tiered activation: sensitive collections, low retrieval confidence, or user-requested "verify mode"; effectiveness gated by golden-suite and groundedness evaluation. |
+| F18 | Maintain per-user conversational and profile memory so requests can be refined iteratively. Thread memory (entities, filters, as-of date, documents already shown) rewrites each follow-up into a standalone query, displayed to the user and editable, before it enters the shared normalizer. Profile memory (usual collections, currency preference, answer length, entity disambiguations, previously flagged answers) persists across sessions. Users can view, edit, and delete any memory item, a whole thread, or everything. |
+| F19 | Ground every agent in the system (ingestion classification, conformance review, eval clustering, groundedness judging, admin chat, maintainer tooling, user chat) in the retrieval or admin APIs, with citations where the agent produces user-visible claims, and no direct database access for any agent. |
+| F20 | Make the agent's workshop available to **all users and maintainers**: build mini-tools and saved views, compose and schedule jobs and ETL workflows, run analyses, and generate reports and documents, by asking in plain language. Maintainers additionally get data-plane jobs (backfill, re-parse, re-index); end-user artifacts are read-only per S6. Everything generated reaches data only through the documented, audited APIs, inherits its author's entitlements, and passes the standard CI, size, and AI conformance gates. |
 
 ### A.2 Security, Compliance, and Governance
 
@@ -533,10 +621,11 @@ A corpus of three million documents, one honest database, and a system designed 
 | S1 | Access control strictly mirrors source-system entitlements. ACL filters are applied **pre-ranking** at the database layer; unauthorized users can never retrieve or observe chunks from restricted documents. |
 | S2 | Information barriers (ethical walls, client/deal segregation) enforced at the tenant / collection partition level. |
 | S3 | Automated classification tags at ingestion: PII, MNPI, client-confidential, regulatory, and retention category. |
-| S4 | Full audit log per query: user identity, evaluated roles/groups, applied filters, retrieved chunk IDs, ranking scores, model/prompt versions, generated response, and rendered citations. |
+| S4 | Full audit log per query: user identity, evaluated roles/groups, question as typed and as rewritten from memory, memory items injected into the prompt, applied filters, retrieved chunk IDs, ranking scores, model/prompt versions, generated response, and rendered citations. |
 | S5 | Complete data residency: originals, derivatives, vector indices, and audit logs remain within the firm's approved security boundary. Models are self-hosted or private enterprise endpoints. |
 | S6 | Release v1 is strictly **read-only**: no execution of financial transactions, external communications, or automated decisions. |
 | S7 | Prompts, retrieved contexts, and outputs are archived as immutable business records; closed audit-log partitions are exported to write-once storage. |
+| S8 | Agent memory is bound to a single user identity, never shared across users, and re-filtered through the pre-ranking ACL join on every read, so revoked entitlements take effect in the next conversational turn. Memory is context only and never a source of asserted facts; it is user-visible, user-erasable, retention-limited (thread 30 days, profile 12 months, both policy-configurable), and disposable without loss of correctness. |
 
 ### A.3 Non-Functional
 
@@ -545,7 +634,7 @@ A corpus of three million documents, one honest database, and a system designed 
 | N1 | **Corpus Scale:** Low single-digit millions of source documents; 20-30 million indexed chunks after deduplication. |
 | N2 | **Query Latency:** p95 retrieval under 1.5 s (excluding LLM generation). |
 | N3 | **Ingestion:** Backfill in weeks; incremental sync in minutes. |
-| N4 | **Operational Simplicity:** Zero multi-cluster maintenance overhead for v1. |
+| N4 | **Operational Simplicity:** No distributed architecture in v1. A single PostgreSQL server (plus a passive standby for failover) and mounted filesystems, with no sharding, no object store, no message broker, and no multi-cluster maintenance overhead. |
 | N5 | **Reliability:** Transactional, observable, crash-resilient job processing with automatic retries. |
 | N6 | **Measurable Quality:** Recall@20, citation accuracy, groundedness, and permission-leak rate continuously evaluated against a golden dataset. |
 | N7 | **Portability:** Chunk indices are disposable and 100% reconstructible from stored derivatives without re-parsing raw files. |
@@ -562,11 +651,12 @@ A corpus of three million documents, one honest database, and a system designed 
 | Database & indexing | PostgreSQL 16+ with `pgvector` (HNSW, `halfvec`) and `pg_search` (BM25) | One engine for ACL joins, keyword search, vector search, queue, and audit |
 | Document graph & wiki | Plain PostgreSQL edge/entity tables; wiki rendered as Markdown + frontmatter + wikilinks (Obsidian-compatible) | Structure stays in the system of record; wiki is a disposable projection |
 | Job queue | PostgreSQL `SKIP LOCKED` | Transactional, broker-free |
+| Agent memory | Plain PostgreSQL tables (thread memory and per-user profile memory), keyed by user identity, ACL-joined on read, retention-bounded, exposed through the retrieval API and a memory panel in the chat UI | Same system of record as everything else, so a permission change and a memory read can never disagree; disposable projection, audited like any other prompt input |
 | Embeddings | Self-hosted open models (BGE / E5 / Nomic class) on local GPUs; shared query/chunk normalizer module (versioned like the model); asymmetric `query:`/`passage:` prefixes; optional HyDE behind a golden-suite gate | Data boundary; no per-token fees across 10B+ tokens; queries and chunks embedded in comparable form via one code path that cannot drift |
 | Reranker | BGE-Reranker-Large cross-encoder; LLM rerank only as evaluated escalation | Precision on multi-hop clauses within the latency budget |
 | Retrieval API | Python FastAPI / asyncpg | Lightweight, typed, decoupled from agents. Python over Rust: the heavy lifting runs in C/GPU libraries (Postgres, CUDA, PyMuPDF), the parsing/ML ecosystem is Python-first, and any measured CPU-bound module can later be swapped to Rust behind its contract |
 | Frontend (command center, admin chat, user chat) | Vanilla JavaScript ES modules, no frameworks, no build step; all styles in a single `styles.css`; static files served from existing infrastructure; consumes only the documented, audited APIs | Simplicity: no framework dependency to quarantine or migrate; modular per the code rules (one module per feature, README per directory); ACLs and audit apply identically to humans and agents |
-| Maintainer workbench ("monkeys") | Separate FastAPI app + vanilla-JS frontend; monkey tables in PostgreSQL; auto-created from dead-letter/eval/flag/scrub events; vibe-coded mini-tools and scheduled ETL workflows running through the shared job queue, gated by the standard CI + AI conformance review | Retrieval service stays lean while the workbench evolves at business speed; every escalation path gets an owner, a status, and a handoff mechanism |
+| Maintainer workbench ("monkeys") | Separate FastAPI app + vanilla-JS frontend; monkey tables in PostgreSQL; auto-created from dead-letter/eval/flag/scrub events; per-user lists with handoff and escalation, manager-wide dashboard, read-only view for the user who raised the flag; agent-built mini-tools and scheduled ETL workflows running through the shared job queue, gated by the standard CI + AI conformance review | Retrieval service stays lean while the workbench evolves at business speed; every escalation path gets an owner, a status, and a history, so no failure is orphaned |
 | Toolchain & dependencies | Homebrew-installed Python (pinned major.minor); `uv` with `exclude-newer = "30 days"` and `prerelease = "disallow"`; PGDG-pinned PostgreSQL; Docker images by digest via scanned internal registry | Supply-chain safety: aged, pinned, verified dependencies; no `:latest`, no day-old packages |
 | Testing | pytest (unit + module tests via public APIs with faked ports); containerized PostgreSQL for integration tests; fixture corpus for pipeline tests; `import-linter` + size/docstring checks in CI; AI-agent architecture-conformance review gating merges | Every layer guarded: functions, module contracts, real adapters, answer quality (golden suite), and the architecture rules themselves |
 | LLM inference | Private enterprise endpoint / self-hosted vLLM; optional fusion mode (2 or 3 independent models + judge synthesis) and persona cross-examination for high-stakes queries, tiered by collection sensitivity, retrieval confidence, and user request | Inside the VPC perimeter; independent models rarely agree on the same hallucination, so multi-model consensus filters idiosyncratic errors at a known 3-4× cost, paid only where the verdict is in doubt |
@@ -577,6 +667,8 @@ A corpus of three million documents, one honest database, and a system designed 
 | Risk | Mitigation |
 |---|---|
 | Permission leakage (incl. via graph links or wiki) | Pre-ranking SQL ACL joins everywhere including graph hops; wiki rendered only in curator enclave; adversarial leak tests in CI; 0.00% tolerance |
+| Permission leak through conversation memory | Memory bound to one identity, re-filtered by the pre-ranking ACL join on every read, never shared between users or sessions; adversarial multi-turn inheritance cases in the golden suite; memory items logged per query |
+| Stale or misleading memory steering answers | Memory is context, not evidence: every claim cites a chunk retrieved this turn; the rewritten question is shown and editable; retention windows expire thread and profile memory; users can delete any item |
 | Missing specific clauses | Adaptive routing lets identifier queries bypass summary filtering |
 | Stale or wrong-period answers | Validity windows, as-of filtering, temporal/currency ranking boosts, supersession flags, as-of golden cases |
 | Hallucinated citations / fabricated claims | Middleware validates every citation token against retrieved chunks; unanswerable-set testing; nightly judge sampling; fusion mode (multi-model consensus + judge synthesis) and persona cross-examination for sensitive or low-confidence queries |
@@ -584,7 +676,7 @@ A corpus of three million documents, one honest database, and a system designed 
 | Routine transient failures (crashed workers, corrupt files, missed events, index bloat) | Self-healing: idempotent retries with backoff, automatic quarantine-and-restore from verified snapshots, reconciliation-driven refetch, automatic partition reindex, regeneration of derived artifacts; dead-letter + page only after retries are exhausted; entitlements and records always escalate to humans |
 | Quality regression after updates | Nightly golden-suite gate vs. 7-day baseline; page + ingestion freeze on trip |
 | Architecture erosion in code | `import-linter` + size/docstring checks in CI; AI-agent conformance review on every merge |
-| Vibe-coded tools bypassing controls | Generated tools live in the maintainers' app, reach data only through documented APIs (ACLs + audit apply automatically), and pass the same CI, size, and conformance gates as human-written code |
+| Agent-generated tools or workflows bypassing controls (whoever asked for them) | Generated artifacts reach data only through documented APIs, so ACLs and audit apply automatically and a generated page cannot see what its author can't; end-user artifacts are read-only per S6; everything passes the same CI, size, and conformance gates as human-written code |
 | Document volume loss/corruption | Locked cross-AZ snapshots; write-once discipline; hash scrub |
 | PostgreSQL loss / logical corruption | Continuous WAL archiving + PITR; standby for failover; monthly restore tests |
 | Audit record loss | Monthly partitions exported nightly to WORM with hash manifests; records-policy-only deletion |

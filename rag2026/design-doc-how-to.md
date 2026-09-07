@@ -99,7 +99,7 @@ of challenges and solutions. See [section 6](#6-writing-it-as-a-story).
 **Phase 5: Produce and verify.** Table of contents, diagrams, PDF,
 final read-through.
 
-### Four rules for the whole ride
+### Five rules for the whole ride
 
 1. **Propose before editing.** When someone asks "does it make sense
    to add X?", they want an assessment, not a rewrite. Give the
@@ -112,6 +112,15 @@ final read-through.
    doesn't do X, say so plainly.
 4. **Markdown is the source of truth.** PDFs, HTML, and rendered
    diagrams are projections. Regenerate them; never hand-edit them.
+5. **Run the process with an agent that remembers.** Give the AI you
+   draft with a knowledge base (the PRD, this guide, the current
+   document, the existing code, the vendor docs) and a memory of the
+   decisions already made and already rejected. Thirty rounds is a lot
+   of rounds. Without memory, round nineteen re-proposes what round
+   four threw out, and you spend the review defending a decision you
+   thought was closed. See [3.5](#35-ai-is-a-component-not-a-feature);
+   the same principle applies to building the document and to the
+   system it describes.
 
 ---
 
@@ -120,6 +129,26 @@ final read-through.
 These are the durable core. They transfer to any system: a payments
 platform, a data pipeline, an IoT fleet, a game backend. Keep them,
 adapt the examples.
+
+**Three of them are the main ones: simplicity, modularity, AI.**
+Simplicity decides how many parts the system has. Modularity decides
+how those parts touch each other. AI decides what the parts are made
+of, because in 2026 an agent with a knowledge base and a memory is a
+component you design in from the start, not a chat box you staple on
+at the end. The ones after 3.5 are principles too, not footnotes:
+self-healing, one system of record, continuous verification, task
+ownership, and supply-chain discipline each carry their own weight.
+The trio just comes first, because the rest are easier to get right
+once those three are settled.
+
+**Print whichever set you land on as a list near the front of the
+document**, before the narrative starts (skeleton item 4). One line per
+principle, main ones first, no reasoning: the reasoning is what the
+rest of the document is for. It costs a page and earns it twice over.
+A reader who has ten minutes gets the whole argument, and a reviewer
+gets a checklist to hold every later section against, which turns
+"I don't love this design" into "section 9 contradicts principle 2."
+The second kind of comment you can actually act on.
 
 ### 3.1 Simplicity is the guiding principle
 
@@ -145,10 +174,21 @@ specialized ones. Prefer a SQL join over a new service. Prefer boring
 technology the team already runs. *Complexity must justify itself with
 evidence; simplicity is the default and needs no justification.*
 
+**The sharpest form of this rule: avoid distributed architectures.**
+One server instead of a cluster. A mounted filesystem instead of an
+object store. A table instead of a message broker. Distribution buys
+you sharding, quorums, eventual consistency, split brains, and
+clock skew, and it charges for all of them whether you use them or
+not. Modern hardware is enormous: a single machine with a few hundred
+gigabytes of RAM handles workloads that reference architectures insist
+on spreading across a rack. Start there, write the gate, and let
+measurement decide when to leave. A standby for failover is not
+distribution, it's insurance, and it is fine.
+
 > **Worked example.** The reference project resisted the standard
 > five-system stack (vector DB + search cluster + message broker +
-> workflow engine + graph DB) and put everything in one PostgreSQL
-> cluster: registry, entitlements, vector index, keyword index, job
+> workflow engine + graph DB) and put everything on one PostgreSQL
+> server: registry, entitlements, vector index, keyword index, job
 > queue, audit log. Justification was arithmetic: 20 to 25 million
 > chunks is not big data. Access control became a SQL join instead of
 > a distributed-systems research project.
@@ -239,7 +279,100 @@ these limits in the design document, not just in a style guide:
   stating what it owns, its public API, what it depends on. A newcomer should
   be able to parachute into any directory and know where they landed.
 
-### 3.5 One system of record
+### 3.5 AI is a component, not a feature
+
+Most design documents mention AI twice: once in the executive summary,
+where it is exciting, and once near the end, where a chat box appears
+in a corner of the UI. That is a feature. What the third principle
+asks for is different.
+
+**Assume an AI agent inside every part of the system, and inside the
+process that designs it.** Not because agents are fashionable, but
+because the work they do (reading a mess of unstructured input,
+classifying it, drafting a first version, noticing that today's
+numbers look wrong, explaining last night's failure in a sentence) is
+work the system needs done and nobody wants to do by hand at three in
+the morning.
+
+An agent that is a real component needs three things, and the design
+document names all three:
+
+- **A knowledge base.** The agent answers from retrieved, cited
+  material, never from what the model happens to remember about the
+  world. Ground it, or it will make things up in a confident voice.
+  Say exactly what corpus each agent may read, and how retrieval is
+  filtered by the identity on whose behalf it acts.
+- **Memory.** Short-term memory of the current conversation, so a user
+  can say "now just Europe" and be understood. Longer-term memory of
+  what this user asked before, what they preferred, what turned out to
+  be wrong. Without it, every session starts from zero and the human
+  does the remembering, which is the one thing humans are worse at
+  than machines.
+- **Tools behind contracts.** The agent calls the same documented,
+  audited APIs everything else calls. It gets no private tunnel to the
+  database. An agent is a client of the system, not an exception to it.
+
+**And the agent is for everyone the system serves, not only for the
+people who operate it.** Users and maintainers alike should be able to
+ask it, in plain language, to build a mini-tool or a saved view,
+compose and schedule a job or a workflow, run an analysis, or draft a
+report or a document. This is where an AI component stops being a
+search box and starts being leverage: the work that used to need a
+ticket to the platform team now takes an afternoon and a conversation.
+Scope it by role rather than by privilege (operators get the
+data-plane jobs; everyone else gets read-only artifacts), and put one
+guardrail under all of it: **everything generated reaches data only
+through the documented, audited APIs**, so entitlements and audit
+apply automatically and a generated page can never see what its author
+can't. Generated code passes the same CI, size limits, and conformance
+review as code a human typed. Fast where speed is cheap, gated where
+mistakes are expensive.
+
+Memory earns its own set of rules, because a memory store is a pile of
+somebody's business sitting outside the place where all the access
+control lives:
+
+- **Memory is scoped to the identity that created it.** One user's
+  history never surfaces in another user's session. Otherwise memory
+  becomes a side channel: a permission leak with a friendly interface.
+- **Memory is context, not evidence.** It steers retrieval and
+  disambiguates follow-up questions. It never becomes a source of
+  facts in an answer. When memory and the corpus disagree, the corpus
+  wins and the answer cites the corpus.
+- **Memory is visible and erasable.** The user can see what the system
+  remembers about them and delete it. A system that quietly accumulates
+  a dossier is a compliance conversation you will lose.
+- **Memory is a projection.** Like every other derived artifact, it can
+  be thrown away and the system still works, a little more forgetfully.
+- **Memory expires.** Give it a retention window and write the number
+  down. Preferences from two years ago are not preferences, they are
+  archaeology.
+
+**The models themselves are versioned data behind a port**, exactly
+like any other vendor dependency ([3.3](#33-modularity-dont-let-the-dumplings-fuse)).
+Record which model produced which artifact. Then a better model next
+year is a swap and a re-run, not a rewrite. This is also what keeps
+the AI principle from fighting the simplicity principle: one interface,
+one place to change providers, no fleet of specialized services.
+
+**And the same shape applies to the design process itself.** Write the
+document with an agent that has a knowledge base (this guide, the PRD,
+the requirement IDs, the existing code, the tickets, the vendor docs
+you keep re-reading) and a memory (the decisions already made, the
+options already rejected and why, the wording the reviewers pushed
+back on). An agent with those two things stops you from re-litigating
+settled questions in round nineteen. An agent without them will
+cheerfully propose, for the third time, the vector database you
+already ruled out in section 2, and you will not notice until someone
+in the review does.
+
+The limit is the same one that governs self-healing
+([3.10](#310-self-healing)): agents draft, retrieve, explain, classify,
+and flag. They do not decide anything expensive on their own.
+Permissions, money, and regulated records go to a human every time,
+with the agent's reasoning attached so the human can be fast about it.
+
+### 3.6 One system of record
 
 Name the single place where truth lives. Everything else is a copy, a
 cache, or a projection, and is labeled as such. Consistency becomes a
@@ -249,7 +382,7 @@ The corollary is a rule with teeth: **projections are never edited by
 hand.** They are rendered from the source of truth and can be deleted
 and regenerated without losing a byte.
 
-### 3.6 Do the expensive work once; everything downstream is disposable
+### 3.7 Do the expensive work once; everything downstream is disposable
 
 Identify the step that costs weeks of compute or money (parsing,
 training, transcoding, geocoding, enrichment) and store its output
@@ -264,7 +397,7 @@ This single decision is what makes future migrations boring:
 
 And boring migrations are the good kind.
 
-### 3.7 Choose boring technology, and justify the language
+### 3.8 Choose boring technology, and justify the language
 
 Someone will ask "why not rewrite it in \<faster language\>?" in the
 design review. Answer it *in the document*, once, with reasoning
@@ -283,7 +416,7 @@ anyone can check:
   (Though the honest first answer to a slow worker is usually even more
   boring: add another worker.)
 
-### 3.8 Trust is re-earned continuously
+### 3.9 Trust is re-earned continuously
 
 Systems break in two ways, and both are silent.
 
@@ -374,7 +507,7 @@ One principle at both timescales: **a failing test blocks the merge; a
 failing eval freezes the pipeline. The system proves it still works
 after every change, or the change doesn't ship.**
 
-### 3.9 Self-healing
+### 3.10 Self-healing
 
 Detection is only half a nervous system. At scale, something is
 *always* slightly broken: a worker dies mid-job, a file quietly rots, a
@@ -395,7 +528,7 @@ Humans get paged for the exceptional, never for the routine.**
 | Degraded index | Recall check finds the sagging partition → re-index in the next maintenance window, scheduled automatically |
 | Anything derived | Throw it away and rebuild it. The universal repair tool is gloriously dumb |
 
-Note how [3.6](#36-do-the-expensive-work-once-everything-downstream-is-disposable)
+Note how [3.7](#37-do-the-expensive-work-once-everything-downstream-is-disposable)
 pays compound interest here: when everything downstream is disposable,
 self-healing rarely requires cleverness, just a rebuild job and
 patience.
@@ -412,7 +545,7 @@ The quiet payoff: the team's time goes into making the system better
 instead of holding it together. A platform that needs constant human
 attention isn't simple, no matter how few boxes are on its diagram.
 
-### 3.10 Don't chase the latest version
+### 3.11 Don't chase the latest version
 
 The design keeps data inside the perimeter, and then a developer
 types `pip install` and the build downloads whatever was uploaded
@@ -463,7 +596,7 @@ Like new hires, packages need a probation period.
   digest** (`postgres:16.6@sha256:...`), `:latest` banned outright,
   pulled once into an internal registry and scanned on the way in.
 
-### 3.11 Don't forget the humans
+### 3.12 Don't forget the humans
 
 A design can be very generous to machines (APIs, queues, contracts,
 agents everywhere) and offer humans nothing. A system without windows
@@ -495,7 +628,7 @@ another migration in five years when it falls out of fashion. Keep it
 modular (small ES modules, one per feature), obey the same size and
 doc limits as the backend, and put **all styles in one `styles.css`**.
 
-### 3.12 Give the work an owner
+### 3.13 Give the work an owner
 
 The system isn't maintained by "the system." It's maintained by people
 who re-run bad batches, review low-confidence output, resolve
@@ -519,10 +652,18 @@ produces them.** Every escalation path in the design gets an inbox:
 - And humans create their own: cleanup campaigns, onboarding drives.
 
 The immune system files tickets. Then the mechanics are deliberately
-ordinary: each person sees *their* tasks; tasks pass between people
-(vacation transfers the whole troop in one action, nothing orphaned);
-a group dashboard shows who's drowning and who's idle, because a task
-system where managers can't see the pileup is just a diary.
+ordinary: each person sees and manages *their own* tasks; tasks pass
+between people (vacation transfers the whole troop in one action) and
+**escalate** upward when the answer is above someone's pay grade;
+managers see everything, because a task system where the pileup is
+invisible is just a diary. Give the person who reported a problem a
+window onto what happened to it, too. Complaining into a void teaches
+people to stop complaining, and their complaints are your best bug
+reports.
+
+The property to state plainly in the document: **no failure is
+orphaned.** Every escalation path ends at a task with an owner, a
+status, and a history, and a task without an owner is itself an alert.
 
 Architecturally, keep this a **separate app** with its own API and its
 own frontend. The core service stays lean and stable while the
@@ -557,39 +698,47 @@ The order matters: it's the order a reader needs to learn things.
 
 **The body**
 
-4. **The problem**: what's broken today, told concretely. Then the
+4. **The principles, at a glance**: the whole argument as a
+   scannable numbered list, one line each, main principles first.
+   A reader gets the architecture in a minute; a reviewer gets a
+   checklist to hold every later section against. Keep it terse and
+   put the reasoning in the sections that follow.
+5. **The problem**: what's broken today, told concretely. Then the
    fine print: the constraints that make it hard (compliance, scale,
    latency, cost, data residency).
-5. **Explicit non-goals**: what v1 deliberately does *not* do. As
+6. **Explicit non-goals**: what v1 deliberately does *not* do. As
    load-bearing as the requirements, and the cheapest scope protection
    you will ever write.
-6. **The simplicity bet**: the architecture, why it has this few
+7. **The simplicity bet**: the architecture, why it has this few
    parts, and the scaling gates that would change your mind. Include
    the language/platform justification here.
-7. **Modularity**: the seams, the contracts, the dependency
+8. **Modularity**: the seams, the contracts, the dependency
    direction, and the code-level rules.
-8. **Storage and data model**: where things physically live, with
-   actual DDL or schemas. Include the durability disciplines
-   (content addressing, write-once, immutability) if they apply.
-9. **The processing pipeline**: how input becomes usable output, with
-   the "expensive work once" boundary marked.
-10. **The core domain sections**: three to six sections specific to
+9. **The AI layer**: every agent the system contains, what knowledge
+   base grounds it, what it remembers and for how long, which APIs it
+   may call, and where a human has to sign. One table is often enough.
+10. **Storage and data model**: where things physically live, with
+    actual DDL or schemas. Include the durability disciplines
+    (content addressing, write-once, immutability) if they apply.
+11. **The processing pipeline**: how input becomes usable output, with
+    the "expensive work once" boundary marked.
+12. **The core domain sections**: three to six sections specific to
     your system. This is where the interesting design lives.
-11. **Lifecycle**: add / update / remove propagation. *See
+13. **Lifecycle**: add / update / remove propagation. *See
     [section 5](#5-the-sections-everyone-forgets).*
-12. **Verification**: the test pyramid and the evaluation gate.
-13. **Self-healing**: the repair reflexes and their limits.
-14. **Correctness contract**: what the system guarantees about its
+14. **Verification**: the test pyramid and the evaluation gate.
+15. **Self-healing**: the repair reflexes and their limits.
+16. **Correctness contract**: what the system guarantees about its
     output, and what it does when it doesn't know.
-15. **Human interfaces**: the doors people walk through.
-16. **Task ownership**: who fixes what, and how it gets handed off.
-17. **Disaster recovery**: the day everything goes wrong.
-18. **Sizing**: disk, memory, database, growth, backup overhead, with
+17. **Human interfaces**: the doors people walk through.
+18. **Task ownership**: who fixes what, and how it gets handed off.
+19. **Disaster recovery**: the day everything goes wrong.
+20. **Sizing**: disk, memory, database, growth, backup overhead, with
     the arithmetic shown.
-19. **Dependency discipline**: the supply-chain rules.
-20. **Roadmap**: phases with timeframes; trust-building work
+21. **Dependency discipline**: the supply-chain rules.
+22. **Roadmap**: phases with timeframes; trust-building work
     (evaluation, sign-offs, DR drills) scheduled *before* scale-out.
-21. **The shape of the thing**: the whole design distilled to N
+23. **The shape of the thing**: the whole design distilled to N
     decisions (six to eight), simplicity first. This is the section
     executives will read. Make it the best writing in the document.
 
@@ -629,11 +778,19 @@ matrix** (event × artifact → mechanism and latency) and the hard rules:
   SLA (minutes), their own alert, and a daily full re-sync to sweep up
   anything a missed webhook dropped.
 
-**Continuous evaluation.** Covered in [3.8](#38-trust-is-re-earned-continuously).
+**Continuous evaluation.** Covered in [3.9](#39-trust-is-re-earned-continuously).
 The thing to remember at outline time: it needs its own section, not a
 paragraph.
 
-**Self-healing.** Covered in [3.9](#39-self-healing).
+**Self-healing.** Covered in [3.10](#310-self-healing).
+
+**What the agent remembers.** Memory gets designed in the demo and
+forgotten in the document. It has a lifecycle like everything else:
+who it belongs to, what it may contain, how long it lives, who can
+read it, how a user inspects and erases it, and what happens to it
+when that user's permissions change. Write those six answers down.
+An undocumented memory store is a personal-data question waiting to
+be asked by someone with a clipboard.
 
 **Backup and recovery.** Start with the unpopular truth: **replicas
 are not backups.** A standby will faithfully replay your `DROP TABLE`
@@ -662,8 +819,8 @@ provisioning recommendation with headroom. Readers always ask; pre-empt
 them. And sizing is what makes a simplicity bet look *rational* rather
 than reckless.
 
-**Human interfaces and task ownership.** [3.11](#311-dont-forget-the-humans)
-and [3.12](#312-give-the-work-an-owner).
+**Human interfaces and task ownership.** [3.12](#312-dont-forget-the-humans)
+and [3.13](#313-give-the-work-an-owner).
 
 ---
 
@@ -722,6 +879,11 @@ Each section is **one concrete challenge**:
   and the metaphor got sharper in the process, because the problem
   isn't dumplings, it's dumplings *fused into a clump*. **When a
   metaphor needs a footnote, replace it.**
+- **Open with the principles, close with the decisions.** The story
+  gets bookends, and they are the two places a list beats prose: the
+  principles up front say what we believe, the decisions at the end say
+  what we did about it. Keep them different in kind, or the reader
+  reads the same page twice and trusts you a little less.
 - **Distill at the end.** Close with "the whole design is N
   decisions": six to eight numbered items, simplicity first.
 - **Keep the formal material as appendices.** Requirement tables, tech
@@ -802,6 +964,15 @@ because domain differences matter.
 
 > *Please add **modularity** as a key principle. Explain it in the
 > usual story-telling manner: problem → solution.*
+
+> *Please make **AI** the third main principle, alongside simplicity
+> and modularity. Include AI as a main component of the system: every
+> part of the design process and of the running system should use an
+> AI agent with a knowledge base and memory.*
+
+> *When a user works with the running system, it should remember
+> previous requests, so answers can be refined iteratively. Please
+> describe how that memory is scoped, retained, and erased.*
 
 > *Please add one more principle, **self-healing**. When something
 > goes wrong, the system should be able to self-clean and self-repair.*
@@ -906,17 +1077,35 @@ Watch for mechanical damage along the way: corrupted escape sequences
 pointing at directories that don't exist, anchors broken by renamed
 headings.
 
+One trap worth knowing in advance, because it fails silently and only
+in the PDF: **WeasyPrint ignores the HTML `start` attribute on ordered
+lists.** Pandoc emits `<ol start="4">` correctly, GitHub renders it
+correctly, and the PDF quietly restarts at 1. So a numbered list split
+in two by a paragraph comes out numbered 1, 2, 3, 1, 2, 3. Don't split
+numbered lists; use one continuous list and carry the grouping in the
+lead sentence. (If you must split, inject
+`style="counter-reset: list-item 3"` on the second `<ol>` at build
+time.) The general lesson: after every build, read the rendered
+numbers, not just the rendered text.
+
 ---
 
 ## 9. Definition of Done
 
 - [ ] Scale, cost, and "how big is this really?" are answered **with
       numbers**, arithmetic shown.
+- [ ] **The principles appear as a scannable list near the front**,
+      before the narrative starts, one line each, main ones first.
 - [ ] **Simplicity** is stated as a principle, and every component
-      earns its place against it.
+      earns its place against it. If the architecture is distributed,
+      the document says why one machine wasn't enough.
 - [ ] Every architectural bet has a **written scaling gate**.
 - [ ] **Modularity** is specified at both levels: contracts between
       modules, size and doc limits inside them.
+- [ ] **AI** is designed in rather than bolted on: every agent has a
+      named knowledge base, a defined memory (scope, retention,
+      erasure), tools reachable only through the audited APIs, and a
+      written list of what it may never decide alone.
 - [ ] **Lifecycle** (add / update / remove propagation) is described,
       not just steady-state architecture.
 - [ ] **Verification** covers both timescales: a test pyramid gating
@@ -925,7 +1114,12 @@ headings.
       auto-repaired.
 - [ ] **Backup and recovery** states RPO/RTO, restore ordering, and a
       restore-testing schedule.
-- [ ] **Humans** have interfaces, and maintenance work has owners.
+- [ ] **Humans** have interfaces, and maintenance work has owners:
+      people manage their own tasks, hand them off, and escalate them;
+      managers see everything; **no failure is orphaned**.
+- [ ] **Generated code and workflows** reach data only through the
+      documented, audited APIs and pass the same gates as hand-written
+      code.
 - [ ] **Dependencies** are pinned, aged, and verified.
 - [ ] **Non-goals** are explicit.
 - [ ] The document closes with **N decisions** anyone can quote.
@@ -948,6 +1142,8 @@ headings.
 | **The changelog header** | Three screens of revision history before the content | Delete it. Git remembers |
 | **Accretion bloat** | Each round adds a section; nothing is ever removed | Run the consolidation prompt every ~20% growth |
 | **The unread masterpiece** | Technically perfect, forty pages, formal voice, nobody finishes it | Story rewrite |
+| **AI as garnish** | The agent appears twice: in the summary, and as a chat box in a corner of the UI | Name every agent, its knowledge base, its memory, and its limits |
+| **The amnesiac assistant** | Every session starts from zero; the user re-types context they supplied five minutes ago | Give the agent memory, scoped per user, with retention and an erase button |
 | **Machines only** | APIs and queues everywhere, no dashboard, no chat, no task list | Three doors for humans; give the work an owner |
 | **The footnoted metaphor** | A clever analogy the reader has to look up | If it needs a footnote, replace it |
 | **Stale PDF** | The Markdown moved on; the PDF didn't | Regenerate every time. Say "and the PDF" in every request |
