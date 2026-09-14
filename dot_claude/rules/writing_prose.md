@@ -1,9 +1,10 @@
 # Rules For Writing Prose
 
-Any prose written for this project (book chapters,
-forewords, summaries, blurbs, captions, articles, narrative
-sections of documentation) must follow the `humanize`
-skill: `.claude/skills/humanize/SKILL.md`.
+Any prose written in any project (book chapters, forewords,
+summaries, blurbs, captions, articles, narrative sections
+of documentation) must follow the `humanize` skill:
+`~/.claude/skills/humanize/SKILL.md`, or the project's own
+copy at `.claude/skills/humanize/SKILL.md` if one exists.
 
 Apply it in drafting mode. Write text that already reads
 like a human wrote it in one sitting, from the first draft

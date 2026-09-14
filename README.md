@@ -62,6 +62,9 @@ As you go through the training materials below, you will have questions.
  - Huggingface ( https://huggingface.co/chat )
  - Google search
 
+Example Claude Code setup (rules, skills, CLAUDE.md):
+see [dot_claude/](dot_claude/README.md).
+
 <table bgcolor="red" width="100%"><tr><td></td></tr></table>
 
 ## Lesson 1 - Introduction into Generative AI

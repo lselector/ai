@@ -8,26 +8,27 @@ Status: Draft (pending approval) · Date: 2026-08-27
 
 1. [The Principles](#the-principles)
 2. [The Problem Nobody Wants to Own](#the-problem-nobody-wants-to-own)
-3. [The Temptation of Shiny Infrastructure](#the-temptation-of-shiny-infrastructure)
-4. [Don't Let the Dumplings Fuse](#dont-let-the-dumplings-fuse)
-5. [The Agent That Remembers](#the-agent-that-remembers)
-6. [Where Do Three Million Files Live?](#where-do-three-million-files-live)
-7. [Teaching the System to Read](#teaching-the-system-to-read)
-8. [The Art of Breaking Documents Apart](#the-art-of-breaking-documents-apart)
-9. [Three Ways to Find a Needle](#three-ways-to-find-a-needle)
-10. [The Web Between the Documents](#the-web-between-the-documents)
-11. [What Was True Last March?](#what-was-true-last-march)
-12. [The Corpus Never Sits Still](#the-corpus-never-sits-still)
-13. [Trust, but Verify](#trust-but-verify)
-14. [The System That Heals Itself](#the-system-that-heals-itself)
-15. [Answers You Can Take to a Regulator](#answers-you-can-take-to-a-regulator)
-16. [Three Doors for Humans](#three-doors-for-humans)
-17. [Monkey Business](#monkey-business)
-18. [The Day Everything Goes Wrong](#the-day-everything-goes-wrong)
-19. [How Big Is This, Really?](#how-big-is-this-really)
-20. [Don't Chase the Latest Version](#dont-chase-the-latest-version)
-21. [The Road from Here](#the-road-from-here)
-22. [The Shape of the Thing](#the-shape-of-the-thing)
+3. [Why Not Just Paste It All Into the Model?](#why-not-just-paste-it-all-into-the-model)
+4. [The Temptation of Shiny Infrastructure](#the-temptation-of-shiny-infrastructure)
+5. [Don't Let the Dumplings Fuse](#dont-let-the-dumplings-fuse)
+6. [The Agent That Remembers](#the-agent-that-remembers)
+7. [Where Do Three Million Files Live?](#where-do-three-million-files-live)
+8. [Teaching the System to Read](#teaching-the-system-to-read)
+9. [The Art of Breaking Documents Apart](#the-art-of-breaking-documents-apart)
+10. [Three Ways to Find a Needle](#three-ways-to-find-a-needle)
+11. [The Web Between the Documents](#the-web-between-the-documents)
+12. [What Was True Last March?](#what-was-true-last-march)
+13. [The Corpus Never Sits Still](#the-corpus-never-sits-still)
+14. [Trust, but Verify](#trust-but-verify)
+15. [The System That Heals Itself](#the-system-that-heals-itself)
+16. [Answers You Can Take to a Regulator](#answers-you-can-take-to-a-regulator)
+17. [Three Doors for Humans](#three-doors-for-humans)
+18. [Monkey Business](#monkey-business)
+19. [The Day Everything Goes Wrong](#the-day-everything-goes-wrong)
+20. [How Big Is This, Really?](#how-big-is-this-really)
+21. [Don't Chase the Latest Version](#dont-chase-the-latest-version)
+22. [The Road from Here](#the-road-from-here)
+23. [The Shape of the Thing](#the-shape-of-the-thing)
 
 Appendices: [A. Requirements Reference](#appendix-a-requirements-reference) · [B. Technology Choices](#appendix-b-technology-choices) · [C. Risk Register](#appendix-c-risk-register-condensed)
 
@@ -41,10 +42,10 @@ Every decision in this document traces back to one of these. They are listed her
 2. **Modularity.** Every capability behind a contract (API, plugin, port), with loose coupling, encapsulation, and bounded contexts, so any part can be changed, replaced, or tested on its own. The same discipline reaches into the code: subdirectories per module, files under 800 lines, functions under 50, docs at every level, a `README.md` per directory.
 3. **AI as a component, not a feature.** Agents run through the whole system and through the process that designed it, each with a knowledge base it must cite, a memory scoped to one identity, and tools reachable only through the audited APIs. The agent is available to **every user and every maintainer**: talk to it to build mini-tools and workflows, schedule and run jobs, run analyses, and draft reports and documents.
 
-4. **Self-healing.** Timeouts and retries, snapshots and restore, degraded indexes rebuilt, derived artifacts regenerated. Humans get paged as needed, never for the routine.
+4. **Self-healing.** Timeouts and retries, snapshots and restore, degraded indexes rebuilt, derived artifacts regenerated. **A restart is a non-event**, because no durable state lives in process memory and every job resumes from the queue. Humans get paged as needed, never for the routine.
 5. **One system of record.** PostgreSQL holds all transactional truth. Everything else is a copy, a cache, or a projection, and is labeled as such.
 6. **Parse once.** The expensive work happens a single time; everything downstream is disposable and cheap to regenerate.
-7. **Search three ways.** Semantic vectors for meaning, BM25 for the exact string, the document graph for structure, with time as a dimension across all three.
+7. **Search three ways, more than once.** Semantic vectors for meaning, BM25 for the exact string, the document graph for structure, with time as a dimension across all three, and a bounded multi-step loop so the agent can go back for what the first pass missed. **Retrieve small, relevant, and authorized**, rather than pouring the corpus into a context window.
 8. **Security and provenance are load-bearing.** ACLs filter in SQL before ranking; every claim carries a verified citation; every answer leaves an immutable audit trail; "I don't know" is a graded skill.
 9. **Verify continuously.** Unit, module, integration, and AI conformance tests gate every merge. A golden-suite evaluation gate, reconciliation counts, and hallucination sampling gate every day.
 10. **No failure is orphaned.** Every escalation becomes a monkey: a task with an owner, a status, and a history. People manage and hand off their own, escalate what's above their pay grade, and managers see the whole troop.
@@ -77,9 +78,31 @@ One deliberate act of modesty: version 1 is **read-only**. It answers questions.
 
 ---
 
+## Why Not Just Paste It All Into the Model?
+
+Two shortcuts get proposed at the start of every project like this one, and both were respectable positions not long ago.
+
+**The first is one-shot vector RAG.** Embed the corpus, embed the question, pull the top twenty chunks, paste them into a prompt, ship it. Through 2023 and 2024 that was the entire playbook, and it spread everywhere because it demos beautifully. It fails in a specific and predictable way: one shot means one guess. Ask *"which amendments changed the leverage covenant, and what did it say before?"* and no single search can answer it, because the second search depends on what the first one found. A lone retrieval pass cannot ask a follow-up question.
+
+By 2026 the field has moved to **agentic, multi-step retrieval**. The system searches, reads what came back, notices what's missing, and searches again, which is what a competent analyst does with a filing cabinet and always has.
+
+**The second shortcut is newer and far more seductive: skip retrieval altogether.** Context windows are enormous now. Why not hand the model the whole credit agreement, or the whole deal folder, and let it sort out the rest?
+
+Start with arithmetic. This corpus runs past **ten billion tokens**, and the largest windows on the market measure in the millions. The whole corpus was never going in, so the only real question is who does the selecting and how well. Even the modest version, stuffing one deal folder into every prompt, means paying for a hundred thousand tokens to answer a question that four thousand tokens would have answered, on every query, all day, forever.
+
+Accuracy is the better argument anyway. **A big window is not a free lunch.** Evidence sitting in the middle of a very long context gets skimmed rather than read, and the effect gets worse as the window grows. Forty well-chosen chunks beat four hundred mediocre ones, and they beat them on the exact questions that matter, the ones where the answer hinges on a single clause.
+
+Then comes the argument that ends the discussion in a regulated firm: **a context window has no access control.** Whatever goes in can come out. "We put everything in the prompt and asked the model to be careful about ethical walls" is not a control, it's a wish with a budget. Pasted text has no version, no page number, and no provenance either, so the citations come back as plausible-looking strings rather than as links to the exact paragraph a regulator can open.
+
+**So the design is a knowledge runtime, not a vector database with a chat box bolted to it.** Keyword search for the exact string, vectors for meaning, the document graph for structure, and the derivative store for the file itself, all behind one retrieval API that an agent may call more than once. Every pass filters by entitlement before it ranks. Every claim comes back with a citation to a version and a page. Contradictions and superseded text get surfaced instead of quietly averaged, and every answer carries a confidence signal the reader can see.
+
+Which gives the rule the rest of this document keeps returning to: **retrieve small, relevant, and authorized.** Not everything the model could physically hold. Just what the question needs, from what this particular person is allowed to read.
+
+---
+
 ## The Temptation of Shiny Infrastructure
 
-The first challenge isn't technical. It's saying no.
+The next challenge isn't technical either. It's saying no.
 
 The standard architecture for a system like this, the one in every vendor deck, involves a vector database, a search cluster, a message broker, a workflow engine, and a graph database. Collect all five! Each one is a distributed system to operate, patch, secure, and keep synchronized with the others. Every pair of systems is a place where data can quietly disagree. Every extra cluster is a pager that will eventually go off at 2 a.m., and it will not be sorry.
 
@@ -259,6 +282,16 @@ None of this is assumed to help. Every pre-processing step is toggled and measur
 
 **Solution three: after matching, widen the lens.** Chunks are sized for *matching*, but the sentence that matches a query and the sentence that answers it are frequently next-door neighbors. So each selected chunk gets expanded to its parent section (its siblings by heading path, within a token budget) before the model reads it. The match finds the spot; the section supplies the meaning.
 
+**Solution four: let the agent go back for more.** Some questions cannot be answered by any single search, however clever the routing ("Why Not Just Paste It All Into the Model?"). *"Which amendments changed the leverage covenant, and what did it say before?"* needs a first pass to find the amendments and a second to fetch what they amended. So retrieval is a **bounded loop**, not a single shot: the agent reads what came back, decides whether the evidence actually answers the question, and may search again with a sharper query.
+
+The bounds are what keep this from becoming a research project that bills by the hour:
+
+- **At most four passes**, then the loop stops whether it is satisfied or not.
+- **Every pass runs the full path**, entitlement filter included. No pass inherits access from an earlier one, and a second search can never see what the first was not allowed to see.
+- **Every pass is logged** in the query trace with its query, filters, chunks, and scores, so a regulator can watch the system think.
+- **Running out of passes is an abstention, with a reason.** The system says what it was still missing rather than answering from the three-quarters of an answer it managed to collect.
+- **Escalation is conditional, like everything else here.** Simple lookups take one pass and stay fast; the loop switches on where the golden suite shows it earns its latency.
+
 And beneath all of it, without exception, sits the entitlement check. **ACL filtering happens in SQL, before ranking.** An unauthorized document doesn't rank low. It doesn't exist. The permission-leak tolerance is written down as a number, and the number is **0.00%**.
 
 ![Adaptive hybrid retrieval workflow](assets/adaptive-retrieval-workflow.svg)
@@ -336,7 +369,7 @@ Rules that nothing enforces are wishes. And untested code develops a second dise
 
 ### Guarding the answers
 
-Code tests prove the machine works. A separate discipline proves it's still *right*. The yardstick is a **golden test suite**: 300+ real questions curated with Legal, Risk, Credit, and Operations, with known correct answers *and known correct citations*. It includes as-of temporal cases, adversarial permission-leak attempts (single-turn and across a conversation), multi-turn refinement chains that check the fourth turn still answers what the first turn was really asking, and, the fun part, an **unanswerable set**: questions whose answers are deliberately absent, locked behind entitlements, or found only in superseded text. The correct response is abstention. A confident answer to an unanswerable question is a hallucination caught red-handed.
+Code tests prove the machine works. A separate discipline proves it's still *right*. The yardstick is a **golden test suite**: 300+ real questions curated with Legal, Risk, Credit, and Operations, with known correct answers *and known correct citations*. It includes as-of temporal cases, adversarial permission-leak attempts (single-turn and across a conversation), multi-turn refinement chains that check the fourth turn still answers what the first turn was really asking, multi-hop questions that no single retrieval pass can answer, and, the fun part, an **unanswerable set**: questions whose answers are deliberately absent, locked behind entitlements, or found only in superseded text. The correct response is abstention. A confident answer to an unanswerable question is a hallucination caught red-handed.
 
 But where do test questions and grading criteria come from? The tempting shortcut is a conference-room checklist: "answers should be accurate, relevant, and clear, scored 1 to 10." Checklists born this way fail twice: the scores are too mushy to act on, and the criteria only cover failures somebody predicted. The system's actual failures have more imagination than that.
 
@@ -373,13 +406,43 @@ Detection is only half a nervous system. At this scale, something is *always* sl
 
 The repair reflexes, most of which we've already met wearing other hats:
 
-- **A crashed worker heals by retry.** Every pipeline step is an idempotent job in the transactional queue; a dead worker's lock expires and the next worker simply picks the job up. Re-running a finished step is a no-op. Nobody restarts anything by hand at 3 a.m.
+- **A crashed worker heals by retry.** Every pipeline step is an idempotent job in the transactional queue, claimed under a five-minute lease that the worker heartbeats while it works. A dead worker stops heartbeating, the lease expires, and the next worker picks the job up. Re-running a finished step is a no-op. Nobody restarts anything by hand at 3 a.m.
 - **A corrupted file heals from snapshots.** When the weekly scrub finds a file whose hash no longer matches the registry, it quarantines the file, restores the most recent snapshot copy that *does* verify, re-checks the hash, and files a report. The human reads the report over coffee, after the repair.
 - **A missed event heals by reconciliation.** The nightly three-layer count doesn't just detect gaps; it queues refetch jobs for every missing document. The daily full ACL re-sync does the same for dropped permission events. Detection and repair are one motion.
 - **A degraded index heals by rebuild.** When the weekly recall check finds a partition sagging under dead vectors, that partition gets re-indexed in the next maintenance window, scheduled automatically and mentioned in the morning summary.
 - **Everything derived heals by regeneration.** Wiki pages, symlink trees, summaries, chunks, whole indexes: all projections of the source of truth. The universal repair tool is gloriously dumb: throw the broken thing away and rebuild it. This is where the earlier principles pay compound interest: *parse once, everything downstream disposable* means self-healing rarely requires cleverness, just a rebuild job and patience.
 
 Self-healing has manners, though. Retries use backoff and give up after a set number of attempts. A job that keeps failing retires to a dead-letter state and pages a human, because infinite retry is not persistence, it's a tantrum. And two things are **never** repaired by automation guessing: entitlements and regulated records. Anything ambiguous in those neighborhoods escalates to people immediately. The system heals itself; it does not *improvise* itself.
+
+### Restart Is a Non-Event
+
+Machines get rebooted. Deploys roll. A GPU node runs out of memory at four in the morning and comes back forty seconds later, and the patching window reboots the database host on the second Tuesday of every month whether anyone is ready or not. If putting the system back together after any of that needs a human, it isn't self-healing. It's just well documented.
+
+**So here is the rule underneath all the others: no durable state lives in process memory.** Everything a restart could destroy sits in PostgreSQL, on the write-once volume, or in the category of things we can cheerfully rebuild. A process here is a worker, never a vault.
+
+Trace it through the things that could be in flight when the lights go out:
+
+| Interrupted | What a restart finds |
+|---|---|
+| A parse job halfway through a 900-page scan | A queue row whose lease has expired. The next worker claims it and starts that step again from the beginning, which is safe because every step is idempotent |
+| A backfill three weeks into a five-week run | Registry rows and content-addressed files that already exist. Work already done is detected by hash, skipped, and never repeated |
+| A user mid-conversation | Thread memory in a table, so the conversation resumes exactly where it was, on any node, with no sticky sessions and nothing lost but the request that was in the air |
+| An index build | A shadow table that was never flipped into service. An interrupted build costs wasted CPU and nothing else; no half-built index ever answers a query |
+| A visibility flip (old chunks off, new chunks on) | Either the whole transaction or none of it. Postgres has been good at this for thirty years and we are not going to improve on it |
+| A file being written | A temp path nothing references, swept on the next scrub. The atomic `rename()` either happened or didn't |
+
+The boot sequence is scripted, because the components have to agree with each other on the way up just as they do after a restore:
+
+1. **Mounts are verified before anything starts.** A missing volume must fail loudly at boot, not quietly at the first query, and a spot-check of a few hashes proves the right volume came back.
+2. **PostgreSQL completes crash recovery** by replaying its WAL, and accepts no connections until it's finished. This is ordinary database behavior and it's the single largest reason the design keeps truth in one.
+3. **Workers start and reclaim expired leases.** The queue drains from wherever it stopped.
+4. **The ACL sync runs before the API answers its first question**, for the same reason it runs before the API reopens after a restore: serving stale entitlements is a breach whose root cause is a runbook.
+5. **Models load and warm up**, and the readiness probe stays red until a real query returns a real answer. A cold GPU node that accepts traffic is a node that times out.
+6. **Reconciliation counts run once service is up**, because the outside world kept changing while the system was down.
+
+Two things are deliberately *not* resumed: in-flight HTTP requests and in-flight multi-step retrieval loops. Neither has written anything, both are cheap to ask again, and a system that tries to resurrect a half-finished conversation turn is a system inventing state it never persisted. The client re-asks. That's the whole recovery procedure.
+
+And it gets exercised rather than assumed. Every deploy is a rolling worker restart, so the common path is proven several times a week by the ordinary business of shipping. The full-stack restart, database host included, is rehearsed in the quarterly drill alongside the restore test, on a stopwatch, and what came back and how long it took goes into the morning report.
 
 The quiet payoff: the team's time goes into making the system better, not holding it together. A platform that needs constant human attention isn't simple, no matter how few boxes are on its diagram.
 
@@ -458,7 +521,7 @@ Vibe-coding gets guardrails rather than a leash. Generated tools and workflows l
 
 ## The Day Everything Goes Wrong
 
-Now the section nobody enjoys writing. Suppose the worst, all of it, preferably on a Friday: a bad ACL sync poisons entitlements, an operator fat-fingers a `DROP TABLE`, ransomware arrives, an availability zone catches fire. What survives?
+Now the section nobody enjoys writing. A reboot isn't a disaster and doesn't belong here; that path is a non-event and lives in "The System That Heals Itself." This section is about the day the data itself is in danger. Suppose the worst, all of it, preferably on a Friday: a bad ACL sync poisons entitlements, an operator fat-fingers a `DROP TABLE`, ransomware arrives, an availability zone catches fire. What survives?
 
 First, an unpopular truth: **replicas are not backups.** A standby replica will faithfully replay your `DROP TABLE` within milliseconds. That's its job, and it's very good at it. Replication protects against hardware failure. Backups protect against mistakes and malice, which have no SLA.
 
@@ -466,7 +529,7 @@ So: the database ships every write to an archive continuously (point-in-time rec
 
 Restores follow a scripted order, because the database and the volume must agree with each other afterward: **database first**, to the chosen moment; **volume snapshot from at-or-after** that moment (write-once means a newer snapshot only carries harmless extras, while an older one might be missing referenced files; newer is always safe, older never is); then a reconciliation pass that re-hashes every referenced file and queues re-fetches for gaps. **ACLs re-sync before the API reopens**. Restoring stale entitlements would be a permission leak with a runbook as the root cause, which is not a sentence anyone wants in a postmortem.
 
-And because a backup that's never been restored is a rumor: **a monthly automated restore test** rebuilds the database in an isolated environment, verifies integrity, and runs the golden suite against it. A failed restore pages on-call like a production outage. Quarterly, a full disaster-recovery drill runs the whole sequence against a stopwatch, and the results go to Compliance and Business Continuity in writing.
+And because a backup that's never been restored is a rumor: **a monthly automated restore test** rebuilds the database in an isolated environment, verifies integrity, and runs the golden suite against it. A failed restore pages on-call like a production outage. Quarterly, a full disaster-recovery drill runs the whole sequence against a stopwatch, together with a full-stack restart of the live system, and the results go to Compliance and Business Continuity in writing.
 
 Recovery targets, stated plainly: lose at most one hour of data; be back within eight hours for a full-site event, faster for lesser disasters.
 
@@ -501,7 +564,7 @@ The numbers that make the single-database bet rational rather than reckless:
 
 A single instance with 128-256 GB of RAM keeps the vectors and hot indexes in memory, where they belong. Backups run 2-3× database size; the first volume snapshot equals used bytes, with small daily deltas after.
 
-Speed targets: **p95 under 1.5 seconds** for retrieval, under 4.5 end-to-end. Ingestion: the full backfill lands in weeks, bulk-loaded into unindexed tables with the indexes built once at the end, because building indexes *during* a 25-million-row load is how a backfill becomes a quarter-long hostage negotiation. After that, incremental sync in minutes.
+Speed targets: **p95 under 1.5 seconds** for a retrieval pass, under 4.5 end-to-end for the single-pass answer that most questions get. Queries that escalate to the multi-step loop carry their own budget, **p95 under 10 seconds** for four passes, with each pass shown to the user as it happens, because a system that is visibly working is easier to wait for than a spinner. Ingestion: the full backfill lands in weeks, bulk-loaded into unindexed tables with the indexes built once at the end, because building indexes *during* a 25-million-row load is how a backfill becomes a quarter-long hostage negotiation. After that, incremental sync in minutes.
 
 ---
 
@@ -561,7 +624,7 @@ The build order is chosen so that trust is earned before scale is attempted. Pro
 
 ![Delivery roadmap](assets/delivery-roadmap.svg)
 
-**Phase 0 (weeks 1-3)** lays the foundations: storage, database, WAL archiving, ACL schema. **Phase 1 (weeks 4-8)** ingests a 500k-document pilot across two business units, builds the hybrid indexes, extracts links and effective dates, renders the first wiki, and runs the golden suite for the first time, while curators grade the extraction on the same corpus they're QA-ing anyway. **Phase 2 (weeks 9-12)** adds the guarded generation layer (citations, abstention, audit logging, WORM export) plus graph expansion, as-of retrieval, conversational and profile memory with its ACL re-filtering and multi-turn eval cases, and the nightly evaluation gate, ending in Compliance/Legal/BC sign-off. **Phase 3 (weeks 13-16)** is the full backfill and load testing, bracketed by base backups and closed with the first timed DR drill. **Phase 4** is enterprise rollout, at which point the nightly gates, restore tests, and drills stop being milestones and simply become weather.
+**Phase 0 (weeks 1-3)** lays the foundations: storage, database, WAL archiving, ACL schema. **Phase 1 (weeks 4-8)** ingests a 500k-document pilot across two business units, builds the hybrid indexes, extracts links and effective dates, renders the first wiki, and runs the golden suite for the first time, while curators grade the extraction on the same corpus they're QA-ing anyway. **Phase 2 (weeks 9-12)** adds the guarded generation layer (citations, abstention, audit logging, WORM export) plus graph expansion, as-of retrieval, the bounded multi-step retrieval loop with its per-pass tracing, conversational and profile memory with its ACL re-filtering and multi-turn eval cases, and the nightly evaluation gate, ending in Compliance/Legal/BC sign-off. **Phase 3 (weeks 13-16)** is the full backfill and load testing, bracketed by base backups and closed with the first timed DR drill. **Phase 4** is enterprise rollout, at which point the nightly gates, restore tests, and drills stop being milestones and simply become weather.
 
 v2 candidates wait patiently behind evaluation evidence, in the spirit of the opening bet: LLM-based relationship extraction on high-value collections, thematic clustering with summary pages, and any migration past a scaling gate.
 
@@ -576,10 +639,10 @@ Strip away the details, and the whole design is eleven decisions, the first thre
 3. **AI is a component, not a feature.** Agents run through the whole system (ingestion classification, architecture conformance review, eval clustering, groundedness judging, operations chat, maintainer tooling, the user chat) and through the process that designed it. Each one is built the same way: a knowledge base it must cite, a memory scoped to one identity, and tools reachable only through the documented, audited APIs. The user chat remembers previous requests, so answers get refined instead of retyped, and memory stays context rather than evidence: it never becomes a source of facts, and it never outlives a permission. The agent is available to **every user and every maintainer**, who can talk it into building mini-tools, composing and scheduling workflows, running analyses, and drafting reports and documents inside their own entitlements.
 4. **One system of record.** PostgreSQL holds truth (content indexes, entitlements, graph, queue, audit, agent memory) so consistency is a transaction, not a distributed-systems project.
 5. **Parse once; everything downstream is disposable.** Originals and derivatives are permanent; chunks, vectors, indexes, and wiki are projections, rebuildable at will. This is what makes every future migration boring, and boring migrations are the good kind.
-6. **Search three ways** (meaning, keywords, structure) with time as a dimension, because each method catches what the others miss.
+6. **Search three ways** (meaning, keywords, structure) with time as a dimension, because each method catches what the others miss, and let the agent run the search more than once, bounded at four passes, because the second question depends on what the first one found. The system retrieves small, relevant, authorized context instead of trusting a giant window to sort it out.
 7. **Security and provenance are load-bearing.** ACLs filter before ranking; citations verify before display; every answer leaves an immutable trail; saying "I don't know" is a graded skill.
 8. **Trust is re-earned continuously.** A pyramid of tests gates every merge; evaluation gates, reconciliation counts, hallucination sampling, and restore drills gate every day. The system proves it still works after every change, or it stops and says so.
-9. **Self-healing by design.** Timeouts and retries recover crashed jobs, corrupted files restore from verified snapshots, missed events refetch, degraded indexes rebuild, and every derived artifact can be regenerated from the source of truth. Humans are paged as needed, for the exceptional and never the routine, and nothing touching entitlements or records is ever repaired by guessing.
+9. **Self-healing by design.** Timeouts and retries recover crashed jobs, corrupted files restore from verified snapshots, missed events refetch, degraded indexes rebuild, and every derived artifact can be regenerated from the source of truth. Restarts are ordinary: no durable state sits in process memory, so a rebooted node rejoins, reclaims its expired leases, and carries on. Humans are paged as needed, for the exceptional and never the routine, and nothing touching entitlements or records is ever repaired by guessing.
 10. **No failure is orphaned.** Every escalation becomes a monkey: a task with an owner, a status, and a history. People see and manage their own, hand them off or escalate them, and managers see the whole troop. Whatever the machine gives up on, a named human picks up.
 11. **Nothing arrives unvetted.** Dependencies are pinned, aged 30 days, and verified, because "latest" is not a version, it's a gamble. Generated code and workflows reach data only through the documented, audited APIs, so ACLs apply automatically, and they pass the same CI, size, and conformance gates as anything a human typed.
 
@@ -600,7 +663,7 @@ A corpus of three million documents, one honest database on one honest server, a
 | F5 | Support hybrid retrieval: exact/lexical match (tickers, ISINs, clause numbers, dates, party names) **and** semantic match (conceptual questions, thematic synthesis, paraphrase), with symmetric pre-processing so queries and chunks are embedded in comparable form: one shared normalizer (Unicode/whitespace, acronym expansion, canonical entities, dates) on both paths, model-specific `query:`/`passage:` formatting, heading-path context in chunks, and optional HyDE for broad queries, with each step evaluated against the golden suite. |
 | F6 | Filter by rich metadata: source, business unit, document type, date range, classification, and language. |
 | F7 | Return answers with verifiable citations at the page / slide / section / table level, deterministically linked to the exact document version used. |
-| F8 | Abstain or flag uncertainty when evidence is weak, contradictory, or superseded. |
+| F8 | Abstain or flag uncertainty when evidence is weak, contradictory, or superseded. Every answer carries a visible **confidence signal** derived from retrieval scores, citation coverage, OCR confidence, and (where used) multi-model agreement. |
 | F9 | Expose retrieval as an independent, secured REST/gRPC service consumable by the agent and other internal systems. |
 | F10 | Re-index automatically upon source modification; tombstone deleted content promptly. |
 | F11 | Provide a human-browsable, normalized Markdown corpus for domain expert QA, curation, and compliance audits. |
@@ -613,6 +676,7 @@ A corpus of three million documents, one honest database on one honest server, a
 | F18 | Maintain per-user conversational and profile memory so requests can be refined iteratively. Thread memory (entities, filters, as-of date, documents already shown) rewrites each follow-up into a standalone query, displayed to the user and editable, before it enters the shared normalizer. Profile memory (usual collections, currency preference, answer length, entity disambiguations, previously flagged answers) persists across sessions. Users can view, edit, and delete any memory item, a whole thread, or everything. |
 | F19 | Ground every agent in the system (ingestion classification, conformance review, eval clustering, groundedness judging, admin chat, maintainer tooling, user chat) in the retrieval or admin APIs, with citations where the agent produces user-visible claims, and no direct database access for any agent. |
 | F20 | Make the agent's workshop available to **all users and maintainers**: build mini-tools and saved views, compose and schedule jobs and ETL workflows, run analyses, and generate reports and documents, by asking in plain language. Maintainers additionally get data-plane jobs (backfill, re-parse, re-index); end-user artifacts are read-only per S6. Everything generated reaches data only through the documented, audited APIs, inherits its author's entitlements, and passes the standard CI, size, and AI conformance gates. |
+| F21 | Support **bounded multi-step (agentic) retrieval**: the agent may issue follow-up searches based on what earlier passes returned, to a maximum of four passes. Every pass applies the full pre-ranking ACL filter independently and is recorded in the query trace with its query, filters, chunk IDs, and scores. Exhausting the budget produces an abstention naming the missing evidence, never a partial answer presented as complete. Activation is conditional and gated by golden-suite evidence. |
 
 ### A.2 Security, Compliance, and Governance
 
@@ -632,10 +696,11 @@ A corpus of three million documents, one honest database on one honest server, a
 | ID | Requirement |
 |---|---|
 | N1 | **Corpus Scale:** Low single-digit millions of source documents; 20-30 million indexed chunks after deduplication. |
-| N2 | **Query Latency:** p95 retrieval under 1.5 s (excluding LLM generation). |
+| N2 | **Query Latency:** p95 under 1.5 s per retrieval pass (excluding LLM generation); p95 under 4.5 s end-to-end for single-pass answers; p95 under 10 s end-to-end for queries escalated to the bounded multi-step loop, with per-pass progress shown to the user. |
 | N3 | **Ingestion:** Backfill in weeks; incremental sync in minutes. |
 | N4 | **Operational Simplicity:** No distributed architecture in v1. A single PostgreSQL server (plus a passive standby for failover) and mounted filesystems, with no sharding, no object store, no message broker, and no multi-cluster maintenance overhead. |
-| N5 | **Reliability:** Transactional, observable, crash-resilient job processing with automatic retries. |
+| N5 | **Reliability:** Transactional, observable, crash-resilient job processing with automatic retries under heartbeated leases. |
+| N11 | **Restart Recovery:** Any process, node, or the database may restart, planned or otherwise, without human intervention and without data loss beyond in-flight requests. No durable state resides in process memory; interrupted jobs resume from the queue, interrupted conversations resume from stored memory, and interrupted index builds discard cleanly. Full service returns within **10 minutes** of a full-stack restart, in a scripted order (mounts verified → database crash recovery → workers reclaim leases → ACL sync → model warm-up and readiness → reconciliation), exercised on every deploy and timed in the quarterly drill. |
 | N6 | **Measurable Quality:** Recall@20, citation accuracy, groundedness, and permission-leak rate continuously evaluated against a golden dataset. |
 | N7 | **Portability:** Chunk indices are disposable and 100% reconstructible from stored derivatives without re-parsing raw files. |
 | N8 | **Storage Platform:** Originals and derivatives on mounted block/file volumes inside the firm's network, with no object-store dependency. |
@@ -654,7 +719,7 @@ A corpus of three million documents, one honest database on one honest server, a
 | Agent memory | Plain PostgreSQL tables (thread memory and per-user profile memory), keyed by user identity, ACL-joined on read, retention-bounded, exposed through the retrieval API and a memory panel in the chat UI | Same system of record as everything else, so a permission change and a memory read can never disagree; disposable projection, audited like any other prompt input |
 | Embeddings | Self-hosted open models (BGE / E5 / Nomic class) on local GPUs; shared query/chunk normalizer module (versioned like the model); asymmetric `query:`/`passage:` prefixes; optional HyDE behind a golden-suite gate | Data boundary; no per-token fees across 10B+ tokens; queries and chunks embedded in comparable form via one code path that cannot drift |
 | Reranker | BGE-Reranker-Large cross-encoder; LLM rerank only as evaluated escalation | Precision on multi-hop clauses within the latency budget |
-| Retrieval API | Python FastAPI / asyncpg | Lightweight, typed, decoupled from agents. Python over Rust: the heavy lifting runs in C/GPU libraries (Postgres, CUDA, PyMuPDF), the parsing/ML ecosystem is Python-first, and any measured CPU-bound module can later be swapped to Rust behind its contract |
+| Retrieval API | Python FastAPI / asyncpg; single-pass by default, bounded multi-step (max 4 passes) on escalation, each pass independently ACL-filtered and traced | Lightweight, typed, decoupled from agents. Python over Rust: the heavy lifting runs in C/GPU libraries (Postgres, CUDA, PyMuPDF), the parsing/ML ecosystem is Python-first, and any measured CPU-bound module can later be swapped to Rust behind its contract |
 | Frontend (command center, admin chat, user chat) | Vanilla JavaScript ES modules, no frameworks, no build step; all styles in a single `styles.css`; static files served from existing infrastructure; consumes only the documented, audited APIs | Simplicity: no framework dependency to quarantine or migrate; modular per the code rules (one module per feature, README per directory); ACLs and audit apply identically to humans and agents |
 | Maintainer workbench ("monkeys") | Separate FastAPI app + vanilla-JS frontend; monkey tables in PostgreSQL; auto-created from dead-letter/eval/flag/scrub events; per-user lists with handoff and escalation, manager-wide dashboard, read-only view for the user who raised the flag; agent-built mini-tools and scheduled ETL workflows running through the shared job queue, gated by the standard CI + AI conformance review | Retrieval service stays lean while the workbench evolves at business speed; every escalation path gets an owner, a status, and a history, so no failure is orphaned |
 | Toolchain & dependencies | Homebrew-installed Python (pinned major.minor); `uv` with `exclude-newer = "30 days"` and `prerelease = "disallow"`; PGDG-pinned PostgreSQL; Docker images by digest via scanned internal registry | Supply-chain safety: aged, pinned, verified dependencies; no `:latest`, no day-old packages |
@@ -669,10 +734,12 @@ A corpus of three million documents, one honest database on one honest server, a
 | Permission leakage (incl. via graph links or wiki) | Pre-ranking SQL ACL joins everywhere including graph hops; wiki rendered only in curator enclave; adversarial leak tests in CI; 0.00% tolerance |
 | Permission leak through conversation memory | Memory bound to one identity, re-filtered by the pre-ranking ACL join on every read, never shared between users or sessions; adversarial multi-turn inheritance cases in the golden suite; memory items logged per query |
 | Stale or misleading memory steering answers | Memory is context, not evidence: every claim cites a chunk retrieved this turn; the rewritten question is shown and editable; retention windows expire thread and profile memory; users can delete any item |
-| Missing specific clauses | Adaptive routing lets identifier queries bypass summary filtering |
+| Missing specific clauses | Adaptive routing lets identifier queries bypass summary filtering; the multi-step loop can go back for what a single pass missed |
+| Multi-step retrieval burning latency or compounding its own errors | Hard cap of four passes; per-pass ACL filter and trace; budget exhaustion produces an abstention naming the gap, not a partial answer; escalation enabled only where golden-suite evidence justifies the latency |
 | Stale or wrong-period answers | Validity windows, as-of filtering, temporal/currency ranking boosts, supersession flags, as-of golden cases |
 | Hallucinated citations / fabricated claims | Middleware validates every citation token against retrieved chunks; unanswerable-set testing; nightly judge sampling; fusion mode (multi-model consensus + judge synthesis) and persona cross-examination for sensitive or low-confidence queries |
 | Silent ingestion failure / stale index | Nightly three-layer reconciliation; index-lag metric; self-retrieval probes |
+| Restart or reboot losing in-flight work, or a node returning in an inconsistent state | No durable state in process memory; heartbeated leases reclaimed on start; idempotent steps; shadow-table index builds; scripted boot order with ACL sync before first query and readiness gated on a real answer; post-restart reconciliation; rolling restarts proven on every deploy and timed quarterly |
 | Routine transient failures (crashed workers, corrupt files, missed events, index bloat) | Self-healing: idempotent retries with backoff, automatic quarantine-and-restore from verified snapshots, reconciliation-driven refetch, automatic partition reindex, regeneration of derived artifacts; dead-letter + page only after retries are exhausted; entitlements and records always escalate to humans |
 | Quality regression after updates | Nightly golden-suite gate vs. 7-day baseline; page + ingestion freeze on trip |
 | Architecture erosion in code | `import-linter` + size/docstring checks in CI; AI-agent conformance review on every merge |

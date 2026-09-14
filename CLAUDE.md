@@ -1,12 +1,8 @@
 # Project Rules
 
-The following rules apply to all work in this repository:
+Shared rules and skills (simplicity, modularity, Python
+formatting, prose style, terse replies, humanize, design-doc)
+load from `~/.claude/`. A copy lives in the `ai` repo
+under `dot_claude/`.
 
-- @.claude/rules/simplicity.md
-- @.claude/rules/modularity.md
-- @.claude/rules/communication_style.md
-- @.claude/rules/python_formatting_rules.md
-- @.claude/rules/skill_naming_hyphens.md
-- @.claude/rules/update_docs.md
-- @.claude/rules/web_development.md
-- @.claude/rules/writing_prose.md
+Add rules that apply only to this repository below.

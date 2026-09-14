@@ -419,5 +419,90 @@ Please add this in the document, and also update the design-doc-how-to and skill
 
 --------------------------------------------
 
+One-shot vector RAG spread in 2023–24; 
+by 2026 it is evolving toward agentic, multi-step retrieval.
 
---------------------------------------------
+Huge context windows remain costly and can miss key evidence; retrieve small, relevant, authorized context instead.
+
+Modern “knowledge runtimes” combine keyword, vector, graph, and file search with citations, access controls, contradiction checks, and confidence signals.
+
+-----------------------------
+
+The system should be self-healing. Please also make sure that it restores the state after restart. Please review the guides and update if necessary
+
+-----------------------------
+
+Please create a rule 
+
+GitHub/ai/.claude/rules/keep_terse.md
+
+To keep AI communications short to save on tokens.
+Use techniques similar to these:
+ - https://github.com/JuliusBrussee/caveman 
+ - https://github.com/DietrichGebert/ponytail
+
+-----------------------------
+
+Copy the file .claude/rules/keep_terse.md
+to other repositories:
+
+
+seminar/.claude/
+external/little_buck/.claude/
+slides_prep/.claude/
+external/bogdanov/.claude/
+ai/.claude/
+external/borovikov/.claude/
+domain_name/.claude/
+mybus/.claude/
+
+add  `writing_prose.md` where it was missing
+
+-----------------------------
+
+If I have rules under $HOME/.claude and under current project,
+how to avoid loading them twice?
+
+-----------------------------
+
+under repo "ai" create a directory "dot_claude" and put rules and skills under this directory. 
+
+-----------------------------
+
+the "humanize.md" skill is missing
+
+-----------------------------
+
+please check that $HOME/.claude/ has all the rules and skills
+
+-----------------------------
+
+please check that $HOME/.claude/ has the latest versions of all the rules and skills
+
+-----------------------------
+
+Please remove the rules and skills which are available under $HOME/.claude/
+from the following locations:
+
+seminar/.claude/
+external/little_buck/.claude/
+slides_prep/.claude/
+external/bogdanov/.claude/
+ai/.claude/
+external/borovikov/.claude/
+domain_name/.claude/
+mybus/.claude/
+
+also fix the CLAUDE.md in these locations
+to avoid loading these files locally
+
+-----------------------------
+
+authentication
+granular permission and security
+
+
+create documentation about system and procedures
+as searchable knowledge base
+update docs as system changes
+have short summaries and detailed docs

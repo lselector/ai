@@ -120,7 +120,12 @@ design" into "section 9 contradicts principle 2."
    box in the corner of the UI is a feature; this is different. Every
    agent in the document gets three things named: **a knowledge base**
    (it answers from retrieved, cited material, filtered by the identity
-   it acts for, never from what the model absorbed in training), **a
+   it acts for, never from what the model absorbed in training;
+   **retrieve small, relevant, authorized context** instead of pouring
+   everything into a giant window, which costs per question, buries
+   decisive evidence mid-context, and has no access control; and let
+   retrieval run more than once, since the second search usually needs
+   what the first one found), **a
    memory** (short-term thread memory so a follow-up like "now just
    Europe" is understood and requests refine iteratively; longer-term
    profile memory of what this user asked, preferred, and flagged as
@@ -181,6 +186,24 @@ design" into "section 9 contradicts principle 2."
     retry is not persistence, it's a tantrum). Name what is **never**
     auto-repaired — typically permissions, money, regulated records. *The
     system heals itself; it does not improvise itself.*
+    **Restart is the reflex people forget.** Not the disaster (that gets
+    backups and its own section) but the ordinary reboot: deploys, OOM
+    kills, patch windows. State the property that constrains the whole
+    design: **no durable state lives in process memory** — it belongs in
+    the database, on durable storage, or in the rebuild-without-regret
+    pile. Then write the two things nobody writes: **what interrupted
+    work finds on the way back** (expired lease → idempotent step reruns;
+    long import skips what it already did; user session resumes from a
+    table, not from one box's memory; half-built index was a shadow
+    table never flipped, so it wasted CPU and nothing else) and **the
+    boot order** (storage verified → database crash recovery before
+    connections → workers reclaim leases → permissions synced *before*
+    first request → caches/models warm with readiness red until a real
+    request returns → reconciliation last). Say what is *not* resumed
+    (usually in-flight requests: nothing was written, the client re-asks,
+    and resurrecting half-finished work invents state you never
+    persisted). Exercise it: rolling restarts on every deploy prove the
+    common case; time the full-stack restart alongside the restore drill.
 11. **Don't chase the latest version.** The freshest package is the
     least reviewed package; "latest" is not a version, it's a gamble.
     Every dependency is pinned, aged, verified: runtime from a pinned
@@ -311,7 +334,8 @@ learn things):
 12. **Core domain sections** — three to six, specific to the system.
 13. **Lifecycle** — add / update / remove propagation.
 14. **Verification** — test pyramid + evaluation gate.
-15. **Self-healing** — reflexes and their limits.
+15. **Self-healing** — reflexes and their limits, plus restart recovery
+    and the boot order.
 16. **Correctness contract** — what the output guarantees, and what the
     system does when it doesn't know.
 17. **Human interfaces.** 18. **Task ownership.** 19. **Disaster
@@ -346,6 +370,11 @@ before a reviewer has to ask:
   minutes-scale SLA, their own alert, and a daily full re-sync.
 - **Continuous evaluation** — its own section, not a paragraph.
 - **Self-healing** — its own section.
+- **Restart and startup order.** Formal drafts describe a system
+  already running; nobody writes down how it gets that way. What
+  happens to in-flight work, what the boot sequence is and why that
+  order, what is abandoned rather than resumed, how long a cold start
+  takes.
 - **What the agent remembers.** Memory gets designed in the demo and
   forgotten in the document. It has a lifecycle too: who it belongs to,
   what it may contain, how long it lives, who can read it, how a user
@@ -391,6 +420,8 @@ are reusable prompts.
 - **Gap-finding asks** — describe the update process when data is
   added/removed/updated including every derived artifact; describe how
   accuracy and completeness are evaluated after daily updates; does the
+  system restore its state after a restart (in-flight work, boot order,
+  what is not resumed); does the
   design include an interface for humans; does it prescribe unit,
   module, integration, and AI-agent architecture-conformance tests; does
   the running system remember a user's previous requests so answers can
@@ -534,6 +565,9 @@ second `<ol>` at build time. Verify rendered *numbers*, not just text.
 - **Verification** covers both timescales: a test pyramid gating merges,
   an evaluation gate gating updates.
 - **Self-healing** reflexes listed, with what is never auto-repaired.
+- **Restart recovery** specified: no durable state in process memory,
+  what interrupted work finds on return, the boot order, what is not
+  resumed, and how the path is exercised.
 - **Backup and recovery** states RPO/RTO, restore ordering, and a
   restore-testing schedule.
 - **Humans** have interfaces; maintenance work has owners, handoffs,

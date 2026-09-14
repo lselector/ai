@@ -37,4 +37,5 @@ for the full pipeline and the verification checklist.
 ## Related
 
 The agent-facing version of this method lives at
-`.claude/skills/design-doc/SKILL.md` in the repository root.
+`dot_claude/skills/design-doc/SKILL.md` in the repository root
+(installed at `~/.claude/skills/design-doc/`).

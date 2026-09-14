@@ -301,7 +301,13 @@ document names all three:
   material, never from what the model happens to remember about the
   world. Ground it, or it will make things up in a confident voice.
   Say exactly what corpus each agent may read, and how retrieval is
-  filtered by the identity on whose behalf it acts.
+  filtered by the identity on whose behalf it acts. **Retrieve small,
+  relevant, and authorized context** rather than pouring everything
+  into a giant window and hoping: long contexts cost real money per
+  question, bury the decisive evidence in the middle where it gets
+  skimmed, and carry no access control of their own. And let retrieval
+  run more than once. The second search is usually the one that needs
+  what the first search found.
 - **Memory.** Short-term memory of the current conversation, so a user
   can say "now just Europe" and be understood. Longer-term memory of
   what this user asked before, what they preferred, what turned out to
@@ -522,7 +528,8 @@ Humans get paged for the exceptional, never for the routine.**
 
 | Failure | Reflex |
 |---|---|
-| Crashed worker | Idempotent jobs in a transactional queue; the lock expires, the next worker picks it up. Re-running a finished step is a no-op |
+| Crashed worker | Idempotent jobs in a transactional queue under a heartbeated lease; the lease expires, the next worker picks it up. Re-running a finished step is a no-op |
+| Restart or reboot | Nothing durable in process memory, so the process comes back and reclaims its work. See below |
 | Corrupted file | Weekly scrub detects hash mismatch → quarantine → restore from the most recent *verifying* snapshot → re-check → file a report the human reads over coffee, after the repair |
 | Missed event | Reconciliation doesn't just detect gaps, it queues the refetch. Detection and repair are one motion |
 | Degraded index | Recall check finds the sagging partition → re-index in the next maintenance window, scheduled automatically |
@@ -540,6 +547,43 @@ persistence, it's a tantrum. And name the categories that are **never**
 repaired by automation guessing: typically permissions, money, and
 regulated records. Anything ambiguous there escalates to people
 immediately. *The system heals itself; it does not improvise itself.*
+
+**Restart is the reflex people forget.** Not the disaster, which gets
+its own section and a backup strategy, but the ordinary Tuesday
+reboot: a deploy rolls, a node runs out of memory, the patching window
+arrives whether or not anyone is ready. State the property plainly in
+the document, because it constrains the whole design: **no durable
+state lives in process memory.** Everything a restart could destroy
+belongs in the database, on durable storage, or in the category of
+things you can rebuild without regret. A process is a worker, not a
+vault.
+
+Then write down the two things nobody writes down:
+
+- **What each interrupted thing finds on the way back.** A half-done
+  job finds an expired lease and starts that step again, safely,
+  because the step is idempotent. A long import finds the work it
+  already did and skips it. A user's session finds its state in a
+  table rather than in the memory of whichever box answered last time.
+  A half-built index finds a shadow table that was never flipped into
+  service, so an interrupted build wastes CPU and nothing else.
+- **The boot order**, because components must agree with each other on
+  the way up exactly as they do after a restore. Storage verified
+  before anything starts. Database through crash recovery before it
+  accepts connections. Workers reclaiming expired leases. Permissions
+  synced *before* the first request is served. Caches and models
+  warmed, with the readiness probe staying red until a real request
+  returns a real answer, because a cold node accepting traffic is a
+  node timing out. Reconciliation last, since the world kept moving
+  while you were down.
+
+Say explicitly what is *not* resumed, too. In-flight requests usually
+shouldn't be: nothing was written, the client can ask again, and a
+system that resurrects half-finished work is inventing state it never
+persisted. Then exercise the path rather than assuming it. Rolling
+restarts happen on every deploy, which proves the common case weekly;
+put the full-stack restart on the same schedule as the restore drill
+and time it.
 
 The quiet payoff: the team's time goes into making the system better
 instead of holding it together. A platform that needs constant human
@@ -727,7 +771,8 @@ The order matters: it's the order a reader needs to learn things.
 13. **Lifecycle**: add / update / remove propagation. *See
     [section 5](#5-the-sections-everyone-forgets).*
 14. **Verification**: the test pyramid and the evaluation gate.
-15. **Self-healing**: the repair reflexes and their limits.
+15. **Self-healing**: the repair reflexes and their limits, plus
+    restart recovery and the boot order.
 16. **Correctness contract**: what the system guarantees about its
     output, and what it does when it doesn't know.
 17. **Human interfaces**: the doors people walk through.
@@ -783,6 +828,14 @@ The thing to remember at outline time: it needs its own section, not a
 paragraph.
 
 **Self-healing.** Covered in [3.10](#310-self-healing).
+
+**Restart and startup order.** Formal drafts describe a system that is
+already running. Nobody writes down how it gets that way. Say what
+happens to work that was in flight when the process died, what the
+boot sequence is and why that order, what is deliberately abandoned
+rather than resumed, and how long a cold start takes. This section
+costs a page and saves the first 3 a.m. call after go-live, which is
+statistically the one that goes badly.
 
 **What the agent remembers.** Memory gets designed in the demo and
 forgotten in the document. It has a lifecycle like everything else:
@@ -941,6 +994,10 @@ reader, so after the plain-language answer, fix the document.
 > *Does the design include an interface for humans to work with this
 > system?*
 
+> *Does the system restore its state after a restart? Please describe
+> what happens to in-flight work and in what order things come back
+> up.*
+
 > *Please make sure the document prescribes creating tests: unit
 > tests, per-module tests, integration tests, and tests using AI
 > agents to confirm that code changes don't violate the architecture
@@ -976,6 +1033,10 @@ because domain differences matter.
 
 > *Please add one more principle, **self-healing**. When something
 > goes wrong, the system should be able to self-clean and self-repair.*
+
+> *Please make sure the system restores its state after a restart.
+> Describe what happens to work that was in flight, the boot order,
+> and what is deliberately not resumed.*
 
 > *In the modularity section, add that code should be split into small
 > pieces and well documented: files under 800 lines, functions under
@@ -1112,6 +1173,9 @@ numbers, not just the rendered text.
       merges, an evaluation gate gating updates.
 - [ ] **Self-healing** reflexes are listed, along with what is never
       auto-repaired.
+- [ ] **Restart recovery** is specified: no durable state in process
+      memory, what interrupted work finds on the way back, the boot
+      order, what is not resumed, and how the path gets exercised.
 - [ ] **Backup and recovery** states RPO/RTO, restore ordering, and a
       restore-testing schedule.
 - [ ] **Humans** have interfaces, and maintenance work has owners:
