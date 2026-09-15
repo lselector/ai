@@ -65,6 +65,9 @@ As you go through the training materials below, you will have questions.
 Example Claude Code setup (rules, skills, CLAUDE.md):
 see [dot_claude/](dot_claude/README.md).
 
+Project knowledge base (design notes, gotchas):
+see [wiki/](wiki/Dashboards/Home.md).
+
 <table bgcolor="red" width="100%"><tr><td></td></tr></table>
 
 ## Lesson 1 - Introduction into Generative AI

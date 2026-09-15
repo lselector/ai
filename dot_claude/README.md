@@ -8,16 +8,37 @@ or to seed a new project.
 dot_claude/
 ├── CLAUDE.md        # imports the rules below
 ├── rules/           # one topic per file, loaded every session
-└── skills/
-    ├── design-doc/  # /design-doc
-    └── humanize/    # /humanize
+├── skills/
+│   ├── design-doc/  # /design-doc
+│   ├── humanize/    # /humanize
+│   ├── wiki-init/   # /wiki-init
+│   ├── wiki-update/ # /wiki-update
+│   └── wiki-serve/  # /wiki-serve
+└── wiki/            # project wiki tools and web server
 ```
+
+## Project wiki
+
+`rules/update_wiki.md`, the three `wiki-*` skills and
+the `wiki/` folder work together. They give every
+project a knowledge base in `<repo>/wiki/`: interlinked
+Markdown pages in Open Knowledge Format that agents
+search with grep and people browse as a local website.
+See [wiki/README.md](wiki/README.md) for the tools and
+[wiki/conventions.md](wiki/conventions.md) for the page
+format.
+
+The rule and skills call the tools at
+`~/.claude/wiki/`, so that folder always goes to
+`~/.claude/`, even when the rules and skills are
+installed per project. The web server needs
+`pip install flask markdown`.
 
 ## Recreate globally (all projects on this machine)
 
 ```bash
 mkdir -p ~/.claude
-cp -R dot_claude/rules dot_claude/skills ~/.claude/
+cp -R dot_claude/rules dot_claude/skills dot_claude/wiki ~/.claude/
 cp dot_claude/CLAUDE.md ~/.claude/
 ```
 
@@ -26,6 +47,7 @@ cp dot_claude/CLAUDE.md ~/.claude/
 ```bash
 mkdir -p <repo>/.claude
 cp -R dot_claude/rules dot_claude/skills <repo>/.claude/
+cp -R dot_claude/wiki ~/.claude/    # wiki tools stay global
 ```
 
 Then create `<repo>/CLAUDE.md` listing the rules with

@@ -1,0 +1,71 @@
+/* Styles for wiki_server.py: a quiet, Wikipedia-like
+   reading layout. Created 2026-09-15. */
+
+body { margin: 0; color: #202122; background: #f8f9fa;
+  font-family: -apple-system, "Helvetica Neue", Arial,
+  sans-serif; line-height: 1.5; }
+a { color: #3366cc; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.missing { color: #d33; }
+
+#topbar { background: #fff; border-bottom: 1px solid #a7d7f9;
+  padding: 10px 20px; display: flex; align-items: center;
+  gap: 24px; }
+#topbar h1 { font-size: 1.3em; margin: 0;
+  font-family: Georgia, serif; font-weight: normal; }
+#topbar h1 a { color: #202122; }
+#topbar form { margin-left: auto; }
+#topbar input { padding: 6px 10px; width: 260px;
+  border: 1px solid #a2a9b1; border-radius: 2px; }
+
+.layout { display: flex; max-width: 1200px; margin: 0 auto; }
+nav { width: 180px; padding: 20px 12px; font-size: 0.9em;
+  flex-shrink: 0; }
+nav h3 { font-size: 0.85em; color: #54595d;
+  border-bottom: 1px solid #c8ccd1; padding-bottom: 4px; }
+nav ul { padding-left: 20px; margin: 6px 0; }
+nav li { margin: 4px 0; }
+nav hr { border: 0; border-top: 1px solid #eaecf0;
+  margin: 8px 6px; }
+
+main { flex: 1; min-width: 0; background: #fff;
+  border: 1px solid #a7d7f9; padding: 24px 32px;
+  margin: 16px 0; min-height: 70vh; }
+main h1, main h2, main h3 { font-family: Georgia, serif;
+  font-weight: normal; border-bottom: 1px solid #a2a9b1;
+  padding-bottom: 4px; }
+main h1 { font-size: 1.9em; margin-top: 0; }
+.pagetype { color: #54595d; font-size: 0.85em;
+  margin: -6px 0 12px; }
+.clear { clear: both; }
+
+.infobox { float: right; width: 280px; margin: 0 0 16px 20px;
+  background: #f8f9fa; border: 1px solid #a2a9b1;
+  font-size: 0.85em; }
+.infobox th { text-align: left; vertical-align: top;
+  color: #54595d; white-space: nowrap; }
+.infobox td { word-break: break-word; }
+a.ext::after { content: "\2197"; font-size: 0.75em;
+  vertical-align: super; margin-left: 1px; }
+
+.backlinks { margin-top: 32px; padding-top: 8px;
+  border-top: 1px solid #c8ccd1; font-size: 0.9em;
+  color: #54595d; }
+.result { margin-bottom: 14px; }
+.snippet { color: #54595d; font-size: 0.9em; }
+.snippet b { background: #ffff66; }
+
+table { border-collapse: collapse; }
+td, th { border: 1px solid #c8ccd1; padding: 4px 8px; }
+code { background: #f8f9fa; border: 1px solid #eaecf0;
+  padding: 1px 4px; }
+pre { background: #f8f9fa; border: 1px solid #eaecf0;
+  padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+pre code { border: 0; padding: 0; }
+
+@media (max-width: 760px) {
+  .layout { flex-direction: column; }
+  nav { width: auto; }
+  .infobox { float: none; width: auto; margin: 0 0 16px; }
+  #topbar input { width: 140px; }
+}
