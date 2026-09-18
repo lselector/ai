@@ -13,13 +13,14 @@ dot_claude/
 │   ├── humanize/    # /humanize
 │   ├── wiki-init/   # /wiki-init
 │   ├── wiki-update/ # /wiki-update
-│   └── wiki-serve/  # /wiki-serve
+│   ├── wiki-serve/  # /wiki-serve
+│   └── wiki-stop/   # /wiki-stop
 └── wiki/            # project wiki tools and web server
 ```
 
 ## Project wiki
 
-`rules/update_wiki.md`, the three `wiki-*` skills and
+`rules/update_wiki.md`, the four `wiki-*` skills and
 the `wiki/` folder work together. They give every
 project a knowledge base in `<repo>/wiki/`: interlinked
 Markdown pages in Open Knowledge Format that agents
