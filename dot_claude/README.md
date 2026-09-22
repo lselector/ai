@@ -9,6 +9,8 @@ dot_claude/
 ├── CLAUDE.md        # imports the rules below
 ├── rules/           # one topic per file, loaded every session
 ├── skills/
+│   ├── architecture-review/ # /architecture-review
+│   ├── lean-change/ # /lean-change
 │   ├── design-doc/  # /design-doc
 │   ├── humanize/    # /humanize
 │   ├── wiki-init/   # /wiki-init
@@ -34,6 +36,23 @@ The rule and skills call the tools at
 `~/.claude/`, even when the rules and skills are
 installed per project. The web server needs
 `pip install flask markdown`.
+
+## Keeping code lean
+
+AI agents add features in small increments, each by the
+quickest path. After many changes the code turns into a
+Frankenstein creature: bloated, duplicated, full of extra
+libraries. Three pieces push back:
+
+- `rules/no_frankenstein.md` applies to every change: fit
+  the existing design, reuse code, justify new packages,
+  delete what the change made obsolete.
+- `/lean-change` runs that rule step by step for one
+  feature and ends with a tidy pass over the diff.
+- `/architecture-review` is the periodic deep review. It
+  reads the whole codebase, writes ranked refactoring
+  recommendations to `docs/architecture-review-<date>.md`,
+  and changes code only after you pick what to apply.
 
 ## Recreate globally (all projects on this machine)
 

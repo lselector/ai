@@ -4,6 +4,7 @@ These rules apply to all projects on this computer:
 
 - @rules/simplicity.md
 - @rules/modularity.md
+- @rules/no_frankenstein.md
 - @rules/communication_style.md
 - @rules/python_formatting_rules.md
 - @rules/skill_naming_hyphens.md
