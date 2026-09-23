@@ -50,6 +50,10 @@ every hunk:
       commented-out blocks, or leftover experiments.
 - [ ] Code the change made obsolete is deleted, not kept
       beside the new version.
+- [ ] Nothing left from rejected variants tried while
+      debugging: their code, guards, retries, flags,
+      scratch files, or comments about them (see "Vacuum
+      before done" in the rule).
 - [ ] Packages the change made unused are removed from the
       manifest.
 - [ ] No wrapper or `try/except` hiding a root cause.
