@@ -22,7 +22,7 @@ double-bracket wikilinks.
 - `wiki_pages.py`: read side (layout, frontmatter,
   links, search, lint).
 - `wiki_edit.py`: write side (skeleton, Index, Log).
-- `wiki_server.py`: read-only web UI on port 8020,
+- `wiki_server.py`: read-only web UI on port 4747,
   needs `flask` and `markdown`.
 - `server_start.sh`, `server_stop.sh`,
   `server_restart.sh`, `test_wiki.py`.
