@@ -501,8 +501,40 @@ to avoid loading these files locally
 authentication
 granular permission and security
 
+-----------------------------
 
 create documentation about system and procedures
 as searchable knowledge base
 update docs as system changes
 have short summaries and detailed docs
+
+-----------------------------
+
+I am thinking about adding some ideas from this work:
+
+VectifyAI PageIndex Doc Search
+.. https://github.com/VectifyAI/PageIndex
+
+It hits 98.7% on FinanceBench
+
+Open Source, 29K GitHub stars, MCP support
+
+Document search without vectors, embeddings, chunking
+
+Builds a tree, like a smart table of contents
+Mafin 2.5, built on PageIndex, scored 98.7% on FinanceBench; 
+Whereas vector RAG got only about 50%
+
+Suited to long legal, financial and technical documents
+
+Please add the essence, the main ideas into our design document.
+
+-----------------------------
+
+
+-----------------------------
+
+
+-----------------------------
+
+
